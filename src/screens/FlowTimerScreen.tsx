@@ -124,16 +124,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     };
 
-    const ActionButton: React.FC = () => (
-        <TouchableOpacity
-            style={styles.actionButton}
-            onPress={stopTimer}
-            activeOpacity={0.7}
-        >
-            <View style={styles.actionButtonInner} />
-        </TouchableOpacity>
-    );
-
     return (
         <SafeAreaView className={"flex-1  bg-bg-100 dark:bg-dark-bg-100"} >
             <StatusBar barStyle="light-content" backgroundColor="#000000" />

@@ -11,7 +11,6 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import StatisticsChart from "../components/BarChart";
 
-const {width: screenWidth} = Dimensions.get('window');
 
 // Type definitions
 interface NavigationProps {
