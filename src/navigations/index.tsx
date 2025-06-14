@@ -28,6 +28,7 @@ const AppTabNavigation = createBottomTabNavigator({
             display:'none'
         }
     }),
+    initialRouteName:'FlowTimerScreen',
     screens: {
         StatisticsScreen: StatisticsScreen,
         FlowTimerScreen: FlowTimerScreen,
