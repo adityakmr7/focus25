@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type TimeDuration = 5 | 10 | 15 | 20 | 25;
+export type TimeDuration = 1 | 5 | 10 | 15 | 20 | 25;
 
 interface Settings {
     notifications: boolean;
@@ -44,7 +44,7 @@ const initialSettings: Settings = {
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
     settings: initialSettings,
-    
+
     toggleSetting: (key) => set((state) => ({
         settings: {
             ...state.settings,
@@ -105,4 +105,4 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         // TODO: Implement feedback form opening logic
         console.log('Opening feedback form...');
     },
-})); 
+}));

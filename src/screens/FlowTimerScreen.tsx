@@ -4,7 +4,6 @@ import {
     Text,
     StyleSheet,
     SafeAreaView,
-    TouchableOpacity,
     Animated,
     Dimensions,
     StatusBar,
@@ -13,8 +12,9 @@ import { SessionDots } from '../components/SessionDots';
 import { PlayPauseButton } from '../components/PlayPauseButton';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { useSettingsStore } from '../store/settingsStore';
+import {useAudioPlayer} from "expo-audio";
 
-const { width, height } = Dimensions.get('window');
+const {  height } = Dimensions.get('window');
 
 interface FlowTimerScreenProps {
     navigation?: {
@@ -22,6 +22,8 @@ interface FlowTimerScreenProps {
         navigate: (screen: string) => void;
     };
 }
+
+const audioSource = require('../../assets/sounds/cutting-tomato.mp3');
 
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const {
@@ -33,12 +35,22 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         setTimer,
         updateTimerFromSettings,
     } = usePomodoroStore();
-
+    const player = useAudioPlayer(audioSource);
     const { settings } = useSettingsStore();
 
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const pulseAnimation = useRef(new Animated.Value(1)).current;
     const progressAnimation = useRef(new Animated.Value(0)).current;
+
+
+    // Play sound effect
+    const playCompletionSound = async () => {
+        try {
+            player.play();
+        } catch (error) {
+            console.error('Error playing sound:', error);
+        }
+    };
 
     // Update timer when duration changes in settings
     useEffect(() => {
@@ -52,6 +64,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         if (timer.isRunning && !timer.isPaused) {
             intervalRef.current = setInterval(() => {
                 if (timer.totalSeconds <= 0) {
+                    playCompletionSound();
                     handleTimerComplete();
                     return;
                 }
@@ -60,6 +73,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 const minutes = Math.floor(newTotalSeconds / 60);
                 const seconds = newTotalSeconds % 60;
 
+                player.remove()
                 setTimer({
                     minutes,
                     seconds,

@@ -14,7 +14,7 @@ interface TimeDurationSelectorProps {
     onChange: (duration: TimeDuration) => void;
 }
 
-const DURATION_OPTIONS: TimeDuration[] = [5, 10, 15, 20, 25];
+const DURATION_OPTIONS: TimeDuration[] = [1,5, 10, 15, 20, 25];
 
 export const TimeDurationSelector: React.FC<TimeDurationSelectorProps> = ({
     value,
@@ -128,4 +128,4 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRadius: 8,
     },
-}); 
+});
