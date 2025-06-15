@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { useSettingsStore } from './settingsStore';
+import * as Notifications from 'expo-notifications';
 
 interface TimerState {
     minutes: number;
@@ -88,6 +89,20 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
 
     handleTimerComplete: () => {
         const state = get();
+        const settings = useSettingsStore.getState();
+
+        // Trigger notification if enabled
+        if (settings.notifications) {
+            Notifications.scheduleNotificationAsync({
+                content: {
+                    title: "Flow Session Complete! 🎉",
+                    body: "Great job! Time for a break.",
+                    sound: true,
+                },
+                trigger: null, // Show immediately
+            });
+        }
+
         if (state.timer.currentSession < state.timer.totalSessions) {
             set((state) => ({
                 timer: {

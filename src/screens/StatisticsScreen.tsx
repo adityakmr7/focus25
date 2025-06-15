@@ -9,7 +9,7 @@ import {
     SafeAreaView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import StatisticsChart from "../components/BarChart";
+import StatisticsChart from "../components/StatisticsChart";
 
 
 // Type definitions

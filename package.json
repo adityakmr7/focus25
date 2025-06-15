@@ -30,7 +30,10 @@
     "react-native-url-polyfill": "^2.0.0",
     "react-native-vector-icons": "^10.2.0",
     "tailwind-merge": "^3.3.1",
-    "zustand": "^5.0.5"
+    "zustand": "^5.0.5",
+    "expo-notifications": "~0.31.3",
+    "expo-device": "~7.1.4",
+    "expo-constants": "~17.1.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

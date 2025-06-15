@@ -12,6 +12,7 @@ interface Settings {
     focusReminders: boolean;
     weeklyReports: boolean;
     dataSync: boolean;
+    notificationStatus: string | null;
 }
 
 interface SettingsState extends Settings {
@@ -31,6 +32,7 @@ interface SettingsState extends Settings {
     openTheme: () => void;
     openStorage: () => void;
     openFeedback: () => void;
+    updateNotification: (status:string) => void;
 }
 
 const initialSettings: Settings = {
@@ -42,6 +44,7 @@ const initialSettings: Settings = {
     focusReminders: true,
     weeklyReports: true,
     dataSync: true,
+    notificationStatus: null
 };
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -98,12 +101,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     openFeedback: () => {
         console.log('Opening feedback form...');
     },
-
+    updateNotification: (status:string) => {
+        set({notificationStatus: status});
+    },
     loadSettings: async (userId: string) => {
         try {
             set({ isLoading: true, error: null });
             const settings = await settingsService.getSettings(userId);
-            
+
             if (settings) {
                 set({
                     timeDuration: settings.time_duration as TimeDuration,
@@ -126,10 +131,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     updateSettings: async (userId: string, settings: Partial<Settings>) => {
         try {
             set({ isLoading: true, error: null });
-            
+
             // Update local state immediately for better UX
             set(settings);
-            
+
             // Convert settings to database format
             const dbSettings = {
                 time_duration: settings.timeDuration,

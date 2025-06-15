@@ -14,8 +14,7 @@ import { PlayPauseButton } from '../components/PlayPauseButton';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { useSettingsStore } from '../store/settingsStore';
 import {useAudioPlayer} from "expo-audio";
-import { Icon } from 'react-native-vector-icons/Icon';
-
+import {Ionicons} from '@expo/vector-icons'
 const {  height } = Dimensions.get('window');
 
 interface FlowTimerScreenProps {
@@ -25,7 +24,7 @@ interface FlowTimerScreenProps {
     };
 }
 
-const audioSource = require('../../assets/sounds/cutting-tomato.mp3');
+const audioSource = require('../../assets/sounds/smooth-completed-notify-starting-alert.mp3');
 
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const {
@@ -48,7 +47,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     // Play sound effect
     const playCompletionSound = async () => {
         try {
-            player.play();
+            await player.play();
+            // Stop sound after 2 seconds
+            setTimeout(() => {
+                player.pause();
+            }, 2000);
         } catch (error) {
             console.error('Error playing sound:', error);
         }
@@ -141,7 +144,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     };
 
 
-    // Reset 
+    // Reset
     const handleReset = () => {
         resetTimer();
     }
@@ -151,7 +154,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             <View style={styles.header}>
                 <View/>
                 <TouchableOpacity onPress={handleReset}>
-                    <Text>Retry</Text>
+                    <Ionicons name={"refresh"} size={24} color={"#48BB78"}/>
                 </TouchableOpacity>
             </View>
             <StatusBar barStyle="light-content" backgroundColor="#000000" />

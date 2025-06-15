@@ -2,14 +2,53 @@ import {createStaticNavigation} from "@react-navigation/native";
 import {AppStackNavigation} from "./src/navigations";
 import './global.css';
 const Navigation = createStaticNavigation(AppStackNavigation);
+import * as Notifications from "expo-notifications";
+import {useEffect} from "react";
+import {Alert} from "react-native";
+import {useSettingsStore} from "./src/store/settingsStore";
 
 const AppContent = () => {
+    const {updateNotification} = useSettingsStore();
+
+    useEffect(() => {
+        (async () => {
+            const { status: existingStatus } = await Notifications.getPermissionsAsync();
+            let finalStatus = existingStatus;
+
+            if (existingStatus !== 'granted') {
+                const { status: requestedStatus } = await Notifications.requestPermissionsAsync();
+                finalStatus = requestedStatus;
+            }
+
+
+            updateNotification(finalStatus);
+            if (finalStatus !== 'granted') {
+                Alert.alert(
+                    'Notifications Disabled',
+                    'Please enable notifications in your device settings.'
+                );
+            }
+        })();
+    }, []);
     return (
-            <Navigation/>
+        <Navigation/>
     );
 };
 
 export default function App() {
+
+    Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+            shouldShowAlert: true,
+            shouldPlaySound: true,
+            shouldSetBadge: true,
+            shouldShowBanner: true,
+            shouldShowList: true
+        }),
+    });
+
+
+
     return <AppContent />;
 }
 
