@@ -20,7 +20,14 @@ interface SettingsScreenProps {
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const {
-        settings,
+        timeDuration,
+        soundEffects,
+        notifications,
+        darkMode,
+        autoBreak,
+        focusReminders,
+        weeklyReports,
+        dataSync,
         toggleSetting,
         setTimeDuration,
         exportData,
@@ -111,7 +118,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             Focus Duration
                         </Text>
                         <TimeDurationSelector
-                            value={settings.timeDuration}
+                            value={timeDuration}
                             onChange={setTimeDuration}
                         />
                     </View>
@@ -124,7 +131,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         subtitle="Receive flow reminders and updates"
                         icon="notifications-outline"
                         hasSwitch={true}
-                        switchValue={settings.notifications}
+                        switchValue={notifications}
                         onSwitchToggle={() => toggleSetting('notifications')}
                     />
                     <SettingItem
@@ -132,7 +139,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         subtitle="Get reminded to start your focus sessions"
                         icon="time-outline"
                         hasSwitch={true}
-                        switchValue={settings.focusReminders}
+                        switchValue={focusReminders}
                         onSwitchToggle={() => toggleSetting('focusReminders')}
                     />
                     <SettingItem
@@ -140,7 +147,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         subtitle="Receive weekly productivity summaries"
                         icon="bar-chart-outline"
                         hasSwitch={true}
-                        switchValue={settings.weeklyReports}
+                        switchValue={weeklyReports}
                         onSwitchToggle={() => toggleSetting('weeklyReports')}
                     />
                 </View>
@@ -152,7 +159,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         subtitle="Play sounds during flow sessions"
                         icon="volume-medium-outline"
                         hasSwitch={true}
-                        switchValue={settings.soundEffects}
+                        switchValue={soundEffects}
                         onSwitchToggle={() => toggleSetting('soundEffects')}
                     />
                     <SettingItem
@@ -160,15 +167,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         subtitle="Vibrate for important notifications"
                         icon="phone-portrait-outline"
                         hasSwitch={true}
-                        switchValue={settings.vibration}
-                        onSwitchToggle={() => toggleSetting('vibration')}
+                        switchValue={darkMode}
+                        onSwitchToggle={() => toggleSetting('darkMode')}
                     />
                     <SettingItem
                         title="Auto Break"
                         subtitle="Automatically start break sessions"
                         icon="pause-circle-outline"
                         hasSwitch={true}
-                        switchValue={settings.autoBreak}
+                        switchValue={autoBreak}
                         onSwitchToggle={() => toggleSetting('autoBreak')}
                     />
                     <SettingItem
@@ -188,7 +195,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         subtitle="Sync your data across devices"
                         icon="cloud-outline"
                         hasSwitch={true}
-                        switchValue={settings.dataSync}
+                        switchValue={dataSync}
                         onSwitchToggle={() => toggleSetting('dataSync')}
                     />
                     <SettingItem

@@ -43,22 +43,22 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => 
     const chartDataMap: Record<PeriodType, ChartData> = {
         D: {
             labels: ['4', '8', '12', '16', '20'],
-            data: [0, 2, 4, 3, 1], // Sample data for daily view
+            data: [0, 2, 4, 3, 1],
             maxValue: 5,
         },
         W: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-            data: [5, 8, 6, 10, 7], // Sample data for weekly view
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            data: [5, 8, 6, 10, 7, 4, 3],
             maxValue: 12,
         },
         M: {
-            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-            data: [20, 35, 28, 40], // Sample data for monthly view
+            labels: ['1', '5', '10', '15', '20', '25', '30'],
+            data: [20, 35, 28, 40, 32, 25, 18],
             maxValue: 45,
         },
         Y: {
-            labels: ['Q1', 'Q2', 'Q3', 'Q4'],
-            data: [120, 180, 150, 200], // Sample data for yearly view
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            data: [120, 180, 150, 200, 160, 140, 170, 190, 210, 180, 160, 200],
             maxValue: 220,
         },
     };
@@ -241,7 +241,6 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => 
 
 const styles = StyleSheet.create({
     container: {
-        // paddingHorizontal: 20,
         marginBottom: 20,
     },
     topSection: {

@@ -6,6 +6,7 @@ import {
     SafeAreaView,
     Animated,
     Dimensions,
+    TouchableOpacity,
     StatusBar,
 } from 'react-native';
 import { SessionDots } from '../components/SessionDots';
@@ -13,6 +14,7 @@ import { PlayPauseButton } from '../components/PlayPauseButton';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { useSettingsStore } from '../store/settingsStore';
 import {useAudioPlayer} from "expo-audio";
+import { Icon } from 'react-native-vector-icons/Icon';
 
 const {  height } = Dimensions.get('window');
 
@@ -35,8 +37,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         setTimer,
         updateTimerFromSettings,
     } = usePomodoroStore();
+    const { timeDuration } = useSettingsStore();
     const player = useAudioPlayer(audioSource);
-    const { settings } = useSettingsStore();
 
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const pulseAnimation = useRef(new Animated.Value(1)).current;
@@ -57,7 +59,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         if (!timer.isRunning) {
             updateTimerFromSettings();
         }
-    }, [settings.timeDuration]);
+    }, [timeDuration]);
 
     // Timer logic
     useEffect(() => {
@@ -138,8 +140,20 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     };
 
+
+    // Reset 
+    const handleReset = () => {
+        resetTimer();
+    }
+
     return (
-        <SafeAreaView className={"flex-1  bg-bg-100 dark:bg-dark-bg-100"} >
+        <SafeAreaView className={"flex-1  bg-bg-100 dark:bg-dark-bg-100"}>
+            <View style={styles.header}>
+                <View/>
+                <TouchableOpacity onPress={handleReset}>
+                    <Text>Retry</Text>
+                </TouchableOpacity>
+            </View>
             <StatusBar barStyle="light-content" backgroundColor="#000000" />
 
             <View style={styles.timerContainer}>
@@ -174,6 +188,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+    header: {
+        flexDirection:'row',
+        alignItems:'center',
+        paddingHorizontal:16,
+        justifyContent:'space-between'
+    },
     timerContainer: {
         flex: 1,
         justifyContent: 'center',

@@ -41,7 +41,7 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     workDuration: 25,
     breakDuration: 5,
     timer: getInitialTimerState(25),
-    
+
     setWorkDuration: (duration) => set((state) => ({
         workDuration: duration,
         timer: {
@@ -52,13 +52,13 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
             initialSeconds: duration * 60,
         }
     })),
-    
+
     setBreakDuration: (duration) => set({ breakDuration: duration }),
-    
+
     setTimer: (timerUpdate) => set((state) => ({
         timer: { ...state.timer, ...timerUpdate }
     })),
-    
+
     toggleTimer: () => set((state) => ({
         timer: {
             ...state.timer,
@@ -66,7 +66,7 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
             isPaused: state.timer.isRunning ? !state.timer.isPaused : false,
         }
     })),
-    
+
     resetTimer: () => set((state) => ({
         timer: {
             ...state.timer,
@@ -77,7 +77,7 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
             totalSeconds: state.timer.initialSeconds,
         }
     })),
-    
+
     stopTimer: () => set((state) => ({
         timer: {
             ...state.timer,
@@ -85,7 +85,7 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
             isPaused: false,
         }
     })),
-    
+
     handleTimerComplete: () => {
         const state = get();
         if (state.timer.currentSession < state.timer.totalSessions) {
@@ -116,10 +116,10 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     },
 
     updateTimerFromSettings: () => {
-        const settings = useSettingsStore.getState().settings;
+        const settings = useSettingsStore.getState();
         set((state) => ({
-            workDuration: settings.timeDuration,
-            timer: getInitialTimerState(settings.timeDuration)
+            workDuration: settings?.timeDuration,
+            timer: getInitialTimerState(settings?.timeDuration)
         }));
     },
-})); 
+}));
