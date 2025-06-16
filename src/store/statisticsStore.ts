@@ -10,6 +10,17 @@ interface ChartData {
     data: number[];
   }[];
 }
+interface Flow  {
+  started: number;
+  completed: number;
+  minutes: number;
+}
+
+interface Break { 
+  started: number;
+  completed: number;
+  minutes: number; 
+}
 
 interface Statistics {
   totalFlows: number;
@@ -18,6 +29,11 @@ interface Statistics {
   currentDate: Date;
   selectedPeriod: 'day' | 'week' | 'month';
   chartData: ChartData;
+  // Statics data
+  totalCount: number,
+  flows:Flow
+  breaks: Break
+  interruptions: number,
 }
 
 interface StatisticsState extends Statistics {
@@ -39,6 +55,18 @@ const initialStatistics: Statistics = {
     labels: [],
     datasets: [{ data: [] }],
   },
+  totalCount: 0,
+  flows: {
+    started: 0,
+    completed: 0,
+    minutes: 0,
+  },
+  breaks: {
+    started: 0,
+    completed: 0,
+    minutes: 0,
+  },
+  interruptions: 2,
 };
 
 export const useStatisticsStore = create<StatisticsState>((set, get) => ({
@@ -46,7 +74,7 @@ export const useStatisticsStore = create<StatisticsState>((set, get) => ({
   ...initialStatistics,
   isLoading: false,
   error: null,
-
+  
   // Actions
   loadStatistics: async (userId: string) => {
     try {
