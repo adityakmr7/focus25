@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { useSettingsStore } from './settingsStore';
+import { useStatisticsStore } from './statisticsStore';
 import * as Notifications from 'expo-notifications';
 
 interface TimerState {
@@ -60,13 +61,26 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
         timer: { ...state.timer, ...timerUpdate }
     })),
 
-    toggleTimer: () => set((state) => ({
-        timer: {
-            ...state.timer,
-            isRunning: !state.timer.isRunning,
-            isPaused: state.timer.isRunning ? !state.timer.isPaused : false,
+    toggleTimer: () => {
+        const state = get();
+        const statistics = useStatisticsStore.getState();
+        
+        if (!state.timer.isRunning) {
+            // Starting a new session
+            statistics.incrementFlowStarted();
+        } else if (state.timer.isPaused) {
+            // Resuming from pause
+            statistics.incrementInterruptions();
         }
-    })),
+        
+        set((state) => ({
+            timer: {
+                ...state.timer,
+                isRunning: !state.timer.isRunning,
+                isPaused: state.timer.isRunning ? !state.timer.isPaused : false,
+            }
+        }));
+    },
 
     resetTimer: () => set((state) => ({
         timer: {
@@ -90,6 +104,11 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     handleTimerComplete: () => {
         const state = get();
         const settings = useSettingsStore.getState();
+        const statistics = useStatisticsStore.getState();
+
+        // Update statistics
+        const minutes = Math.floor(state.timer.initialSeconds / 60);
+        statistics.incrementFlowCompleted(minutes);
 
         // Trigger notification if enabled
         if (settings.notifications) {
@@ -99,7 +118,7 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                     body: "Great job! Time for a break.",
                     sound: true,
                 },
-                trigger: null, // Show immediately
+                trigger: null,
             });
         }
 

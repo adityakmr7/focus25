@@ -43,6 +43,11 @@ interface StatisticsState extends Statistics {
   updateStatistics: (userId: string, sessionType: 'focus' | 'break') => Promise<void>;
   setSelectedPeriod: (period: 'day' | 'week' | 'month') => void;
   setCurrentDate: (date: Date) => void;
+  incrementFlowStarted: () => void;
+  incrementFlowCompleted: (minutes: number) => void;
+  incrementBreakStarted: () => void;
+  incrementBreakCompleted: (minutes: number) => void;
+  incrementInterruptions: () => void;
 }
 
 const initialStatistics: Statistics = {
@@ -66,7 +71,7 @@ const initialStatistics: Statistics = {
     completed: 0,
     minutes: 0,
   },
-  interruptions: 2,
+  interruptions: 0,
 };
 
 export const useStatisticsStore = create<StatisticsState>((set, get) => ({
@@ -75,6 +80,41 @@ export const useStatisticsStore = create<StatisticsState>((set, get) => ({
   isLoading: false,
   error: null,
   
+  incrementFlowStarted: () => set((state) => ({
+    flows: {
+      ...state.flows,
+      started: state.flows.started + 1
+    },
+    totalCount: state.totalCount + 1
+  })),
+
+  incrementFlowCompleted: (minutes: number) => set((state) => ({
+    flows: {
+      ...state.flows,
+      completed: state.flows.completed + 1,
+      minutes: state.flows.minutes + minutes
+    }
+  })),
+
+  incrementBreakStarted: () => set((state) => ({
+    breaks: {
+      ...state.breaks,
+      started: state.breaks.started + 1
+    }
+  })),
+
+  incrementBreakCompleted: (minutes: number) => set((state) => ({
+    breaks: {
+      ...state.breaks,
+      completed: state.breaks.completed + 1,
+      minutes: state.breaks.minutes + minutes
+    }
+  })),
+
+  incrementInterruptions: () => set((state) => ({
+    interruptions: state.interruptions + 1
+  })),
+
   // Actions
   loadStatistics: async (userId: string) => {
     try {
