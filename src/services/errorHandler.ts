@@ -72,21 +72,7 @@ export class ErrorHandler {
       });
     }
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('unhandledrejection', (event) => {
-        this.logError(new Error(event.reason), {
-          context: 'Unhandled Promise Rejection',
-          severity: 'medium',
-        });
-      });
-
-      window.addEventListener('error', (event) => {
-        this.logError(event.error || new Error(event.message), {
-          context: 'Window Error',
-          severity: 'high',
-        });
-      });
-    }
+    
   }
 
   async logError(
