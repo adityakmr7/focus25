@@ -1,5 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import { Platform, View, Text } from 'react-native';
+import React from 'react';
+
+interface ErrorUtils {
+  getGlobalHandler(): (error: Error, isFatal: boolean) => void;
+  setGlobalHandler(handler: (error: Error, isFatal: boolean) => void): void;
+}
+
+declare global {
+  interface Global {
+    ErrorUtils?: ErrorUtils;
+  }
+}
 
 export interface ErrorLog {
   id: string;
@@ -35,12 +47,8 @@ export class ErrorHandler {
     if (this.isInitialized) return;
 
     try {
-      // Load existing error logs
       await this.loadErrorLogs();
-
-      // Set up global error handlers
       this.setupGlobalErrorHandlers();
-
       this.isInitialized = true;
       console.log('Error handler initialized');
     } catch (error) {
@@ -49,24 +57,21 @@ export class ErrorHandler {
   }
 
   private setupGlobalErrorHandlers(): void {
-    // Handle unhandled promise rejections
-    if (typeof global !== 'undefined') {
-      const originalHandler = global.ErrorUtils?.getGlobalHandler();
+    if (typeof global !== 'undefined' && global.ErrorUtils) {
+      const originalHandler = global.ErrorUtils.getGlobalHandler();
       
-      global.ErrorUtils?.setGlobalHandler((error: Error, isFatal: boolean) => {
+      global.ErrorUtils.setGlobalHandler((error: Error, isFatal: boolean) => {
         this.logError(error, {
           context: 'Global Error Handler',
           severity: isFatal ? 'critical' : 'high',
         });
 
-        // Call original handler if it exists
         if (originalHandler) {
           originalHandler(error, isFatal);
         }
       });
     }
 
-    // Handle unhandled promise rejections
     if (typeof window !== 'undefined') {
       window.addEventListener('unhandledrejection', (event) => {
         this.logError(new Error(event.reason), {
@@ -238,7 +243,6 @@ export class ErrorHandler {
 
 export const errorHandler = ErrorHandler.getInstance();
 
-// Utility function for easy error logging
 export const logError = (
   error: Error | string,
   context?: string,
@@ -247,10 +251,14 @@ export const logError = (
   errorHandler.logError(error, { context, severity });
 };
 
-// Utility function for wrapping components with error boundaries
+interface ErrorBoundaryProps {
+  error: Error;
+  retry: () => void;
+}
+
 export const withErrorBoundary = <P extends object>(
   Component: React.ComponentType<P>,
-  fallback?: React.ComponentType<{ error: Error; retry: () => void }>
+  fallback?: React.ComponentType<ErrorBoundaryProps>
 ) => {
   return class ErrorBoundary extends React.Component<
     P,
@@ -272,39 +280,22 @@ export const withErrorBoundary = <P extends object>(
       });
     }
 
-    render() {
+    render(): React.ReactNode {
       if (this.state.hasError) {
         if (fallback) {
-          const FallbackComponent = fallback;
-          return (
-            <FallbackComponent
-              error={this.state.error!}
-              retry={() => this.setState({ hasError: false, error: null })}
-            />
-          );
+          return React.createElement(fallback, {
+            error: this.state.error!,
+            retry: () => this.setState({ hasError: false, error: null })
+          });
         }
 
-        return (
-          <div style={{ padding: 20, textAlign: 'center' }}>
-            <h2>Something went wrong</h2>
-            <button
-              onClick={() => this.setState({ hasError: false, error: null })}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: 5,
-                cursor: 'pointer',
-              }}
-            >
-              Try Again
-            </button>
-          </div>
+        return React.createElement(View, 
+          { style: { padding: 20, alignItems: 'center' } },
+          React.createElement(Text, null, 'Something went wrong')
         );
       }
 
-      return <Component {...this.props} />;
+      return React.createElement(Component, this.props);
     }
   };
 };
