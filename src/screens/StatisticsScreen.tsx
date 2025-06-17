@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   Dimensions,
   TouchableOpacity,
   SafeAreaView,
+  Animated,
+  Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import StatisticsChart from "../components/StatisticsChart";
@@ -15,6 +17,9 @@ import { usePomodoroStore } from '../store/pomodoroStore';
 import { FlowMetrics } from '../components/FlowMetrics';
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import cn from "../lib/cn";
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 type RootStackParamList = {
   AllSessions: undefined;
@@ -39,19 +44,163 @@ interface BreakStats {
   minutes: number;
 }
 
-interface StatisticsData {
-  totalCount: number;
-  flows: FlowStats;
-  breaks: BreakStats;
-  interruptions: number;
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: string;
+  gradient: string[];
+  trend?: number;
+  delay?: number;
 }
 
-type PeriodType = "D" | "W" | "M" | "Y";
+const StatCard: React.FC<StatCardProps> = ({ 
+  title, 
+  value, 
+  subtitle, 
+  icon, 
+  gradient, 
+  trend, 
+  delay = 0 
+}) => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  const scaleValue = useRef(new Animated.Value(0.8)).current;
 
-interface StatRowProps {
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: 800,
+        delay,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleValue, {
+        toValue: 1,
+        delay,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8,
+      }),
+    ]).start();
+  }, []);
+
+  const translateY = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [50, 0],
+  });
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        styles.statCard,
+        {
+          transform: [{ translateY }, { scale: scaleValue }],
+          opacity,
+        },
+      ]}
+    >
+      <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.cardContent}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.iconContainer, { backgroundColor: gradient[0] + '20' }]}>
+            <Icon name={icon} size={24} color={gradient[0]} />
+          </View>
+          {trend !== undefined && (
+            <View style={[styles.trendContainer, { backgroundColor: trend >= 0 ? '#10B98120' : '#EF444420' }]}>
+              <Icon 
+                name={trend >= 0 ? "trending-up" : "trending-down"} 
+                size={16} 
+                color={trend >= 0 ? '#10B981' : '#EF4444'} 
+              />
+              <Text style={[styles.trendText, { color: trend >= 0 ? '#10B981' : '#EF4444' }]}>
+                {Math.abs(trend)}%
+              </Text>
+            </View>
+          )}
+        </View>
+        
+        <Text className="text-text-primary dark:text-dark-text-primary" style={styles.cardValue}>
+          {value}
+        </Text>
+        <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.cardTitle}>
+          {title}
+        </Text>
+        {subtitle && (
+          <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.cardSubtitle}>
+            {subtitle}
+          </Text>
+        )}
+      </View>
+    </Animated.View>
+  );
+};
+
+const ActionButton: React.FC<{
+  icon: string;
   label: string;
-  value: number;
-}
+  onPress: () => void;
+  gradient: string[];
+  delay?: number;
+}> = ({ icon, label, onPress, gradient, delay = 0 }) => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  const scaleValue = useRef(new Animated.Value(0.9)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: 600,
+        delay,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleValue, {
+        toValue: 1,
+        delay,
+        useNativeDriver: true,
+        tension: 120,
+        friction: 7,
+      }),
+    ]).start();
+  }, []);
+
+  const translateY = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [30, 0],
+  });
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        {
+          transform: [{ translateY }, { scale: scaleValue }],
+          opacity,
+        },
+      ]}
+    >
+      <TouchableOpacity
+        style={[styles.actionButton, { backgroundColor: gradient[0] + '15' }]}
+        onPress={onPress}
+        activeOpacity={0.8}
+      >
+        <View style={[styles.actionIconContainer, { backgroundColor: gradient[0] }]}>
+          <Icon name={icon} size={20} color="#FFFFFF" />
+        </View>
+        <Text className="text-text-primary dark:text-dark-text-primary" style={styles.actionButtonText}>
+          {label}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 const StatisticsScreen: React.FC<StatisticsScreenProps> = () => {
   const {
@@ -64,100 +213,199 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = () => {
     interruptions,
   } = useStatisticsStore();
   const navigation = useNavigation<NavigationProp>();
+  const headerAnimatedValue = useRef(new Animated.Value(0)).current;
 
-  const StatRow: React.FC<StatRowProps> = ({ label, value }) => (
-    <View style={styles.statRow}>
-      <Text
-        className={"text-text-primary dark:text-dark-text-primary"}
-        style={styles.statLabel}
-      >
-        {label}
-      </Text>
-      <Text
-        className={"text-text-secondary dark:text-dark-text-secondary"}
-        style={styles.statValue}
-      >
-        {value}
-      </Text>
-    </View>
-  );
+  useEffect(() => {
+    Animated.timing(headerAnimatedValue, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
-  const StatCard: React.FC<{ title: string; children: React.ReactNode }> = ({
-    title,
-    children,
-  }) => (
-    <View className={"bg-bg-200 dark:bg-dark-bg-200"} style={styles.statCard}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      {children}
-    </View>
-  );
+  const headerOpacity = headerAnimatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  const headerTranslateY = headerAnimatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-30, 0],
+  });
+
+  const statsData = [
+    {
+      title: 'Total Flows',
+      value: flows.completed,
+      subtitle: `${flows.started} started`,
+      icon: 'local-fire-department',
+      gradient: ['#FF6B6B', '#FF8E8E'],
+      trend: 12,
+    },
+    {
+      title: 'Focus Time',
+      value: `${Math.floor(flows.minutes / 60)}h ${flows.minutes % 60}m`,
+      subtitle: 'This period',
+      icon: 'schedule',
+      gradient: ['#4ECDC4', '#44A08D'],
+      trend: 8,
+    },
+    {
+      title: 'Breaks Taken',
+      value: breaks.completed,
+      subtitle: `${Math.floor(breaks.minutes / 60)}h ${breaks.minutes % 60}m total`,
+      icon: 'coffee',
+      gradient: ['#45B7D1', '#96C93D'],
+      trend: -3,
+    },
+    {
+      title: 'Interruptions',
+      value: interruptions,
+      subtitle: 'Stay focused!',
+      icon: 'notifications-off',
+      gradient: ['#F093FB', '#F5576C'],
+      trend: -15,
+    },
+  ];
 
   return (
-    <SafeAreaView
-      className={"bg-bg-100 dark:bg-dark-bg-100"}
-      style={styles.container}
-    >
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <Text
-          className={"color-text-primary dark:color-text-primary"}
-          style={styles.headerTitle}
+    <SafeAreaView className="bg-bg-100 dark:bg-dark-bg-100" style={styles.container}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Animated Header */}
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            },
+          ]}
         >
-          Statistics
-        </Text>
-        {/* Chart */}
-        <StatisticsChart />
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Icon name="list" size={24} color="#4CAF50" />
-            <Text
-              className={"text-text-primary dark:text-dark-text-primary"}
-              style={styles.actionButtonText}
-            >
-              Sessions
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Icon name="share" size={24} color="#4CAF50" />
-            <Text style={styles.actionButtonText}>Export</Text>
-          </TouchableOpacity>
+          <Text className="text-text-primary dark:text-dark-text-primary" style={styles.headerTitle}>
+            Statistics
+          </Text>
+          <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.headerSubtitle}>
+            Track your productivity journey
+          </Text>
+        </Animated.View>
+
+        {/* Enhanced Chart with Animation */}
+        <View style={styles.chartSection}>
+          <StatisticsChart />
         </View>
 
-        {/* Statistics Cards */}
-        <StatCard title="Flows">
-          <StatRow label="Started" value={flows.started} />
-          <StatRow label="Completed" value={flows.completed} />
-          <StatRow label="Minutes" value={flows.minutes} />
-        </StatCard>
+        {/* Action Buttons */}
+        <View style={styles.actionButtonsContainer}>
+          <ActionButton
+            icon="list"
+            label="All Sessions"
+            onPress={() => navigation.navigate("AllSessions")}
+            gradient={['#667eea', '#764ba2']}
+            delay={200}
+          />
+          <ActionButton
+            icon="analytics"
+            label="Flow Analytics"
+            onPress={() => navigation.navigate("FlowAnalytics")}
+            gradient={['#f093fb', '#f5576c']}
+            delay={300}
+          />
+          <ActionButton
+            icon="share"
+            label="Export Data"
+            onPress={() => console.log('Export data')}
+            gradient={['#4facfe', '#00f2fe']}
+            delay={400}
+          />
+        </View>
 
-        <StatCard title="Breaks">
-          <StatRow label="Started" value={breaks.started} />
-          <StatRow label="Completed" value={breaks.completed} />
-          <StatRow label="Minutes" value={breaks.minutes} />
-        </StatCard>
+        {/* Enhanced Statistics Cards Grid */}
+        <View style={styles.statsGrid}>
+          {statsData.map((stat, index) => (
+            <StatCard
+              key={stat.title}
+              title={stat.title}
+              value={stat.value}
+              subtitle={stat.subtitle}
+              icon={stat.icon}
+              gradient={stat.gradient}
+              trend={stat.trend}
+              delay={index * 100 + 500}
+            />
+          ))}
+        </View>
 
-        <StatCard title="Interruptions">
-          <StatRow label="Total" value={interruptions} />
-        </StatCard>
+        {/* Flow Metrics Section */}
+        <View style={styles.flowMetricsSection}>
+          <Animated.View
+            style={[
+              styles.sectionHeader,
+              {
+                opacity: headerOpacity,
+                transform: [{ translateY: headerTranslateY }],
+              },
+            ]}
+          >
+            <Icon name="psychology" size={24} color="#4ECDC4" />
+            <Text className="text-text-primary dark:text-dark-text-primary" style={styles.sectionTitle}>
+              Flow State Analysis
+            </Text>
+          </Animated.View>
+          <FlowMetrics showDetailed={false} />
+        </View>
 
-        {/* Show All Sessions Button */}
-        <TouchableOpacity
-          style={styles.showAllButton}
-          onPress={() => navigation.navigate("AllSessions")}
-        >
-          <Text style={styles.showAllText}>Show All Sessions</Text>
-          <Icon name="chevron-right" size={20} color="#666" />
-        </TouchableOpacity>
+        {/* Quick Actions */}
+        <View style={styles.quickActionsSection}>
+          <Animated.View
+            style={[
+              styles.sectionHeader,
+              {
+                opacity: headerOpacity,
+                transform: [{ translateY: headerTranslateY }],
+              },
+            ]}
+          >
+            <Icon name="flash-on" size={24} color="#FF6B6B" />
+            <Text className="text-text-primary dark:text-dark-text-primary" style={styles.sectionTitle}>
+              Quick Actions
+            </Text>
+          </Animated.View>
+          
+          <View style={styles.quickActionsGrid}>
+            <TouchableOpacity 
+              style={[styles.quickActionCard, { backgroundColor: '#FF6B6B15' }]}
+              onPress={() => navigation.navigate("FlowAnalytics")}
+            >
+              <Icon name="trending-up" size={32} color="#FF6B6B" />
+              <Text className="text-text-primary dark:text-dark-text-primary" style={styles.quickActionTitle}>
+                View Trends
+              </Text>
+              <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.quickActionSubtitle}>
+                Analyze patterns
+              </Text>
+            </TouchableOpacity>
 
-        {/* Show All Flow Analytics */}
-        <TouchableOpacity
-          style={styles.showAllButton}
-          onPress={() => navigation.navigate("FlowAnalytics")}
-        >
-          <Text style={styles.showAllText}>Flow Analytics</Text>
-          <Icon name="chevron-right" size={20} color="#666" />
-        </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.quickActionCard, { backgroundColor: '#4ECDC415' }]}
+              onPress={() => console.log('Set goals')}
+            >
+              <Icon name="flag" size={32} color="#4ECDC4" />
+              <Text className="text-text-primary dark:text-dark-text-primary" style={styles.quickActionTitle}>
+                Set Goals
+              </Text>
+              <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.quickActionSubtitle}>
+                Plan your week
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Bottom Spacing */}
+        <View style={styles.bottomSpacing} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -169,170 +417,182 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 10,
   },
   headerTitle: {
     fontSize: 32,
-    fontWeight: "bold",
-    marginTop: 20,
-    marginBottom: 30,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
-  topSection: {
-    marginBottom: 20,
-  },
-  totalCountSection: {
-    marginBottom: 20,
-  },
-  totalCountHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  totalCountLabel: {
+  headerSubtitle: {
     fontSize: 16,
-    color: "#666",
-    marginRight: 5,
+    marginTop: 4,
+    opacity: 0.7,
   },
-  totalCountValue: {
-    fontSize: 48,
-    fontWeight: "bold",
+  chartSection: {
+    marginTop: 10,
   },
-  flowsText: {
-    fontSize: 24,
-    fontWeight: "normal",
-  },
-  periodSelector: {
-    flexDirection: "row",
-    backgroundColor: "#333",
-    borderRadius: 8,
-    padding: 2,
-  },
-  periodButton: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    borderRadius: 6,
-  },
-  selectedPeriod: {
-    backgroundColor: "#555",
-  },
-  periodText: {
-    fontSize: 14,
-    color: "#999",
-    fontWeight: "500",
-  },
-  selectedPeriodText: {},
-  dateNavigation: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  dateText: {
-    fontSize: 18,
-    fontWeight: "500",
-  },
-  chartContainer: {
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
     marginBottom: 30,
-    alignItems: "center",
-  },
-  chart: {
-    borderRadius: 0,
-  },
-  actionButtons: {
-    flexDirection: "row",
-    // justifyContent: 'space-around',
-    marginBottom: 30,
+    gap: 12,
   },
   actionButton: {
-    borderRadius: 12,
-    padding: 20,
-    alignItems: "center",
-    minWidth: 100,
-    marginRight: 18,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  actionIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   actionButtonText: {
     fontSize: 14,
-    marginTop: 8,
-    fontWeight: "500",
+    fontWeight: '600',
+    flex: 1,
+  },
+  statsGrid: {
+    paddingHorizontal: 24,
+    gap: 16,
   },
   statCard: {
-    // backgroundColor: '#1a1a1a',
-    borderRadius: 12,
+    marginBottom: 16,
+  },
+  cardContent: {
     padding: 20,
-    marginBottom: 20,
+    borderRadius: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  trendContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  trendText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  cardValue: {
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 4,
+    letterSpacing: -0.5,
   },
   cardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  flowMetricsSection: {
+    marginTop: 30,
+    paddingHorizontal: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 12,
+  },
+  sectionTitle: {
     fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 15,
+    fontWeight: '700',
   },
-  statRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
+  quickActionsSection: {
+    marginTop: 30,
+    paddingHorizontal: 24,
   },
-  statLabel: {
-    fontSize: 16,
+  quickActionsGrid: {
+    flexDirection: 'row',
+    gap: 16,
   },
-  statValue: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  showAllButton: {
-    borderRadius: 12,
+  quickActionCard: {
+    flex: 1,
     padding: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
+    borderRadius: 16,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  showAllText: {
+  quickActionTitle: {
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: '600',
+    marginTop: 12,
+    textAlign: 'center',
   },
-  // FLOW
-   title: {
-        fontSize: 24,
-        fontWeight: '700',
-        textAlign: 'center',
-        marginVertical: 20,
-    },
-    adviceSection: {
-        margin: 20,
-        padding: 20,
-        backgroundColor: '#F9FAFB',
-   borderRadius: 16,
-   borderLeftWidth: 4,
-   borderLeftColor: '#10B981',
-    },
-    adviceTitle: {
-   fontSize: 18,
-   fontWeight: '600',
-   marginBottom: 10,
-   color: '#1F2937',
-},
-adviceText: {
-   fontSize: 14,
-   lineHeight: 20,
-   color: '#6B7280',
-   marginBottom: 16,
-},
-tipsTitle: {
-   fontSize: 16,
-   fontWeight: '600',
-   marginBottom: 8,
-   color: '#1F2937',
-},
-tipText: {
-   fontSize: 14,
-   lineHeight: 20,
-   color: '#6B7280',
-   marginBottom: 4,
-   paddingLeft: 8,
-},
+  quickActionSubtitle: {
+    fontSize: 12,
+    marginTop: 4,
+    textAlign: 'center',
+    opacity: 0.7,
+  },
+  bottomSpacing: {
+    height: 40,
+  },
 });
 
 export default StatisticsScreen;
