@@ -1,130 +1,74 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, Text } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withRepeat, 
+  withTiming,
+  Easing 
+} from 'react-native-reanimated';
 
 export const BreathingAnimation: React.FC = () => {
-    const breatheAnimation = useRef(new Animated.Value(0)).current;
-    const textOpacity = useRef(new Animated.Value(0)).current;
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(0.3);
 
-    useEffect(() => {
-        const breathingCycle = () => {
-            return Animated.loop(
-                Animated.sequence([
-                    // Inhale
-                    Animated.parallel([
-                        Animated.timing(breatheAnimation, {
-                            toValue: 1,
-                            duration: 4000,
-                            useNativeDriver: true,
-                        }),
-                        Animated.timing(textOpacity, {
-                            toValue: 1,
-                            duration: 500,
-                            useNativeDriver: true,
-                        }),
-                    ]),
-                    // Hold
-                    Animated.delay(1000),
-                    // Exhale
-                    Animated.parallel([
-                        Animated.timing(breatheAnimation, {
-                            toValue: 0,
-                            duration: 4000,
-                            useNativeDriver: true,
-                        }),
-                        Animated.timing(textOpacity, {
-                            toValue: 0.5,
-                            duration: 500,
-                            useNativeDriver: true,
-                        }),
-                    ]),
-                    // Hold
-                    Animated.delay(1000),
-                ])
-            );
-        };
-
-        const animation = breathingCycle();
-        animation.start();
-
-        return () => animation.stop();
-    }, []);
-
-    const scale = breatheAnimation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [1, 1.3],
-    });
-
-    const innerScale = breatheAnimation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0.8, 1.1],
-    });
-
-    const opacity = breatheAnimation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0.3, 0.8],
-    });
-
-    return (
-        <View style={styles.container}>
-            <Animated.View
-                style={[
-                    styles.outerCircle,
-                    {
-                        transform: [{ scale }],
-                        opacity,
-                    },
-                ]}
-            />
-            <Animated.View
-                style={[
-                    styles.innerCircle,
-                    {
-                        transform: [{ scale: innerScale }],
-                        opacity: opacity,
-                    },
-                ]}
-            />
-            <Animated.Text
-                style={[
-                    styles.breatheText,
-                    { opacity: textOpacity },
-                ]}
-            >
-                Breathe
-            </Animated.Text>
-        </View>
+  useEffect(() => {
+    scale.value = withRepeat(
+      withTiming(1.2, {
+        duration: 4000,
+        easing: Easing.inOut(Easing.ease),
+      }),
+      -1,
+      true
     );
+
+    opacity.value = withRepeat(
+      withTiming(0.8, {
+        duration: 4000,
+        easing: Easing.inOut(Easing.ease),
+      }),
+      -1,
+      true
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  return (
+    <View style={styles.container}>
+      <Animated.View style={[styles.circle, animatedStyle]} />
+      <Animated.View style={[styles.innerCircle, animatedStyle]} />
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        position: 'absolute',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 120,
-        height: 120,
-        marginBottom: 40,
-    },
-    outerCircle: {
-        position: 'absolute',
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: 'rgba(72, 187, 120, 0.2)',
-        borderWidth: 2,
-        borderColor: 'rgba(72, 187, 120, 0.4)',
-    },
-    innerCircle: {
-        position: 'absolute',
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: 'rgba(72, 187, 120, 0.3)',
-    },
-    breatheText: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#48BB78',
-        letterSpacing: 1,
-    },
+  container: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  circle: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(72, 187, 120, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(72, 187, 120, 0.3)',
+  },
+  innerCircle: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(72, 187, 120, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(72, 187, 120, 0.2)',
+  },
 });
