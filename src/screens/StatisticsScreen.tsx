@@ -14,7 +14,9 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import StatisticsChart from "../components/StatisticsChart";
 import { useStatisticsStore } from "../store/statisticsStore";
 import { usePomodoroStore } from '../store/pomodoroStore';
+import { useGoalsStore } from '../store/goalsStore';
 import { FlowMetrics } from '../components/FlowMetrics';
+import { GoalsModal } from '../components/GoalsModal';
 import cn from "../lib/cn";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -205,6 +207,11 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     breaks,
     interruptions,
   } = useStatisticsStore();
+  
+  const { flowMetrics } = usePomodoroStore();
+  const { goals, getActiveGoals, updateGoalsFromStats } = useGoalsStore();
+  
+  const [showGoalsModal, setShowGoalsModal] = useState(false);
   const headerAnimatedValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -215,6 +222,18 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     }).start();
   }, []);
 
+  // Update goals based on current statistics
+  useEffect(() => {
+    const stats = {
+      dailySessions: flows.completed,
+      dailyFocusTime: flows.minutes,
+      currentStreak: flowMetrics.currentStreak,
+      weeklyConsistency: flows.completed > 0 ? 85 : 0, // Mock weekly consistency
+    };
+    
+    updateGoalsFromStats(stats);
+  }, [flows, flowMetrics]);
+
   const headerOpacity = headerAnimatedValue.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 1],
@@ -224,6 +243,9 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     inputRange: [0, 1],
     outputRange: [-30, 0],
   });
+
+  const activeGoals = getActiveGoals();
+  const recentGoals = activeGoals.slice(0, 3); // Show top 3 active goals
 
   const statsData = [
     {
@@ -260,6 +282,20 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     },
   ];
 
+  const getGoalProgress = (goal: any) => {
+    return Math.min((goal.current / goal.target) * 100, 100);
+  };
+
+  const getGoalColor = (category: string) => {
+    switch (category) {
+      case 'sessions': return '#FF6B6B';
+      case 'focus_time': return '#4ECDC4';
+      case 'streak': return '#FFD93D';
+      case 'consistency': return '#9F7AEA';
+      default: return '#6B7280';
+    }
+  };
+
   return (
     <SafeAreaView className="bg-bg-100 dark:bg-dark-bg-100" style={styles.container}>
       <ScrollView 
@@ -290,6 +326,98 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
           <StatisticsChart />
         </View>
 
+        {/* Goals Overview Section */}
+        <View style={styles.goalsSection}>
+          <Animated.View
+            style={[
+              styles.sectionHeader,
+              {
+                opacity: headerOpacity,
+                transform: [{ translateY: headerTranslateY }],
+              },
+            ]}
+          >
+            <View style={styles.sectionTitleContainer}>
+              <Icon name="flag" size={24} color="#9F7AEA" />
+              <Text className="text-text-primary dark:text-dark-text-primary" style={styles.sectionTitle}>
+                Active Goals
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.viewAllButton, { backgroundColor: '#9F7AEA' + '20' }]}
+              onPress={() => setShowGoalsModal(true)}
+            >
+              <Text style={[styles.viewAllText, { color: '#9F7AEA' }]}>View All</Text>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {recentGoals.length > 0 ? (
+            <View style={styles.goalsGrid}>
+              {recentGoals.map((goal, index) => (
+                <Animated.View
+                  key={goal.id}
+                  style={[
+                    styles.goalCard,
+                    { backgroundColor: 'rgba(255, 255, 255, 0.8)' },
+                    {
+                      opacity: headerOpacity,
+                      transform: [{ translateY: headerTranslateY }],
+                    },
+                  ]}
+                >
+                  <View style={styles.goalHeader}>
+                    <View style={[
+                      styles.goalIcon, 
+                      { backgroundColor: getGoalColor(goal.category) + '20' }
+                    ]}>
+                      <Icon 
+                        name={goal.category === 'sessions' ? 'timer' : 
+                              goal.category === 'focus_time' ? 'schedule' :
+                              goal.category === 'streak' ? 'local-fire-department' : 'calendar-today'} 
+                        size={16} 
+                        color={getGoalColor(goal.category)} 
+                      />
+                    </View>
+                    <Text className="text-text-primary dark:text-dark-text-primary" style={styles.goalTitle}>
+                      {goal.title}
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.goalProgress}>
+                    <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.goalProgressText}>
+                      {goal.current} / {goal.target} {goal.unit}
+                    </Text>
+                    <View style={[styles.goalProgressBar, { backgroundColor: '#E5E7EB' }]}>
+                      <View
+                        style={[
+                          styles.goalProgressFill,
+                          {
+                            width: `${getGoalProgress(goal)}%`,
+                            backgroundColor: getGoalColor(goal.category),
+                          }
+                        ]}
+                      />
+                    </View>
+                  </View>
+                </Animated.View>
+              ))}
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[styles.emptyGoalsCard, { backgroundColor: 'rgba(255, 255, 255, 0.8)' }]}
+              onPress={() => setShowGoalsModal(true)}
+            >
+              <Icon name="flag-outline" size={32} color="#9F7AEA" />
+              <Text className="text-text-primary dark:text-dark-text-primary" style={styles.emptyGoalsTitle}>
+                Set Your First Goal
+              </Text>
+              <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.emptyGoalsSubtitle}>
+                Track your progress and stay motivated
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
           <ActionButton
@@ -300,10 +428,10 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
             delay={300}
           />
           <ActionButton
-            icon="share"
-            label="Export Data"
-            onPress={() => console.log('Export data')}
-            gradient={['#4facfe', '#00f2fe']}
+            icon="flag"
+            label="Set Goals"
+            onPress={() => setShowGoalsModal(true)}
+            gradient={['#9F7AEA', '#C084FC']}
             delay={400}
           />
         </View>
@@ -376,14 +504,14 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
 
             <TouchableOpacity 
               style={[styles.quickActionCard, { backgroundColor: '#4ECDC415' }]}
-              onPress={() => console.log('Set goals')}
+              onPress={() => setShowGoalsModal(true)}
             >
               <Icon name="flag" size={32} color="#4ECDC4" />
               <Text className="text-text-primary dark:text-dark-text-primary" style={styles.quickActionTitle}>
-                Set Goals
+                Manage Goals
               </Text>
               <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.quickActionSubtitle}>
-                Plan your week
+                Track progress
               </Text>
             </TouchableOpacity>
           </View>
@@ -392,6 +520,12 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Goals Modal */}
+      <GoalsModal
+        visible={showGoalsModal}
+        onClose={() => setShowGoalsModal(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -423,6 +557,113 @@ const styles = StyleSheet.create({
   },
   chartSection: {
     marginTop: 10,
+  },
+  goalsSection: {
+    paddingHorizontal: 24,
+    marginBottom: 30,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    gap: 12,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  viewAllButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  viewAllText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  goalsGrid: {
+    gap: 12,
+  },
+  goalCard: {
+    padding: 16,
+    borderRadius: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  goalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  goalIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  goalTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+  },
+  goalProgress: {
+    gap: 6,
+  },
+  goalProgressText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  goalProgressBar: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  goalProgressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  emptyGoalsCard: {
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  emptyGoalsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  emptyGoalsSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
   },
   actionButtonsContainer: {
     flexDirection: 'row',
@@ -527,16 +768,6 @@ const styles = StyleSheet.create({
   flowMetricsSection: {
     marginTop: 30,
     paddingHorizontal: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 12,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
   },
   quickActionsSection: {
     marginTop: 30,
