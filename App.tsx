@@ -1,7 +1,6 @@
-import { createStaticNavigation } from "@react-navigation/native";
+import { NavigationContainer } from "@react-navigation/native";
 import { AppStackNavigation } from "./src/navigations";
 import "./global.css";
-const Navigation = createStaticNavigation(AppStackNavigation);
 import * as Notifications from "expo-notifications";
 import { useEffect } from "react";
 import { Alert } from "react-native";
@@ -32,7 +31,12 @@ const AppContent = () => {
       }
     })();
   }, []);
-  return <Navigation />;
+  
+  return (
+    <NavigationContainer>
+      <AppStackNavigation />
+    </NavigationContainer>
+  );
 };
 
 export default function App() {
