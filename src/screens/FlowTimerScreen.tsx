@@ -59,12 +59,14 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const [showMusicPlayer, setShowMusicPlayer] = useState(false);
     const [achievements, setAchievements] = useState<string[]>([]);
     const [showAchievements, setShowAchievements] = useState(false);
+    const [showQuickActions, setShowQuickActions] = useState(false);
 
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const pulseAnimation = useSharedValue(1);
     const progressAnimation = useRef(new Animated.Value(0)).current;
     const containerAnimation = useRef(new Animated.Value(0)).current;
     const achievementAnimation = useSharedValue(0);
+    const quickActionsAnimation = useRef(new Animated.Value(0)).current;
 
     // Initialize container animation
     useEffect(() => {
@@ -74,6 +76,15 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             useNativeDriver: true,
         }).start();
     }, []);
+
+    // Quick actions animation
+    useEffect(() => {
+        Animated.timing(quickActionsAnimation, {
+            toValue: showQuickActions ? 1 : 0,
+            duration: 300,
+            useNativeDriver: true,
+        }).start();
+    }, [showQuickActions]);
 
     // Check for achievements
     useEffect(() => {
@@ -92,11 +103,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         if (newAchievements.length > 0 && newAchievements.length !== achievements.length) {
             setAchievements(newAchievements);
             setShowAchievements(true);
-            
-            // Auto hide after 3 seconds
-            setTimeout(() => {
-                setShowAchievements(false);
-            }, 3000);
         }
     }, [flowMetrics.consecutiveSessions, flowMetrics.currentStreak, flowMetrics.flowIntensity]);
 
@@ -183,6 +189,14 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         resetTimer();
     };
 
+    const handleShowAchievements = () => {
+        setShowAchievements(true);
+    };
+
+    const handleCloseAchievements = () => {
+        setShowAchievements(false);
+    };
+
     const getSessionDurationText = () => {
         if (timer.adaptedDuration && timer.adaptedDuration !== Math.floor(timer.initialSeconds / 60)) {
             return `${Math.floor(timer.initialSeconds / 60)}m (adapted from ${timer.adaptedDuration}m)`;
@@ -198,6 +212,16 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const containerTranslateY = containerAnimation.interpolate({
         inputRange: [0, 1],
         outputRange: [50, 0],
+    });
+
+    const quickActionsOpacity = quickActionsAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 1],
+    });
+
+    const quickActionsTranslateY = quickActionsAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [20, 0],
     });
 
     return (
@@ -221,13 +245,92 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     },
                 ]}
             >
-                {/* Minimal Header - Only Reset Button */}
+                {/* Enhanced Header with Quick Access */}
                 <View style={styles.header}>
-                    <View style={styles.placeholder} />
+                    <TouchableOpacity 
+                        onPress={handleShowAchievements} 
+                        style={[styles.headerButton, { backgroundColor: theme.surface }]}
+                    >
+                        <Ionicons name="trophy" size={20} color="#FFD700" />
+                        {flowMetrics.currentStreak > 0 && (
+                            <View style={styles.badge}>
+                                <Text style={styles.badgeText}>{flowMetrics.currentStreak}</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        onPress={() => setShowQuickActions(!showQuickActions)}
+                        style={[styles.menuButton, { backgroundColor: theme.surface }]}
+                    >
+                        <Ionicons name="ellipsis-horizontal" size={20} color={theme.accent} />
+                    </TouchableOpacity>
+
                     <TouchableOpacity onPress={handleReset} style={[styles.headerButton, { backgroundColor: theme.surface }]}>
                         <Ionicons name="refresh" size={20} color={theme.accent} />
                     </TouchableOpacity>
                 </View>
+
+                {/* Quick Actions Panel */}
+                <Animated.View 
+                    style={[
+                        styles.quickActionsPanel,
+                        { backgroundColor: theme.surface },
+                        {
+                            opacity: quickActionsOpacity,
+                            transform: [{ translateY: quickActionsTranslateY }],
+                        }
+                    ]}
+                    pointerEvents={showQuickActions ? 'auto' : 'none'}
+                >
+                    <TouchableOpacity 
+                        style={styles.quickActionItem}
+                        onPress={() => {
+                            setShowMusicPlayer(true);
+                            setShowQuickActions(false);
+                        }}
+                    >
+                        <View style={[styles.quickActionIcon, { backgroundColor: '#4ECDC4' + '20' }]}>
+                            <Ionicons name="musical-notes" size={20} color="#4ECDC4" />
+                        </View>
+                        <Text style={[styles.quickActionText, { color: theme.text }]}>Focus Music</Text>
+                        <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>
+                            Ambient sounds
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        style={styles.quickActionItem}
+                        onPress={() => {
+                            setShowBreathingAnimation(!showBreathingAnimation);
+                            setShowQuickActions(false);
+                        }}
+                    >
+                        <View style={[styles.quickActionIcon, { backgroundColor: '#48BB78' + '20' }]}>
+                            <Ionicons name="leaf" size={20} color="#48BB78" />
+                        </View>
+                        <Text style={[styles.quickActionText, { color: theme.text }]}>Breathing Guide</Text>
+                        <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>
+                            {showBreathingAnimation ? 'Active' : 'Inactive'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        style={styles.quickActionItem}
+                        onPress={() => {
+                            navigation?.navigate('FlowAnalytics');
+                            setShowQuickActions(false);
+                        }}
+                    >
+                        <View style={[styles.quickActionIcon, { backgroundColor: '#9F7AEA' + '20' }]}>
+                            <Ionicons name="analytics" size={20} color="#9F7AEA" />
+                        </View>
+                        <Text style={[styles.quickActionText, { color: theme.text }]}>Analytics</Text>
+                        <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>
+                            View insights
+                        </Text>
+                    </TouchableOpacity>
+                </Animated.View>
 
                 {/* Timer Container */}
                 <View style={styles.timerContainer}>
@@ -276,32 +379,36 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         onPress={toggleTimer}
                     />
 
-                    {/* Minimal Controls - only when not running */}
-                    {!timer.isRunning && (
-                        <View style={styles.controls}>
-                            <TouchableOpacity 
-                                onPress={() => setShowBreathingAnimation(!showBreathingAnimation)}
-                                style={[styles.controlButton, { backgroundColor: theme.surface }]}
-                            >
-                                <Ionicons 
-                                    name="leaf" 
-                                    size={16} 
-                                    color={showBreathingAnimation ? theme.accent : theme.textSecondary} 
-                                />
-                            </TouchableOpacity>
-                            
-                            <TouchableOpacity 
-                                onPress={() => setShowMusicPlayer(true)}
-                                style={[styles.controlButton, { backgroundColor: theme.surface }]}
-                            >
-                                <Ionicons 
-                                    name="musical-notes" 
-                                    size={16} 
-                                    color={theme.textSecondary} 
-                                />
-                            </TouchableOpacity>
-                        </View>
-                    )}
+                    {/* Bottom Action Bar - Always visible for easy access */}
+                    <View style={styles.bottomActionBar}>
+                        <TouchableOpacity 
+                            onPress={() => setShowMusicPlayer(true)}
+                            style={[styles.actionBarButton, { backgroundColor: theme.surface }]}
+                        >
+                            <Ionicons name="musical-notes" size={18} color="#4ECDC4" />
+                            <Text style={[styles.actionBarText, { color: theme.textSecondary }]}>Music</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity 
+                            onPress={handleShowAchievements}
+                            style={[styles.actionBarButton, { backgroundColor: theme.surface }]}
+                        >
+                            <Ionicons name="trophy" size={18} color="#FFD700" />
+                            <Text style={[styles.actionBarText, { color: theme.textSecondary }]}>Rewards</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            onPress={() => setShowBreathingAnimation(!showBreathingAnimation)}
+                            style={[styles.actionBarButton, { backgroundColor: theme.surface }]}
+                        >
+                            <Ionicons 
+                                name="leaf" 
+                                size={18} 
+                                color={showBreathingAnimation ? "#48BB78" : theme.textSecondary} 
+                            />
+                            <Text style={[styles.actionBarText, { color: theme.textSecondary }]}>Breathe</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </Animated.View>
 
@@ -316,6 +423,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 isVisible={showAchievements}
                 achievements={achievements}
                 animationValue={achievementAnimation}
+                onClose={handleCloseAchievements}
             />
         </SafeAreaView>
     );
@@ -337,13 +445,10 @@ const styles = StyleSheet.create({
         paddingBottom: 10,
         marginBottom: 20,
     },
-    placeholder: {
-        width: 40,
-    },
     headerButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
@@ -351,6 +456,69 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 2,
+        position: 'relative',
+    },
+    menuButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    badge: {
+        position: 'absolute',
+        top: -2,
+        right: -2,
+        backgroundColor: '#FF6B6B',
+        borderRadius: 10,
+        minWidth: 20,
+        height: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    badgeText: {
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: '700',
+    },
+    quickActionsPanel: {
+        marginHorizontal: 24,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 6,
+    },
+    quickActionItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 8,
+    },
+    quickActionIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    quickActionText: {
+        fontSize: 16,
+        fontWeight: '600',
+        flex: 1,
+    },
+    quickActionSubtext: {
+        fontSize: 12,
+        opacity: 0.7,
     },
     timerContainer: {
         flex: 1,
@@ -377,22 +545,31 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    controls: {
+    bottomActionBar: {
         flexDirection: 'row',
-        gap: 16,
-        marginTop: 40,
-    },
-    controlButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
+        marginTop: 40,
+        gap: 20,
+        paddingHorizontal: 20,
+    },
+    actionBarButton: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 16,
+        minWidth: 70,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 2,
+    },
+    actionBarText: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginTop: 4,
     },
 });
 
