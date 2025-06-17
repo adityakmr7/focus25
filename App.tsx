@@ -16,22 +16,28 @@ const AppContent = () => {
 
   useEffect(() => {
     (async () => {
-      const { status: existingStatus } =
-        await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
+      try {
+        const { status: existingStatus } =
+          await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
 
-      if (existingStatus !== "granted") {
-        const { status: requestedStatus } =
-          await Notifications.requestPermissionsAsync();
-        finalStatus = requestedStatus;
-      }
+        if (existingStatus !== "granted") {
+          const { status: requestedStatus } =
+            await Notifications.requestPermissionsAsync();
+          finalStatus = requestedStatus;
+        }
 
-      updateNotification(finalStatus);
-      if (finalStatus !== "granted") {
-        Alert.alert(
-          "Notifications Disabled",
-          "Please enable notifications in your device settings."
-        );
+        updateNotification(finalStatus);
+        if (finalStatus !== "granted") {
+          Alert.alert(
+            "Notifications Disabled",
+            "Please enable notifications in your device settings."
+          );
+        }
+      } catch (error) {
+        console.error("Error requesting notification permissions:", error);
+        // Set a default status if permission request fails
+        updateNotification("denied");
       }
     })();
   }, []);
