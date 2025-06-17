@@ -129,6 +129,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         showAlert('Feedback', 'Opening feedback form...');
     };
 
+    const handleThemeCustomization = (): void => {
+        if (navigation) {
+            navigation.navigate('ThemeCustomization');
+        } else {
+            showAlert('Navigation Error', 'Theme customization is not available.');
+        }
+    };
+
     const headerOpacity = headerAnimation.interpolate({
         inputRange: [0, 1],
         outputRange: [0, 1],
@@ -265,7 +273,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             subtitle="Personalize colors and timer style"
                             icon="color-palette-outline"
                             showArrow={true}
-                            onPress={() => navigation?.navigate('ThemeCustomization')}
+                            onPress={handleThemeCustomization}
                         />
                         <SettingItem
                             title="Dark Mode"
