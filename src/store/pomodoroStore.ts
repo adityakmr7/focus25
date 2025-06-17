@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import { useSettingsStore } from "./settingsStore";
 import { useStatisticsStore } from "./statisticsStore";
+import { databaseService } from "../services/database";
 import * as Notifications from "expo-notifications";
 import { isNewDay, getCurrentDateString } from "../utils/dateUtils";
+
 // Add new interfaces for flow tracking
 interface FlowMetrics {
   consecutiveSessions: number;
@@ -35,6 +37,9 @@ interface PomodoroState {
   breakDuration: number;
   timer: TimerState;
   flowMetrics: FlowMetrics;
+  isInitialized: boolean;
+  
+  initializeStore: () => Promise<void>;
   setWorkDuration: (duration: number) => void;
   setBreakDuration: (duration: number) => void;
   setTimer: (timer: Partial<TimerState>) => void;
@@ -46,12 +51,13 @@ interface PomodoroState {
   startBreak: () => void;
   endBreak: () => void;
   // New flow tracking methods
-  trackDistraction: () => void;
+  trackDistraction: () => Promise<void>;
   calculateFlowIntensity: () => void;
   adaptSessionLength: () => number;
-  updateFlowMetrics: () => void;
-  resetDailyMetrics: () => void;
+  updateFlowMetrics: () => Promise<void>;
+  resetDailyMetrics: () => Promise<void>;
   checkAndResetDailyMetrics: () => void;
+  syncWithDatabase: () => Promise<void>;
 }
 
 // Helper functions
@@ -131,8 +137,25 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
   breakDuration: 1,
   timer: getInitialTimerState(25),
   flowMetrics: getInitialFlowMetrics(),
+  isInitialized: false,
 
-  // Add this method to the store
+  initializeStore: async () => {
+    if (get().isInitialized) return;
+    
+    try {
+      const savedMetrics = await databaseService.getFlowMetrics();
+      set({ 
+        flowMetrics: savedMetrics,
+        isInitialized: true 
+      });
+      
+      get().checkAndResetDailyMetrics();
+    } catch (error) {
+      console.error('Failed to initialize pomodoro store:', error);
+      set({ isInitialized: true }); // Continue with defaults
+    }
+  },
+
   checkAndResetDailyMetrics: () => {
     const state = get();
     if (isNewDay(state.flowMetrics.lastSessionDate)) {
@@ -145,8 +168,12 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
           lastSessionDate: getCurrentDateString(),
         },
       }));
+      
+      // Save updated metrics to database
+      get().syncWithDatabase();
     }
   },
+
   setWorkDuration: (duration) =>
     set((state) => ({
       workDuration: duration,
@@ -385,15 +412,24 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
   },
 
   // New flow tracking methods
-  trackDistraction: () => {
-    set((state) => ({
-      flowMetrics: {
-        ...state.flowMetrics,
-        distractionCount: state.flowMetrics.distractionCount + 1,
-      },
-    }));
+  trackDistraction: async () => {
+    try {
+      set((state) => ({
+        flowMetrics: {
+          ...state.flowMetrics,
+          distractionCount: state.flowMetrics.distractionCount + 1,
+        },
+      }));
 
-    get().calculateFlowIntensity();
+      get().calculateFlowIntensity();
+      await get().syncWithDatabase();
+      
+      // Also update statistics
+      const statistics = useStatisticsStore.getState();
+      statistics.incrementInterruptions();
+    } catch (error) {
+      console.error('Failed to track distraction:', error);
+    }
   },
 
   calculateFlowIntensity: () => {
@@ -427,44 +463,67 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     );
   },
 
-  updateFlowMetrics: () => {
-    const state = get();
-    const sessionDuration = Math.floor(state.timer.initialSeconds / 60);
-    const sessionTime = state.flowMetrics.sessionStartTime
-      ? (Date.now() - state.flowMetrics.sessionStartTime) / (1000 * 60)
-      : sessionDuration;
+  updateFlowMetrics: async () => {
+    try {
+      const state = get();
+      const sessionDuration = Math.floor(state.timer.initialSeconds / 60);
+      const sessionTime = state.flowMetrics.sessionStartTime
+        ? (Date.now() - state.flowMetrics.sessionStartTime) / (1000 * 60)
+        : sessionDuration;
 
-    set((state) => ({
-      flowMetrics: {
-        ...state.flowMetrics,
-        consecutiveSessions: state.flowMetrics.consecutiveSessions + 1,
-        currentStreak: state.flowMetrics.currentStreak + 1,
-        longestStreak: Math.max(
-          state.flowMetrics.longestStreak,
-          state.flowMetrics.currentStreak + 1
-        ),
-        totalFocusTime: state.flowMetrics.totalFocusTime + sessionDuration,
-        averageSessionLength:
-          (state.flowMetrics.averageSessionLength + sessionDuration) / 2,
-        bestFlowDuration: Math.max(
-          state.flowMetrics.bestFlowDuration,
-          sessionTime
-        ),
-        sessionStartTime: null,
-        distractionCount: 0, // Reset after successful session
-      },
-    }));
+      set((state) => ({
+        flowMetrics: {
+          ...state.flowMetrics,
+          consecutiveSessions: state.flowMetrics.consecutiveSessions + 1,
+          currentStreak: state.flowMetrics.currentStreak + 1,
+          longestStreak: Math.max(
+            state.flowMetrics.longestStreak,
+            state.flowMetrics.currentStreak + 1
+          ),
+          totalFocusTime: state.flowMetrics.totalFocusTime + sessionDuration,
+          averageSessionLength:
+            (state.flowMetrics.averageSessionLength + sessionDuration) / 2,
+          bestFlowDuration: Math.max(
+            state.flowMetrics.bestFlowDuration,
+            sessionTime
+          ),
+          sessionStartTime: null,
+          distractionCount: 0, // Reset after successful session
+          lastSessionDate: getCurrentDateString(),
+        },
+      }));
 
-    get().calculateFlowIntensity();
+      get().calculateFlowIntensity();
+      await get().syncWithDatabase();
+    } catch (error) {
+      console.error('Failed to update flow metrics:', error);
+    }
   },
-  resetDailyMetrics: () => {
-    set((state) => ({
-      flowMetrics: {
-        ...state.flowMetrics,
-        consecutiveSessions: 0,
-        distractionCount: 0,
-        sessionStartTime: null,
-      },
-    }));
+
+  resetDailyMetrics: async () => {
+    try {
+      set((state) => ({
+        flowMetrics: {
+          ...state.flowMetrics,
+          consecutiveSessions: 0,
+          distractionCount: 0,
+          sessionStartTime: null,
+          lastSessionDate: getCurrentDateString(),
+        },
+      }));
+      
+      await get().syncWithDatabase();
+    } catch (error) {
+      console.error('Failed to reset daily metrics:', error);
+    }
+  },
+
+  syncWithDatabase: async () => {
+    try {
+      const state = get();
+      await databaseService.saveFlowMetrics(state.flowMetrics);
+    } catch (error) {
+      console.error('Failed to sync flow metrics with database:', error);
+    }
   },
 }));

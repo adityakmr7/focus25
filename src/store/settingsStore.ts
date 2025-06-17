@@ -1,12 +1,12 @@
 import { create } from 'zustand';
-import { settingsService } from '../services/database';
+import { databaseService } from '../services/database';
 
 export type TimeDuration = 1 | 5 | 10 | 15 | 20 | 25;
 export type BreakDuration = 1 | 5 | 10 | 15 | 20 | 25;
 
 interface Settings {
     timeDuration: TimeDuration;
-    breakDuration:BreakDuration;
+    breakDuration: BreakDuration;
     soundEffects: boolean;
     notifications: boolean;
     darkMode: boolean;
@@ -20,14 +20,15 @@ interface Settings {
 interface SettingsState extends Settings {
     isLoading: boolean;
     error: string | null;
-    loadSettings: (userId: string) => Promise<void>;
-    updateSettings: (userId: string, settings: Partial<Settings>) => Promise<void>;
-    toggleSetting: (key: keyof Settings) => void;
-    setTimeDuration: (duration: TimeDuration) => void;
-    setBreakDuration:(duration:BreakDuration) => void;
-    resetSettings: () => void;
-    exportData: () => void;
-    deleteData: () => void;
+    isInitialized: boolean;
+    
+    initializeStore: () => Promise<void>;
+    toggleSetting: (key: keyof Settings) => Promise<void>;
+    setTimeDuration: (duration: TimeDuration) => Promise<void>;
+    setBreakDuration: (duration: BreakDuration) => Promise<void>;
+    resetSettings: () => Promise<void>;
+    exportData: () => Promise<string>;
+    deleteData: () => Promise<void>;
     rateApp: () => void;
     openSupport: () => void;
     openPrivacy: () => void;
@@ -35,12 +36,13 @@ interface SettingsState extends Settings {
     openTheme: () => void;
     openStorage: () => void;
     openFeedback: () => void;
-    updateNotification: (status:string) => void;
+    updateNotification: (status: string) => Promise<void>;
+    syncWithDatabase: () => Promise<void>;
 }
 
 const initialSettings: Settings = {
     timeDuration: 25,
-    breakDuration:5,
+    breakDuration: 5,
     soundEffects: true,
     notifications: true,
     darkMode: false,
@@ -55,30 +57,89 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     ...initialSettings,
     isLoading: false,
     error: null,
+    isInitialized: false,
 
-    setBreakDuration(duration) {
-       set({breakDuration:duration})
-    },
-    toggleSetting: (key: keyof Settings) => {
-        set((state) => ({
-            [key]: !state[key],
-        }));
+    initializeStore: async () => {
+        if (get().isInitialized) return;
+        
+        try {
+            set({ isLoading: true, error: null });
+            const savedSettings = await databaseService.getSettings();
+            
+            set({ 
+                ...savedSettings,
+                isInitialized: true,
+                isLoading: false 
+            });
+        } catch (error) {
+            console.error('Failed to initialize settings store:', error);
+            set({ 
+                error: error instanceof Error ? error.message : 'Failed to initialize settings',
+                isInitialized: true,
+                isLoading: false 
+            });
+        }
     },
 
-    setTimeDuration: (duration: TimeDuration) => {
-        set({ timeDuration: duration });
+    setBreakDuration: async (duration) => {
+        try {
+            set({ breakDuration: duration });
+            await get().syncWithDatabase();
+        } catch (error) {
+            console.error('Failed to set break duration:', error);
+            set({ error: error instanceof Error ? error.message : 'Failed to update settings' });
+        }
     },
 
-    resetSettings: () => {
-        set(initialSettings);
+    toggleSetting: async (key: keyof Settings) => {
+        try {
+            set((state) => ({
+                [key]: !state[key],
+            }));
+            await get().syncWithDatabase();
+        } catch (error) {
+            console.error('Failed to toggle setting:', error);
+            set({ error: error instanceof Error ? error.message : 'Failed to update settings' });
+        }
     },
 
-    exportData: () => {
-        console.log('Exporting data...');
+    setTimeDuration: async (duration: TimeDuration) => {
+        try {
+            set({ timeDuration: duration });
+            await get().syncWithDatabase();
+        } catch (error) {
+            console.error('Failed to set time duration:', error);
+            set({ error: error instanceof Error ? error.message : 'Failed to update settings' });
+        }
     },
 
-    deleteData: () => {
-        console.log('Deleting data...');
+    resetSettings: async () => {
+        try {
+            set({ ...initialSettings, isInitialized: true });
+            await get().syncWithDatabase();
+        } catch (error) {
+            console.error('Failed to reset settings:', error);
+            set({ error: error instanceof Error ? error.message : 'Failed to reset settings' });
+        }
+    },
+
+    exportData: async () => {
+        try {
+            return await databaseService.exportAllData();
+        } catch (error) {
+            console.error('Failed to export data:', error);
+            throw error;
+        }
+    },
+
+    deleteData: async () => {
+        try {
+            await databaseService.clearAllData();
+            set({ ...initialSettings, isInitialized: true });
+        } catch (error) {
+            console.error('Failed to delete data:', error);
+            set({ error: error instanceof Error ? error.message : 'Failed to delete data' });
+        }
     },
 
     rateApp: () => {
@@ -108,59 +169,37 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     openFeedback: () => {
         console.log('Opening feedback form...');
     },
-    updateNotification: (status:string) => {
-        set({notificationStatus: status});
-    },
-    loadSettings: async (userId: string) => {
-        try {
-            set({ isLoading: true, error: null });
-            const settings = await settingsService.getSettings(userId);
 
-            if (settings) {
-                set({
-                    timeDuration: settings.time_duration as TimeDuration,
-                    soundEffects: settings.sound_effects,
-                    notifications: settings.notifications,
-                    darkMode: settings.dark_mode,
-                    autoBreak: settings.auto_break,
-                    focusReminders: settings.focus_reminders,
-                    weeklyReports: settings.weekly_reports,
-                    dataSync: settings.data_sync,
-                });
-            }
+    updateNotification: async (status: string) => {
+        try {
+            set({ notificationStatus: status });
+            await get().syncWithDatabase();
         } catch (error) {
-            set({ error: error instanceof Error ? error.message : 'Failed to load settings' });
-        } finally {
-            set({ isLoading: false });
+            console.error('Failed to update notification status:', error);
+            set({ error: error instanceof Error ? error.message : 'Failed to update settings' });
         }
     },
 
-    updateSettings: async (userId: string, settings: Partial<Settings>) => {
+    syncWithDatabase: async () => {
         try {
-            set({ isLoading: true, error: null });
-
-            // Update local state immediately for better UX
-            set(settings);
-
-            // Convert settings to database format
-            const dbSettings = {
-                time_duration: settings.timeDuration,
-                sound_effects: settings.soundEffects,
-                notifications: settings.notifications,
-                dark_mode: settings.darkMode,
-                auto_break: settings.autoBreak,
-                focus_reminders: settings.focusReminders,
-                weekly_reports: settings.weeklyReports,
-                data_sync: settings.dataSync,
+            const state = get();
+            const settings = {
+                timeDuration: state.timeDuration,
+                breakDuration: state.breakDuration,
+                soundEffects: state.soundEffects,
+                notifications: state.notifications,
+                darkMode: state.darkMode,
+                autoBreak: state.autoBreak,
+                focusReminders: state.focusReminders,
+                weeklyReports: state.weeklyReports,
+                dataSync: state.dataSync,
+                notificationStatus: state.notificationStatus
             };
-
-            await settingsService.updateSettings(userId, dbSettings);
+            
+            await databaseService.saveSettings(settings);
         } catch (error) {
-            // Revert local state on error
-            set(get());
-            set({ error: error instanceof Error ? error.message : 'Failed to update settings' });
-        } finally {
-            set({ isLoading: false });
+            console.error('Failed to sync settings with database:', error);
+            set({ error: error instanceof Error ? error.message : 'Failed to sync with database' });
         }
     },
 }));

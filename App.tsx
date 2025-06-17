@@ -6,13 +6,50 @@ import * as Notifications from "expo-notifications";
 import { useEffect } from "react";
 import { Alert } from "react-native";
 import { useSettingsStore } from "./src/store/settingsStore";
+import { useGoalsStore } from "./src/store/goalsStore";
+import { useStatisticsStore } from "./src/store/statisticsStore";
+import { usePomodoroStore } from "./src/store/pomodoroStore";
+import { useThemeStore } from "./src/store/themeStore";
 import { ThemeProvider } from "./src/providers/ThemeProvider";
+import { initializeDatabase } from "./src/services/database";
 
 // Enable screens before any navigation components are rendered
 enableScreens();
 
 const AppContent = () => {
-  const { updateNotification } = useSettingsStore();
+  const { updateNotification, initializeStore: initializeSettings } = useSettingsStore();
+  const { initializeStore: initializeGoals } = useGoalsStore();
+  const { initializeStore: initializeStatistics } = useStatisticsStore();
+  const { initializeStore: initializePomodoro } = usePomodoroStore();
+  const { initializeStore: initializeTheme } = useThemeStore();
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Initialize database first
+        await initializeDatabase();
+        
+        // Initialize all stores
+        await Promise.all([
+          initializeSettings(),
+          initializeGoals(),
+          initializeStatistics(),
+          initializePomodoro(),
+          initializeTheme(),
+        ]);
+        
+        console.log('App initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize app:', error);
+        Alert.alert(
+          'Initialization Error',
+          'Failed to initialize the app. Some features may not work properly.'
+        );
+      }
+    };
+
+    initializeApp();
+  }, []);
 
   useEffect(() => {
     (async () => {
