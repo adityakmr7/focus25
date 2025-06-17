@@ -36,7 +36,7 @@ export const PlayPauseButton: React.FC<PlayPauseButtonProps> = ({
 
 const styles = StyleSheet.create({
     playButton: {
-        marginBottom: 60,
+        marginBottom: 30,
     },
     playButtonInner: {
         width: 80,

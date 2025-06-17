@@ -32,7 +32,7 @@ export const SessionDots: React.FC<SessionDotsProps> = ({
 const styles = StyleSheet.create({
     sessionDots: {
         flexDirection: 'row',
-        marginBottom: 100,
+        marginBottom: 30,
         gap: 12,
     },
 });

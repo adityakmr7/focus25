@@ -343,12 +343,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
            <ScrollView className='flex-1'>
             {/* Dynamic Background */}
-            <DynamicBackground 
+            {/* <DynamicBackground 
                 isRunning={timer.isRunning}
                 isBreak={timer.isBreak}
                 flowIntensity={flowMetrics.flowIntensity}
                 progress={1 - (timer.totalSeconds / timer.initialSeconds)}
-            />
+            /> */}
 
             <Animated.View
                 style={[
@@ -373,7 +373,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         )}
                     </TouchableOpacity>
 
-                    <View style={styles.centerStatus}>
+                    {/* <View style={styles.centerStatus}>
                         {isConnectedToBackground && (
                             <View style={styles.backgroundStatus}>
                                 <Ionicons name="shield-checkmark" size={16} color="#10B981" />
@@ -382,7 +382,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                                 </Text>
                             </View>
                         )}
-                    </View>
+                    </View> */}
 
                     <TouchableOpacity 
                         onPress={() => setShowQuickActions(!showQuickActions)}
@@ -397,10 +397,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 </View>
 
                 {/* Quick Actions Panel */}
+                {showQuickActions &&
                 <Animated.View 
                     style={[
                         styles.quickActionsPanel,
-                        { backgroundColor: theme.surface },
+                        { backgroundColor: theme.surface},
                         {
                             opacity: quickActionsOpacity,
                             transform: [{ translateY: quickActionsTranslateY }],
@@ -456,7 +457,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                             View insights
                         </Text>
                     </TouchableOpacity>
-                </Animated.View>
+                </Animated.View>}
 
                 {/* Timer Container */}
                 <View style={styles.timerContainer}>
@@ -479,17 +480,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         isRunning={timer.isRunning}
                         pulseAnimation={pulseAnimation}
                     />
-
-                    {/* Flow Intensity Indicator - minimal when running */}
-                    {!timer.isBreak && !timer.isRunning && <FlowIntensityIndicator />}
-
                     {/* Session Dots - only when not running */}
-                    {!timer.isBreak && !timer.isRunning && (
                         <SessionDots
                             currentSession={timer.currentSession}
                             totalSessions={timer.totalSessions}
                         />
-                    )}
 
                     {/* Play/Pause Button */}
                     <PlayPauseButton
@@ -498,36 +493,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         onPress={handleToggleTimer}
                     />
 
-                    {/* Bottom Action Bar - Always visible for easy access */}
-                    <View style={styles.bottomActionBar}>
-                        <TouchableOpacity 
-                            onPress={() => setShowMusicPlayer(true)}
-                            style={[styles.actionBarButton, { backgroundColor: theme.surface }]}
-                        >
-                            <Ionicons name="musical-notes" size={18} color="#4ECDC4" />
-                            <Text style={[styles.actionBarText, { color: theme.textSecondary }]}>Music</Text>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity 
-                            onPress={handleShowAchievements}
-                            style={[styles.actionBarButton, { backgroundColor: theme.surface }]}
-                        >
-                            <Ionicons name="trophy" size={18} color="#FFD700" />
-                            <Text style={[styles.actionBarText, { color: theme.textSecondary }]}>Rewards</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity 
-                            onPress={() => setShowBreathingAnimation(!showBreathingAnimation)}
-                            style={[styles.actionBarButton, { backgroundColor: theme.surface }]}
-                        >
-                            <Ionicons 
-                                name="leaf" 
-                                size={18} 
-                                color={showBreathingAnimation ? "#48BB78" : theme.textSecondary} 
-                            />
-                            <Text style={[styles.actionBarText, { color: theme.textSecondary }]}>Breathe</Text>
-                        </TouchableOpacity>
-                    </View>
                 </View>
             </Animated.View>
 
@@ -627,7 +592,7 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     quickActionsPanel: {
-        marginHorizontal: 24,
+        marginHorizontal: Dimensions.get('screen').width * 0.1,
         borderRadius: 16,
         padding: 16,
         shadowColor: '#000',
@@ -635,12 +600,18 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 12,
         elevation: 6,
+        zIndex:100,
+        position: 'absolute',
+        top: 80,
+        width:Dimensions.get('screen').width * 0.8,
+    
     },
     quickActionItem: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 12,
         paddingHorizontal: 8,
+        width:'auto'
     },
     quickActionIcon: {
         width: 40,
@@ -663,6 +634,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 40,
+        marginTop:30
     },
     flowLabel: {
         fontSize: 24,
