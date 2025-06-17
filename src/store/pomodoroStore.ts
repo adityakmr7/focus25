@@ -167,11 +167,8 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                 });
             }
 
-            // Start break if auto break is enabled
-            if (settings.autoBreak) {
-                get().startBreak();
-                return;
-            }
+            // Always start break (user can choose to start it)
+            get().startBreak();
         } else {
             // Break completed
             if (settings.notifications) {
@@ -185,7 +182,6 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                 });
             }
             get().endBreak();
-            return;
         }
 
         // Handle session completion

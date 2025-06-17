@@ -55,9 +55,10 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             setTimeout(() => {
                 player.pause();
             }, 2000);
-            startBreak();
+            handleTimerComplete();
         } catch (error) {
             console.error('Error playing sound:', error);
+             handleTimerComplete(); // Still handle completion even if sound fails
         }
     };
 
@@ -69,39 +70,43 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     }, [timeDuration]);
 
     // Timer logic
-    useEffect(() => {
-        if (timer.isRunning && !timer.isPaused) {
-            intervalRef.current = setInterval(() => {
-                if (timer.totalSeconds <= 0) {
+// Update the timer logic useEffect
+useEffect(() => {
+    if (timer.isRunning && !timer.isPaused) {
+        intervalRef.current = setInterval(() => {
+            if (timer.totalSeconds <= 0) {
+                if (timer.isBreak) {
+                    // Break completed
+                    endBreak();
+                } else {
+                    // Work session completed
                     playCompletionSound();
-                    handleTimerComplete();
-                    return;
                 }
-
-                const newTotalSeconds = timer.totalSeconds - 1;
-                const minutes = Math.floor(newTotalSeconds / 60);
-                const seconds = newTotalSeconds % 60;
-
-                player.remove()
-                setTimer({
-                    minutes,
-                    seconds,
-                    totalSeconds: newTotalSeconds,
-                });
-            }, 1000);
-        } else {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
+                return;
             }
+
+            const newTotalSeconds = timer.totalSeconds - 1;
+            const minutes = Math.floor(newTotalSeconds / 60);
+            const seconds = newTotalSeconds % 60;
+
+            setTimer({
+                minutes,
+                seconds,
+                totalSeconds: newTotalSeconds,
+            });
+        }, 1000);
+    } else {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
         }
+    }
 
-        return () => {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-            }
-        };
-    }, [timer.isRunning, timer.isPaused, timer.totalSeconds]);
-
+    return () => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+        }
+    };
+}, [timer.isRunning, timer.isPaused, timer.totalSeconds, timer.isBreak]);
     // Progress animation
     useEffect(() => {
         const progress = 1 - (timer.totalSeconds / timer.initialSeconds);
@@ -179,12 +184,10 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     </Text>
                 </Animated.View>
 
-                {!timer.isBreak && (
                     <SessionDots
                         currentSession={timer.currentSession}
                         totalSessions={timer.totalSessions}
                     />
-                )}
 
                 <PlayPauseButton
                     isRunning={timer.isRunning}
