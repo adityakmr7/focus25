@@ -4,6 +4,7 @@ import StatisticsScreen from "../screens/StatisticsScreen";
 import {Ionicons} from "@expo/vector-icons";
 import FlowTimerScreen from "../screens/FlowTimerScreen";
 import SettingsScreen from "../screens/SettingsScreen";
+import FlowAnalyticsScreen from "../screens/FlowAnalyticsScreen";
 
 const AppTabNavigation = createBottomTabNavigator({
     screenOptions:({route}) => ({
@@ -44,6 +45,12 @@ const AppStackNavigation = createNativeStackNavigator({
                 headerShown:false
             }
         },
+        FlowAnalytics: {
+            screen: FlowAnalyticsScreen,
+            options: {
+                title:'Focus session'
+            }
+        }
     },
 });
 

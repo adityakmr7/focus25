@@ -16,6 +16,8 @@ import { useSettingsStore } from '../store/settingsStore';
 import {useAudioPlayer} from "expo-audio";
 import {Ionicons} from '@expo/vector-icons'
 const {  height } = Dimensions.get('window');
+import { FlowMetrics } from '../components/FlowMetrics';
+import { FlowIntensityIndicator } from '../components/FlowIntensityIndicator';
 
 interface FlowTimerScreenProps {
     navigation?: {
@@ -158,6 +160,12 @@ useEffect(() => {
         resetTimer();
     }
 
+     const getSessionDurationText = () => {
+        if (timer.adaptedDuration && timer.adaptedDuration !== Math.floor(timer.initialSeconds / 60)) {
+            return `${Math.floor(timer.initialSeconds / 60)}m (adapted from ${timer.adaptedDuration}m)`;
+        }
+        return `${Math.floor(timer.initialSeconds / 60)}m session`;
+    };
     return (
         <SafeAreaView className={"flex-1  bg-bg-100 dark:bg-dark-bg-100"}>
             <View style={styles.header}>
@@ -167,12 +175,19 @@ useEffect(() => {
                 </TouchableOpacity>
             </View>
             <StatusBar barStyle="light-content" backgroundColor="#000000" />
+            {/* Add Flow Metrics at the top */}
+            <FlowMetrics showDetailed={false} />
 
             <View style={styles.timerContainer}>
                 <Text className={"color-text-primary dark:color-dark-text-primary"} style={styles.flowLabel}>
                     {timer.isBreak ? 'Break' : 'Flow'}
                 </Text>
-
+{/* Add session duration info */}
+                {!timer.isBreak && (
+                    <Text style={styles.sessionInfo}>
+                        {getSessionDurationText()}
+                    </Text>
+                )}
                 <Animated.View
                     style={[
                         styles.timerDisplay,
@@ -184,10 +199,15 @@ useEffect(() => {
                     </Text>
                 </Animated.View>
 
+{/* Add Flow Intensity Indicator */}
+                {!timer.isBreak && <FlowIntensityIndicator />}
+
+                {!timer.isBreak && (
                     <SessionDots
                         currentSession={timer.currentSession}
                         totalSessions={timer.totalSessions}
                     />
+                )}
 
                 <PlayPauseButton
                     isRunning={timer.isRunning}
@@ -239,6 +259,12 @@ const styles = StyleSheet.create({
         height: 56,
         borderRadius: 28,
         backgroundColor: '#333333',
+    },
+    sessionInfo: {
+        fontSize: 14,
+        color: '#6B7280',
+        marginBottom: 20,
+        textAlign: 'center',
     },
 });
 

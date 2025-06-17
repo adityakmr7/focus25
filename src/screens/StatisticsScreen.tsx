@@ -11,15 +11,20 @@ import {
 import Icon from "react-native-vector-icons/MaterialIcons";
 import StatisticsChart from "../components/StatisticsChart";
 import { useStatisticsStore } from "../store/statisticsStore";
+import { usePomodoroStore } from '../store/pomodoroStore';
+import { FlowMetrics } from '../components/FlowMetrics';
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-// Type definitions
-interface NavigationProps {
-  goBack: () => void;
-  navigate: (screen: string, params?: any) => void;
-}
+type RootStackParamList = {
+  AllSessions: undefined;
+  FlowAnalytics: undefined;
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface StatisticsScreenProps {
-  navigation: NavigationProps;
+  navigation: NavigationProp;
 }
 
 interface FlowStats {
@@ -48,7 +53,7 @@ interface StatRowProps {
   value: number;
 }
 
-const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
+const StatisticsScreen: React.FC<StatisticsScreenProps> = () => {
   const {
     selectedPeriod,
     currentDate,
@@ -58,6 +63,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     breaks,
     interruptions,
   } = useStatisticsStore();
+  const navigation = useNavigation<NavigationProp>();
 
   const StatRow: React.FC<StatRowProps> = ({ label, value }) => (
     <View style={styles.statRow}>
@@ -141,6 +147,15 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
           onPress={() => navigation.navigate("AllSessions")}
         >
           <Text style={styles.showAllText}>Show All Sessions</Text>
+          <Icon name="chevron-right" size={20} color="#666" />
+        </TouchableOpacity>
+
+        {/* Show All Flow Analytics */}
+        <TouchableOpacity
+          style={styles.showAllButton}
+          onPress={() => navigation.navigate("FlowAnalytics")}
+        >
+          <Text style={styles.showAllText}>Flow Analytics</Text>
           <Icon name="chevron-right" size={20} color="#666" />
         </TouchableOpacity>
       </ScrollView>
@@ -272,12 +287,52 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 30,
+    marginBottom: 8,
   },
   showAllText: {
     fontSize: 16,
     fontWeight: "500",
   },
+  // FLOW
+   title: {
+        fontSize: 24,
+        fontWeight: '700',
+        textAlign: 'center',
+        marginVertical: 20,
+    },
+    adviceSection: {
+        margin: 20,
+        padding: 20,
+        backgroundColor: '#F9FAFB',
+   borderRadius: 16,
+   borderLeftWidth: 4,
+   borderLeftColor: '#10B981',
+    },
+    adviceTitle: {
+   fontSize: 18,
+   fontWeight: '600',
+   marginBottom: 10,
+   color: '#1F2937',
+},
+adviceText: {
+   fontSize: 14,
+   lineHeight: 20,
+   color: '#6B7280',
+   marginBottom: 16,
+},
+tipsTitle: {
+   fontSize: 16,
+   fontWeight: '600',
+   marginBottom: 8,
+   color: '#1F2937',
+},
+tipText: {
+   fontSize: 14,
+   lineHeight: 20,
+   color: '#6B7280',
+   marginBottom: 4,
+   paddingLeft: 8,
+},
 });
 
 export default StatisticsScreen;
