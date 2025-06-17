@@ -1,3 +1,4 @@
+import { enableScreens } from 'react-native-screens';
 import { NavigationContainer } from "@react-navigation/native";
 import { AppStackNavigation } from "./src/navigations";
 import "./global.css";
@@ -6,6 +7,9 @@ import { useEffect } from "react";
 import { Alert } from "react-native";
 import { useSettingsStore } from "./src/store/settingsStore";
 import { ThemeProvider } from "./src/providers/ThemeProvider";
+
+// Enable screens before any navigation components are rendered
+enableScreens();
 
 const AppContent = () => {
   const { updateNotification } = useSettingsStore();
