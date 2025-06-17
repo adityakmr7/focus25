@@ -30,7 +30,6 @@ import { useTheme } from '../providers/ThemeProvider';
 import { backgroundTimerService } from '../services/backgroundTimer';
 import { notificationService } from '../services/notificationService';
 import { errorHandler } from '../services/errorHandler';
-import { OptimizedTimerDisplay, usePerformanceMonitor } from '../components/PerformanceOptimizer';
 
 const { width, height } = Dimensions.get('window');
 
@@ -60,7 +59,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const { timeDuration, breakDuration } = useSettingsStore();
     const player = useAudioPlayer(audioSource);
     const { theme } = useTheme();
-    const { logPerformance } = usePerformanceMonitor('FlowTimerScreen');
 
     const [showBreathingAnimation, setShowBreathingAnimation] = useState(false);
     const [showMusicPlayer, setShowMusicPlayer] = useState(false);
@@ -79,14 +77,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
     // Initialize container animation
     useEffect(() => {
-        const startTime = Date.now();
         Animated.timing(containerAnimation, {
             toValue: 1,
             duration: 1000,
             useNativeDriver: true,
-        }).start(() => {
-            logPerformance('Initial Animation', Date.now() - startTime);
-        });
+        }).start();
     }, []);
 
     // Quick actions animation
@@ -476,11 +471,13 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         </View>
                     )}
 
-                    {/* Optimized Timer Display */}
-                    <OptimizedTimerDisplay
+                    {/* Timer Display */}
+                    <TimerDisplay
                         minutes={timer.minutes}
                         seconds={timer.seconds}
+                        progress={1 - (timer.totalSeconds / timer.initialSeconds)}
                         isRunning={timer.isRunning}
+                        pulseAnimation={pulseAnimation}
                     />
 
                     {/* Flow Intensity Indicator - minimal when running */}

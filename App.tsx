@@ -16,7 +16,6 @@ import { backgroundTimerService } from "./src/services/backgroundTimer";
 import { notificationService } from "./src/services/notificationService";
 import { errorHandler } from "./src/services/errorHandler";
 import { OnboardingFlow, shouldShowOnboarding } from "./src/components/OnboardingFlow";
-import { MemoryMonitor } from "./src/components/PerformanceOptimizer";
 import * as SplashScreen from 'expo-splash-screen';
 
 // Enable screens before any navigation components are rendered
@@ -163,9 +162,6 @@ const AppContent = () => {
         visible={showOnboarding}
         onComplete={() => setShowOnboarding(false)}
       />
-      
-      {/* Development Memory Monitor */}
-      <MemoryMonitor />
     </>
   );
 };
