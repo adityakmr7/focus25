@@ -222,7 +222,10 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     return (
         <SafeAreaView className="flex-1 bg-bg-100 dark:bg-dark-bg-100">
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-            <ScrollView>
+            <ScrollView style={{
+              flex:1,
+          
+            }}>
            
             {/* Dynamic Background */}
             <DynamicBackground 
