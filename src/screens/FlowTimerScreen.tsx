@@ -58,6 +58,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const [showBreathingAnimation, setShowBreathingAnimation] = useState(false);
     const [showMusicPlayer, setShowMusicPlayer] = useState(false);
     const [achievements, setAchievements] = useState<string[]>([]);
+    const [showAchievements, setShowAchievements] = useState(false);
 
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const pulseAnimation = useSharedValue(1);
@@ -78,25 +79,26 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     useEffect(() => {
         const newAchievements = [];
         
-        if (flowMetrics.consecutiveSessions >= 5) {
+        if (flowMetrics.consecutiveSessions >= 5 && flowMetrics.consecutiveSessions % 5 === 0) {
             newAchievements.push('🔥 Flow Master!');
         }
-        if (flowMetrics.currentStreak >= 7) {
+        if (flowMetrics.currentStreak >= 7 && flowMetrics.currentStreak % 7 === 0) {
             newAchievements.push('⭐ Week Warrior!');
         }
-        if (flowMetrics.flowIntensity === 'high') {
+        if (flowMetrics.flowIntensity === 'high' && flowMetrics.consecutiveSessions > 0) {
             newAchievements.push('🚀 Deep Focus!');
         }
         
-        if (newAchievements.length > achievements.length) {
+        if (newAchievements.length > 0 && newAchievements.length !== achievements.length) {
             setAchievements(newAchievements);
-            // Animate achievement
-            achievementAnimation.value = withTiming(1, { duration: 500 });
+            setShowAchievements(true);
+            
+            // Auto hide after 3 seconds
             setTimeout(() => {
-                achievementAnimation.value = withTiming(0, { duration: 500 });
+                setShowAchievements(false);
             }, 3000);
         }
-    }, [flowMetrics]);
+    }, [flowMetrics.consecutiveSessions, flowMetrics.currentStreak, flowMetrics.flowIntensity]);
 
     // Play sound effect
     const playCompletionSound = async () => {
@@ -289,32 +291,32 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                             </TouchableOpacity>
                             
                             <TouchableOpacity 
-                                onPress={() => setShowMusicPlayer(!showMusicPlayer)}
+                                onPress={() => setShowMusicPlayer(true)}
                                 style={[styles.controlButton, { backgroundColor: theme.surface }]}
                             >
                                 <Ionicons 
                                     name="musical-notes" 
                                     size={16} 
-                                    color={showMusicPlayer ? theme.accent : theme.textSecondary} 
+                                    color={theme.textSecondary} 
                                 />
                             </TouchableOpacity>
                         </View>
                     )}
                 </View>
-
-                {/* Focus Music Player */}
-                {showMusicPlayer && (
-                    <FocusMusicPlayer onClose={() => setShowMusicPlayer(false)} />
-                )}
-
-                {/* Gamification Overlay */}
-                <GamificationOverlay
-                    flowMetrics={flowMetrics}
-                    isVisible={achievements.length > 0}
-                    achievements={achievements}
-                    animationValue={achievementAnimation}
-                />
             </Animated.View>
+
+            {/* Focus Music Player */}
+            {showMusicPlayer && (
+                <FocusMusicPlayer onClose={() => setShowMusicPlayer(false)} />
+            )}
+
+            {/* Gamification Overlay */}
+            <GamificationOverlay
+                flowMetrics={flowMetrics}
+                isVisible={showAchievements}
+                achievements={achievements}
+                animationValue={achievementAnimation}
+            />
         </SafeAreaView>
     );
 };
