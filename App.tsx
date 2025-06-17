@@ -38,6 +38,25 @@ const AppContent = () => {
           initializeTheme(),
         ]);
         
+        // Request notification permissions after stores are initialized
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+
+        if (existingStatus !== "granted") {
+          const { status: requestedStatus } = await Notifications.requestPermissionsAsync();
+          finalStatus = requestedStatus;
+        }
+
+        // Now it's safe to update notification status since stores are initialized
+        updateNotification(finalStatus);
+        
+        if (finalStatus !== "granted") {
+          Alert.alert(
+            "Notifications Disabled",
+            "Please enable notifications in your device settings."
+          );
+        }
+        
         console.log('App initialized successfully');
       } catch (error) {
         console.error('Failed to initialize app:', error);
@@ -49,28 +68,6 @@ const AppContent = () => {
     };
 
     initializeApp();
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      const { status: existingStatus } =
-        await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-
-      if (existingStatus !== "granted") {
-        const { status: requestedStatus } =
-          await Notifications.requestPermissionsAsync();
-        finalStatus = requestedStatus;
-      }
-
-      updateNotification(finalStatus);
-      if (finalStatus !== "granted") {
-        Alert.alert(
-          "Notifications Disabled",
-          "Please enable notifications in your device settings."
-        );
-      }
-    })();
   }, []);
   
   return (
