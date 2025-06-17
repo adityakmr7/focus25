@@ -9,6 +9,7 @@ import {
     TouchableOpacity,
     StatusBar,
     Platform,
+    ScrollView,
 } from 'react-native';
 import { SessionDots } from '../components/SessionDots';
 import { PlayPauseButton } from '../components/PlayPauseButton';
@@ -227,7 +228,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-            
+           <ScrollView className='flex-1'>
             {/* Dynamic Background */}
             <DynamicBackground 
                 isRunning={timer.isRunning}
@@ -335,15 +336,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 {/* Timer Container */}
                 <View style={styles.timerContainer}>
                     <Text style={[styles.flowLabel, { color: theme.text }]}>
-                        {timer.isBreak ? 'Break Time' : 'Flow State'}
+                        {timer.isBreak ? 'Break Time' : 'Flow'}
                     </Text>
-
-                    {/* Session duration info - only show when not running for minimal distraction */}
-                    {!timer.isBreak && !timer.isRunning && (
-                        <Text style={[styles.sessionInfo, { color: theme.textSecondary }]}>
-                            {getSessionDurationText()}
-                        </Text>
-                    )}
 
                     {/* Breathing Animation - only when running and enabled */}
                     {showBreathingAnimation && timer.isRunning && (
@@ -425,6 +419,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 animationValue={achievementAnimation}
                 onClose={handleCloseAchievements}
             />
+
+            </ScrollView> 
         </SafeAreaView>
     );
 };
@@ -434,7 +430,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        flex: 1,
+        // flex: 1,
+        paddingVertical:28
     },
     header: {
         flexDirection: 'row',
@@ -443,7 +440,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingTop: Platform.OS === 'ios' ? 0 : 20,
         paddingBottom: 10,
-        marginBottom: 20,
+        // marginBottom: 20,
     },
     headerButton: {
         width: 44,
@@ -490,7 +487,6 @@ const styles = StyleSheet.create({
         marginHorizontal: 24,
         borderRadius: 16,
         padding: 16,
-        marginBottom: 20,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
@@ -521,7 +517,6 @@ const styles = StyleSheet.create({
         opacity: 0.7,
     },
     timerContainer: {
-        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 40,
