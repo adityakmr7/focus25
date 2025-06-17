@@ -48,7 +48,7 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <AppContent />;
+      <AppContent />
     </ThemeProvider>
   );
 }

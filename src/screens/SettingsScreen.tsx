@@ -11,6 +11,7 @@ import { SettingItem } from '../components/SettingItem';
 import { SectionHeader } from '../components/SectionHeader';
 import { TimeDurationSelector } from '../components/TimeDurationSelector';
 import { useSettingsStore } from '../store/settingsStore';
+import { useTheme } from '../providers/ThemeProvider';
 
 interface SettingsScreenProps {
     navigation?: {
@@ -19,6 +20,7 @@ interface SettingsScreenProps {
 }
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
+    const { theme, toggleTheme } = useTheme();
     const {
         timeDuration,
         soundEffects,
@@ -36,7 +38,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         openSupport,
         openPrivacy,
         openTerms,
-        openTheme,
         openStorage,
         openFeedback,
         breakDuration,
@@ -91,8 +92,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     };
 
     const handleTheme = (): void => {
-        openTheme();
-        showAlert('Theme', 'Theme options coming soon!');
+        toggleTheme();
     };
 
     const handleStorage = (): void => {
@@ -175,12 +175,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         onSwitchToggle={() => toggleSetting('soundEffects')}
                     />
                     <SettingItem
-                        title="Vibration"
-                        subtitle="Vibrate for important notifications"
-                        icon="phone-portrait-outline"
+                        title="Dark Mode"
+                        subtitle="Toggle dark/light theme"
+                        icon="moon-outline"
                         hasSwitch={true}
-                        switchValue={darkMode}
-                        onSwitchToggle={() => toggleSetting('darkMode')}
+                        switchValue={theme === 'dark'}
+                        onSwitchToggle={handleTheme}
                     />
                     <SettingItem
                         title="Auto Break"
@@ -189,14 +189,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         hasSwitch={true}
                         switchValue={autoBreak}
                         onSwitchToggle={() => toggleSetting('autoBreak')}
-                    />
-                    <SettingItem
-                        title="Theme"
-                        subtitle="App appearance"
-                        icon="color-palette-outline"
-                        value="Dark"
-                        showArrow={true}
-                        onPress={handleTheme}
                     />
                 </View>
 
