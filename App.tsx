@@ -3,8 +3,10 @@ import { NavigationContainer } from "@react-navigation/native";
 import { AppStackNavigation } from "./src/navigations";
 import "./global.css";
 import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
+import Constants from "expo-constants";
 import { useEffect } from "react";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 import { useSettingsStore } from "./src/store/settingsStore";
 import { ThemeProvider } from "./src/providers/ThemeProvider";
 
@@ -17,6 +19,11 @@ const AppContent = () => {
   useEffect(() => {
     (async () => {
       try {
+        // Check if we're on a physical device (required for push notifications)
+        if (Platform.OS === 'android' && !Device.isDevice) {
+          console.warn('Must use physical device for push notifications');
+        }
+
         const { status: existingStatus } =
           await Notifications.getPermissionsAsync();
         let finalStatus = existingStatus;
@@ -40,7 +47,7 @@ const AppContent = () => {
         updateNotification("denied");
       }
     })();
-  }, []);
+  }, [updateNotification]);
   
   return (
     <NavigationContainer>
