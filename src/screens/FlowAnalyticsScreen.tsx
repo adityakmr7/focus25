@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
     View, 
     Text, 
@@ -11,8 +11,10 @@ import {
     TouchableOpacity,
 } from 'react-native';
 import { FlowMetrics } from '../components/FlowMetrics';
+import { AdvancedAnalytics } from '../components/AdvancedAnalytics';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../providers/ThemeProvider';
 
 const { width } = Dimensions.get('window');
 
@@ -24,6 +26,8 @@ interface FlowAnalyticsScreenProps {
 
 const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation }) => {
     const { flowMetrics } = usePomodoroStore();
+    const { theme } = useTheme();
+    const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter' | 'year'>('week');
     const scrollY = useRef(new Animated.Value(0)).current;
     const headerAnimation = useRef(new Animated.Value(0)).current;
 
@@ -125,6 +129,7 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
             <Animated.View
                 style={[
                     styles.insightCard,
+                    { backgroundColor: theme.surface },
                     {
                         opacity: cardOpacity,
                         transform: [{ translateY: cardTranslateY }],
@@ -135,9 +140,9 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
                     <Ionicons name={icon as any} size={24} color={color} />
                 </View>
                 <View style={styles.insightContent}>
-                    <Text style={styles.insightTitle}>{title}</Text>
+                    <Text style={[styles.insightTitle, { color: theme.textSecondary }]}>{title}</Text>
                     <Text style={[styles.insightValue, { color }]}>{value}</Text>
-                    <Text style={styles.insightSubtitle}>{subtitle}</Text>
+                    <Text style={[styles.insightSubtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
                 </View>
             </Animated.View>
         );
@@ -169,22 +174,23 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
             <Animated.View
                 style={[
                     styles.tipCard,
+                    { backgroundColor: theme.background },
                     {
                         opacity: tipOpacity,
                         transform: [{ translateX: tipTranslateX }],
                     },
                 ]}
             >
-                <View style={styles.tipBullet}>
+                <View style={[styles.tipBullet, { backgroundColor: advice.color }]}>
                     <Text style={styles.tipBulletText}>{index + 1}</Text>
                 </View>
-                <Text style={styles.tipText}>{tip}</Text>
+                <Text style={[styles.tipText, { color: theme.text }]}>{tip}</Text>
             </Animated.View>
         );
     };
 
     return (
-        <SafeAreaView className="bg-bg-100 dark:bg-dark-bg-100" style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <Animated.ScrollView
                 style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
@@ -206,11 +212,11 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
                 >
                     <TouchableOpacity 
                         onPress={() => navigation?.goBack()}
-                        style={styles.backButton}
+                        style={[styles.backButton, { backgroundColor: theme.surface }]}
                     >
-                        <Ionicons name="arrow-back" size={24} color="#6B7280" />
+                        <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </TouchableOpacity>
-                    <Text className="text-text-primary dark:text-dark-text-primary" style={styles.headerTitle}>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>
                         Flow Analytics
                     </Text>
                     <View style={styles.placeholder} />
@@ -219,9 +225,15 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
                 {/* Flow Metrics */}
                 <FlowMetrics showDetailed={true} />
 
+                {/* Advanced Analytics */}
+                <AdvancedAnalytics 
+                    timeRange={timeRange}
+                    onTimeRangeChange={setTimeRange}
+                />
+
                 {/* Insights Grid */}
                 <View style={styles.insightsSection}>
-                    <Text className="text-text-primary dark:text-dark-text-primary" style={styles.sectionTitle}>
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>
                         Key Insights
                     </Text>
                     <View style={styles.insightsGrid}>
@@ -261,17 +273,17 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
                 </View>
 
                 {/* Advice Section */}
-                <View className="bg-bg-200 dark:bg-dark-bg-200" style={[styles.adviceSection, { borderLeftColor: advice.color }]}>
+                <View style={[styles.adviceSection, { backgroundColor: theme.surface, borderLeftColor: advice.color }]}>
                     <View style={styles.adviceHeader}>
                         <Text style={[styles.adviceTitle, { color: advice.color }]}>
                             {advice.title}
                         </Text>
                     </View>
-                    <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.adviceText}>
+                    <Text style={[styles.adviceText, { color: theme.textSecondary }]}>
                         {advice.advice}
                     </Text>
                     
-                    <Text className="text-text-primary dark:text-dark-text-primary" style={styles.tipsTitle}>
+                    <Text style={[styles.tipsTitle, { color: theme.text }]}>
                         💡 Personalized Tips
                     </Text>
                     <View style={styles.tipsContainer}>
@@ -283,15 +295,15 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
 
                 {/* Progress Visualization */}
                 <View style={styles.progressSection}>
-                    <Text className="text-text-primary dark:text-dark-text-primary" style={styles.sectionTitle}>
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>
                         Progress Overview
                     </Text>
-                    <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.progressCard}>
+                    <View style={[styles.progressCard, { backgroundColor: theme.surface }]}>
                         <View style={styles.progressItem}>
-                            <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.progressLabel}>
+                            <Text style={[styles.progressLabel, { color: theme.textSecondary }]}>
                                 Total Focus Time
                             </Text>
-                            <View style={styles.progressBar}>
+                            <View style={[styles.progressBar, { backgroundColor: theme.background }]}>
                                 <View 
                                     style={[
                                         styles.progressFill,
@@ -302,16 +314,16 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
                                     ]} 
                                 />
                             </View>
-                            <Text className="text-text-primary dark:text-dark-text-primary" style={styles.progressValue}>
+                            <Text style={[styles.progressValue, { color: theme.text }]}>
                                 {Math.floor(flowMetrics.totalFocusTime / 60)}h {flowMetrics.totalFocusTime % 60}m
                             </Text>
                         </View>
 
                         <View style={styles.progressItem}>
-                            <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.progressLabel}>
+                            <Text style={[styles.progressLabel, { color: theme.textSecondary }]}>
                                 Session Consistency
                             </Text>
-                            <View style={styles.progressBar}>
+                            <View style={[styles.progressBar, { backgroundColor: theme.background }]}>
                                 <View 
                                     style={[
                                         styles.progressFill,
@@ -322,7 +334,7 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
                                     ]} 
                                 />
                             </View>
-                            <Text className="text-text-primary dark:text-dark-text-primary" style={styles.progressValue}>
+                            <Text style={[styles.progressValue, { color: theme.text }]}>
                                 {flowMetrics.consecutiveSessions}/10 sessions
                             </Text>
                         </View>
@@ -353,7 +365,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: 'rgba(107, 114, 128, 0.1)',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -379,7 +390,6 @@ const styles = StyleSheet.create({
     insightCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
         padding: 20,
         borderRadius: 16,
         ...Platform.select({
@@ -408,7 +418,6 @@ const styles = StyleSheet.create({
     insightTitle: {
         fontSize: 14,
         fontWeight: '500',
-        color: '#6B7280',
         marginBottom: 4,
     },
     insightValue: {
@@ -418,7 +427,6 @@ const styles = StyleSheet.create({
     },
     insightSubtitle: {
         fontSize: 12,
-        color: '#9CA3AF',
     },
     adviceSection: {
         margin: 24,
@@ -462,14 +470,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-start',
         padding: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
         borderRadius: 12,
     },
     tipBullet: {
         width: 24,
         height: 24,
         borderRadius: 12,
-        backgroundColor: '#10B981',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -484,7 +490,6 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 14,
         lineHeight: 20,
-        color: '#374151',
     },
     progressSection: {
         paddingHorizontal: 24,
@@ -515,7 +520,6 @@ const styles = StyleSheet.create({
     },
     progressBar: {
         height: 8,
-        backgroundColor: '#E5E7EB',
         borderRadius: 4,
         overflow: 'hidden',
     },

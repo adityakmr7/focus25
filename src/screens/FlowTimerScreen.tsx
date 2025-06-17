@@ -10,6 +10,7 @@ import {
     StatusBar,
     Platform,
     ScrollView,
+    Alert,
 } from 'react-native';
 import { SessionDots } from '../components/SessionDots';
 import { PlayPauseButton } from '../components/PlayPauseButton';
@@ -22,10 +23,14 @@ import { FlowIntensityIndicator } from '../components/FlowIntensityIndicator';
 import { DynamicBackground } from '../components/DynamicBackground';
 import { BreathingAnimation } from '../components/BreathingAnimation';
 import { GamificationOverlay } from '../components/GamificationOverlay';
-import { FocusMusicPlayer } from '../components/FocusMusicPlayer';
+import { EnhancedFocusMusicPlayer } from '../components/EnhancedFocusMusicPlayer';
 import { TimerDisplay } from '../components/TimerDisplay';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
 import { useTheme } from '../providers/ThemeProvider';
+import { backgroundTimerService } from '../services/backgroundTimer';
+import { notificationService } from '../services/notificationService';
+import { errorHandler } from '../services/errorHandler';
+import { OptimizedTimerDisplay, usePerformanceMonitor } from '../components/PerformanceOptimizer';
 
 const { width, height } = Dimensions.get('window');
 
@@ -55,12 +60,15 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const { timeDuration, breakDuration } = useSettingsStore();
     const player = useAudioPlayer(audioSource);
     const { theme } = useTheme();
+    const { logPerformance } = usePerformanceMonitor('FlowTimerScreen');
 
     const [showBreathingAnimation, setShowBreathingAnimation] = useState(false);
     const [showMusicPlayer, setShowMusicPlayer] = useState(false);
     const [achievements, setAchievements] = useState<string[]>([]);
     const [showAchievements, setShowAchievements] = useState(false);
     const [showQuickActions, setShowQuickActions] = useState(false);
+    const [backgroundSessionId, setBackgroundSessionId] = useState<string | null>(null);
+    const [isConnectedToBackground, setIsConnectedToBackground] = useState(false);
 
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const pulseAnimation = useSharedValue(1);
@@ -71,11 +79,14 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
     // Initialize container animation
     useEffect(() => {
+        const startTime = Date.now();
         Animated.timing(containerAnimation, {
             toValue: 1,
             duration: 1000,
             useNativeDriver: true,
-        }).start();
+        }).start(() => {
+            logPerformance('Initial Animation', Date.now() - startTime);
+        });
     }, []);
 
     // Quick actions animation
@@ -104,19 +115,67 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         if (newAchievements.length > 0 && newAchievements.length !== achievements.length) {
             setAchievements(newAchievements);
             setShowAchievements(true);
+            
+            // Send achievement notifications
+            newAchievements.forEach(achievement => {
+                notificationService.scheduleGoalAchievement(achievement);
+            });
         }
     }, [flowMetrics.consecutiveSessions, flowMetrics.currentStreak, flowMetrics.flowIntensity]);
 
-    // Play sound effect
+    // Sync with background timer on app resume
+    useEffect(() => {
+        const syncWithBackgroundTimer = async () => {
+            try {
+                if (backgroundTimerService.isSupported()) {
+                    const backgroundState = await backgroundTimerService.getTimerState();
+                    const remainingTime = await backgroundTimerService.getRemainingTime();
+                    
+                    if (backgroundState && remainingTime > 0) {
+                        setIsConnectedToBackground(true);
+                        setBackgroundSessionId(backgroundState.sessionId);
+                        
+                        // Update local timer state to match background
+                        const minutes = Math.floor(remainingTime / 60);
+                        const seconds = remainingTime % 60;
+                        
+                        setTimer({
+                            minutes,
+                            seconds,
+                            totalSeconds: remainingTime,
+                            isRunning: backgroundState.isRunning,
+                            isBreak: backgroundState.isBreak,
+                        });
+                    }
+                }
+            } catch (error) {
+                errorHandler.logError(error as Error, {
+                    context: 'Background Timer Sync',
+                    severity: 'medium',
+                });
+            }
+        };
+
+        syncWithBackgroundTimer();
+    }, []);
+
+    // Play sound effect with error handling
     const playCompletionSound = async () => {
         try {
             await player.play();
             setTimeout(() => {
                 player.pause();
             }, 2000);
+            
+            // Send completion notification
+            await notificationService.scheduleSessionComplete(timer.isBreak);
+            
             handleTimerComplete();
         } catch (error) {
-            console.error('Error playing sound:', error);
+            errorHandler.logError(error as Error, {
+                context: 'Audio Playback',
+                severity: 'low',
+            });
             handleTimerComplete();
         }
     };
@@ -128,11 +187,18 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         }
     }, [timeDuration]);
 
-    // Timer logic
+    // Enhanced timer logic with background support
     useEffect(() => {
         if (timer.isRunning && !timer.isPaused) {
-            intervalRef.current = setInterval(() => {
+            intervalRef.current = setInterval(async () => {
                 if (timer.totalSeconds <= 0) {
+                    // Stop background timer
+                    if (backgroundTimerService.isSupported()) {
+                        await backgroundTimerService.stopTimer();
+                        setBackgroundSessionId(null);
+                        setIsConnectedToBackground(false);
+                    }
+                    
                     if (timer.isBreak) {
                         endBreak();
                     } else {
@@ -186,8 +252,60 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         }
     }, [timer.isRunning, timer.isPaused]);
 
-    const handleReset = () => {
-        resetTimer();
+    const handleToggleTimer = async () => {
+        try {
+            const wasRunning = timer.isRunning;
+            
+            // Toggle local timer
+            toggleTimer();
+            
+            // Handle background timer
+            if (backgroundTimerService.isSupported()) {
+                if (!wasRunning) {
+                    // Starting timer
+                    const sessionId = await backgroundTimerService.startTimer(
+                        Math.floor(timer.totalSeconds / 60),
+                        timer.isBreak
+                    );
+                    setBackgroundSessionId(sessionId);
+                    setIsConnectedToBackground(true);
+                } else if (timer.isPaused) {
+                    // Resuming timer
+                    await backgroundTimerService.resumeTimer();
+                } else {
+                    // Pausing timer
+                    await backgroundTimerService.pauseTimer();
+                }
+            }
+        } catch (error) {
+            errorHandler.logError(error as Error, {
+                context: 'Timer Toggle',
+                severity: 'medium',
+            });
+            
+            Alert.alert(
+                'Timer Error',
+                'There was an issue with the timer. Please try again.'
+            );
+        }
+    };
+
+    const handleReset = async () => {
+        try {
+            resetTimer();
+            
+            // Stop background timer
+            if (backgroundTimerService.isSupported()) {
+                await backgroundTimerService.stopTimer();
+                setBackgroundSessionId(null);
+                setIsConnectedToBackground(false);
+            }
+        } catch (error) {
+            errorHandler.logError(error as Error, {
+                context: 'Timer Reset',
+                severity: 'low',
+            });
+        }
     };
 
     const handleShowAchievements = () => {
@@ -246,7 +364,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     },
                 ]}
             >
-                {/* Enhanced Header with Quick Access */}
+                {/* Enhanced Header with Background Timer Status */}
                 <View style={styles.header}>
                     <TouchableOpacity 
                         onPress={handleShowAchievements} 
@@ -259,6 +377,17 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                             </View>
                         )}
                     </TouchableOpacity>
+
+                    <View style={styles.centerStatus}>
+                        {isConnectedToBackground && (
+                            <View style={styles.backgroundStatus}>
+                                <Ionicons name="shield-checkmark" size={16} color="#10B981" />
+                                <Text style={[styles.backgroundStatusText, { color: '#10B981' }]}>
+                                    Background Active
+                                </Text>
+                            </View>
+                        )}
+                    </View>
 
                     <TouchableOpacity 
                         onPress={() => setShowQuickActions(!showQuickActions)}
@@ -284,6 +413,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     ]}
                     pointerEvents={showQuickActions ? 'auto' : 'none'}
                 >
+                    
                     <TouchableOpacity 
                         style={styles.quickActionItem}
                         onPress={() => {
@@ -346,13 +476,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         </View>
                     )}
 
-                    {/* Timer Display */}
-                    <TimerDisplay
+                    {/* Optimized Timer Display */}
+                    <OptimizedTimerDisplay
                         minutes={timer.minutes}
                         seconds={timer.seconds}
-                        progress={1 - (timer.totalSeconds / timer.initialSeconds)}
                         isRunning={timer.isRunning}
-                        pulseAnimation={pulseAnimation}
                     />
 
                     {/* Flow Intensity Indicator - minimal when running */}
@@ -370,7 +498,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     <PlayPauseButton
                         isRunning={timer.isRunning}
                         isPaused={timer.isPaused}
-                        onPress={toggleTimer}
+                        onPress={handleToggleTimer}
                     />
 
                     {/* Bottom Action Bar - Always visible for easy access */}
@@ -406,9 +534,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 </View>
             </Animated.View>
 
-            {/* Focus Music Player */}
+            {/* Enhanced Focus Music Player */}
             {showMusicPlayer && (
-                <FocusMusicPlayer onClose={() => setShowMusicPlayer(false)} />
+                <EnhancedFocusMusicPlayer 
+                    onClose={() => setShowMusicPlayer(false)}
+                    autoStartTrack={timer.isRunning ? 'deep-focus' : undefined}
+                />
             )}
 
             {/* Gamification Overlay */}
@@ -430,8 +561,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        // flex: 1,
-        paddingVertical:28
+        paddingVertical: 28
     },
     header: {
         flexDirection: 'row',
@@ -440,7 +570,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingTop: Platform.OS === 'ios' ? 0 : 20,
         paddingBottom: 10,
-        // marginBottom: 20,
     },
     headerButton: {
         width: 44,
@@ -466,6 +595,23 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 2,
+    },
+    centerStatus: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    backgroundStatus: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        gap: 6,
+    },
+    backgroundStatusText: {
+        fontSize: 12,
+        fontWeight: '600',
     },
     badge: {
         position: 'absolute',

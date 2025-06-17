@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "flow-clone",
-    "slug": "flow-clone",
+    "name": "Flow Focus",
+    "slug": "flow-focus",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,29 +10,66 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#48BB78"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
         "UIBackgroundModes": [
-          "audio"
-        ]
-      }
+          "audio",
+          "background-fetch",
+          "background-processing"
+        ],
+        "NSMicrophoneUsageDescription": "This app uses the microphone for focus session audio feedback.",
+        "NSUserNotificationsUsageDescription": "This app sends notifications to remind you about focus sessions and breaks."
+      },
+      "bundleIdentifier": "com.flowfocus.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#48BB78"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.WAKE_LOCK",
+        "android.permission.VIBRATE",
+        "android.permission.USE_FULL_SCREEN_INTENT"
+      ],
+      "package": "com.flowfocus.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
       "expo-audio",
-      "expo-notifications"
-    ]
+      "expo-notifications",
+      "expo-background-fetch",
+      "expo-task-manager",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "newArchEnabled": true
+          },
+          "android": {
+            "newArchEnabled": true
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id-here"
+      }
+    }
   }
 }
