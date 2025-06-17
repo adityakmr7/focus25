@@ -352,12 +352,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     },
                 ]}
             >
-                <TouchableOpacity 
-                    onPress={() => navigation?.goBack()}
-                    style={[styles.backButton, { backgroundColor: theme.surface }]}
-                >
-                    <Ionicons name="arrow-back" size={24} color={theme.text} />
-                </TouchableOpacity>
                 <View style={styles.headerContent}>
                     <Text style={[styles.title, { color: theme.text }]}>
                         Settings
