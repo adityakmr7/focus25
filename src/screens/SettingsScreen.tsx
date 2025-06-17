@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -9,7 +9,6 @@ import {
     Animated,
     Platform,
     TouchableOpacity,
-    Share,
 } from 'react-native';
 import { SettingItem } from '../components/SettingItem';
 import { SectionHeader } from '../components/SectionHeader';
@@ -17,10 +16,6 @@ import { TimeDurationSelector } from '../components/TimeDurationSelector';
 import { useSettingsStore } from '../store/settingsStore';
 import { useTheme } from '../providers/ThemeProvider';
 import { useThemeStore } from '../store/themeStore';
-import { useGoalsStore } from '../store/goalsStore';
-import { useStatisticsStore } from '../store/statisticsStore';
-import { usePomodoroStore } from '../store/pomodoroStore';
-import { DataExportService } from '../services/storage';
 import { Ionicons } from '@expo/vector-icons';
 
 interface SettingsScreenProps {
@@ -30,43 +25,35 @@ interface SettingsScreenProps {
     };
 }
 
-/**
- * Settings Screen Component
- * 
- * Comprehensive settings interface with MMKV storage integration
- * Provides data management, export/import, and storage analytics
- */
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const { theme, isDark } = useTheme();
     const { setMode } = useThemeStore();
-    
-    // Store hooks for data management
-    const settingsStore = useSettingsStore();
-    const goalsStore = useGoalsStore();
-    const statisticsStore = useStatisticsStore();
-    const pomodoroStore = usePomodoroStore();
-    
-    // Local state for storage information
-    const [storageStats, setStorageStats] = useState({
-        totalSize: 0,
-        totalKeys: 0,
-        breakdown: {
-            settings: { size: 0, keys: 0 },
-            goals: { size: 0, goalCount: 0 },
-            statistics: { size: 0, totalSessions: 0 },
-            pomodoro: { size: 0, sessions: 0 },
-        }
-    });
+    const {
+        timeDuration,
+        soundEffects,
+        notifications,
+        autoBreak,
+        focusReminders,
+        weeklyReports,
+        dataSync,
+        toggleSetting,
+        setTimeDuration,
+        exportData,
+        deleteData,
+        rateApp,
+        openSupport,
+        openPrivacy,
+        openTerms,
+        openStorage,
+        openFeedback,
+        breakDuration,
+        setBreakDuration
+    } = useSettingsStore();
 
-    // Animation references
     const headerAnimation = useRef(new Animated.Value(0)).current;
     const sectionsAnimation = useRef(new Animated.Value(0)).current;
 
-    /**
-     * Initialize animations and load storage stats
-     */
     useEffect(() => {
-        // Start animations
         Animated.stagger(200, [
             Animated.timing(headerAnimation, {
                 toValue: 1,
@@ -79,232 +66,77 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 useNativeDriver: true,
             }),
         ]).start();
-
-        // Load storage statistics
-        loadStorageStats();
     }, []);
 
-    /**
-     * Load Storage Statistics
-     * 
-     * Gathers storage information from all stores
-     */
-    const loadStorageStats = () => {
-        try {
-            const settingsInfo = settingsStore.getStorageInfo();
-            const goalsInfo = goalsStore.getStorageInfo();
-            const statisticsInfo = statisticsStore.getStorageInfo();
-            const pomodoroInfo = pomodoroStore.getStorageInfo();
-            
-            // Get overall storage stats
-            const overallStats = DataExportService.getStorageStats();
-            
-            setStorageStats({
-                totalSize: overallStats.total.size,
-                totalKeys: overallStats.total.keys,
-                breakdown: {
-                    settings: settingsInfo,
-                    goals: goalsInfo,
-                    statistics: statisticsInfo,
-                    pomodoro: pomodoroInfo,
-                }
-            });
-            
-            console.log('Storage stats loaded:', overallStats);
-        } catch (error) {
-            console.error('Error loading storage stats:', error);
-        }
-    };
-
-    /**
-     * Format bytes to human readable format
-     */
-    const formatBytes = (bytes: number): string => {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    };
-
-    /**
-     * Show Alert Helper
-     */
     const showAlert = (title: string, message: string): void => {
         Alert.alert(title, message, [{ text: 'OK' }]);
     };
 
-    /**
-     * Export All Data
-     * 
-     * Exports all app data in JSON format
-     */
-    const handleExportAllData = async (): Promise<void> => {
-        try {
-            const allData = {
-                settings: JSON.parse(settingsStore.exportData()),
-                goals: JSON.parse(goalsStore.exportGoalsToJSON()),
-                statistics: JSON.parse(statisticsStore.exportStatistics()),
-                flowData: JSON.parse(pomodoroStore.exportFlowData()),
-                exportInfo: {
-                    exportDate: new Date().toISOString(),
-                    version: '1.0.0',
-                    storageStats: storageStats,
-                }
-            };
-
-            const jsonData = JSON.stringify(allData, null, 2);
-
-            if (Platform.OS === 'web') {
-                // Web download
-                const blob = new Blob([jsonData], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `flow_app_backup_${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showAlert('Export Complete', 'All data exported successfully!');
-            } else {
-                // Mobile share
-                await Share.share({
-                    message: jsonData,
-                    title: 'Flow App Data Export',
-                });
-            }
-        } catch (error) {
-            console.error('Error exporting all data:', error);
-            showAlert('Export Failed', 'Failed to export data. Please try again.');
-        }
+    const handleExportData = (): void => {
+        exportData();
+        showAlert('Export Data', 'Your data has been exported successfully.');
     };
 
-    /**
-     * Export Statistics as CSV
-     */
-    const handleExportStatisticsCSV = async (): Promise<void> => {
-        try {
-            const csvData = statisticsStore.exportStatisticsCSV();
-
-            if (Platform.OS === 'web') {
-                const blob = new Blob([csvData], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `flow_statistics_${new Date().toISOString().split('T')[0]}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showAlert('Export Complete', 'Statistics exported as CSV!');
-            } else {
-                await Share.share({
-                    message: csvData,
-                    title: 'Flow Statistics CSV',
-                });
-            }
-        } catch (error) {
-            console.error('Error exporting statistics CSV:', error);
-            showAlert('Export Failed', 'Failed to export statistics. Please try again.');
-        }
-    };
-
-    /**
-     * Export Goals as CSV
-     */
-    const handleExportGoalsCSV = async (): Promise<void> => {
-        try {
-            const csvData = goalsStore.exportGoalsToCSV();
-
-            if (Platform.OS === 'web') {
-                const blob = new Blob([csvData], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `flow_goals_${new Date().toISOString().split('T')[0]}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showAlert('Export Complete', 'Goals exported as CSV!');
-            } else {
-                await Share.share({
-                    message: csvData,
-                    title: 'Flow Goals CSV',
-                });
-            }
-        } catch (error) {
-            console.error('Error exporting goals CSV:', error);
-            showAlert('Export Failed', 'Failed to export goals. Please try again.');
-        }
-    };
-
-    /**
-     * Delete All Data
-     * 
-     * Clears all app data with confirmation
-     */
-    const handleDeleteAllData = (): void => {
+    const handleDeleteData = (): void => {
         Alert.alert(
             'Delete All Data',
-            'This will permanently delete ALL your data including:\n\n• Settings\n• Goals\n• Statistics\n• Flow metrics\n\nThis action cannot be undone!',
+            'Are you sure you want to delete all your flow data? This action cannot be undone.',
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
-                    text: 'Delete Everything',
+                    text: 'Delete',
                     style: 'destructive',
                     onPress: () => {
-                        try {
-                            settingsStore.deleteData();
-                            goalsStore.resetGoals();
-                            statisticsStore.resetStatistics();
-                            pomodoroStore.resetDailyMetrics();
-                            
-                            // Reload storage stats
-                            loadStorageStats();
-                            
-                            showAlert('Data Deleted', 'All data has been permanently deleted.');
-                        } catch (error) {
-                            console.error('Error deleting all data:', error);
-                            showAlert('Delete Failed', 'Failed to delete all data. Please try again.');
-                        }
+                        deleteData();
+                        showAlert('Data Deleted', 'All your data has been deleted.');
                     }
                 }
             ]
         );
     };
 
-    /**
-     * Clear Storage Cache
-     * 
-     * Clears temporary data while preserving user data
-     */
-    const handleClearCache = (): void => {
-        Alert.alert(
-            'Clear Cache',
-            'This will clear temporary data and may improve performance. Your settings and progress will be preserved.',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Clear Cache',
-                    onPress: () => {
-                        try {
-                            // In a real implementation, this would clear cache data
-                            // For now, we'll just reload storage stats
-                            loadStorageStats();
-                            showAlert('Cache Cleared', 'Temporary data has been cleared.');
-                        } catch (error) {
-                            console.error('Error clearing cache:', error);
-                            showAlert('Clear Failed', 'Failed to clear cache. Please try again.');
-                        }
-                    }
-                }
-            ]
-        );
+    const handleRateApp = (): void => {
+        rateApp();
+        showAlert('Rate App', 'Thank you for using our app! Redirecting to app store...');
     };
 
-    // Animation interpolations
+    const handleSupport = (): void => {
+        openSupport();
+        showAlert('Support', 'Opening support page...');
+    };
+
+    const handlePrivacy = (): void => {
+        openPrivacy();
+        showAlert('Privacy Policy', 'Opening privacy policy...');
+    };
+
+    const handleTerms = (): void => {
+        openTerms();
+        showAlert('Terms of Service', 'Opening terms of service...');
+    };
+
+    const handleTheme = (): void => {
+        setMode(isDark ? 'light' : 'dark');
+    };
+
+    const handleStorage = (): void => {
+        openStorage();
+        showAlert('Storage', 'Storage details coming soon!');
+    };
+
+    const handleFeedback = (): void => {
+        openFeedback();
+        showAlert('Feedback', 'Opening feedback form...');
+    };
+
+    const handleThemeCustomization = (): void => {
+        if (navigation) {
+            navigation.navigate('ThemeCustomization');
+        } else {
+            showAlert('Navigation Error', 'Theme customization is not available.');
+        }
+    };
+
     const headerOpacity = headerAnimation.interpolate({
         inputRange: [0, 1],
         outputRange: [0, 1],
@@ -325,9 +157,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         outputRange: [20, 0],
     });
 
-    /**
-     * Animated Section Component
-     */
     const AnimatedSection: React.FC<{ 
         children: React.ReactNode; 
         delay?: number;
@@ -392,12 +221,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         Customize your flow experience
                     </Text>
                 </View>
-                <TouchableOpacity 
-                    onPress={loadStorageStats}
-                    style={[styles.refreshButton, { backgroundColor: theme.surface }]}
-                >
-                    <Ionicons name="refresh" size={20} color={theme.accent} />
-                </TouchableOpacity>
+                <View style={styles.placeholder} />
             </Animated.View>
 
             <Animated.ScrollView
@@ -410,7 +234,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 ]}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Timer Settings */}
                 <AnimatedSection delay={100}>
                     <SectionHeader title="TIMER SETTINGS" />
                     <View style={[styles.section, { backgroundColor: theme.surface }]}>
@@ -422,8 +245,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                                 </Text>
                             </View>
                             <TimeDurationSelector
-                                value={settingsStore.timeDuration}
-                                onChange={settingsStore.setTimeDuration}
+                                value={timeDuration}
+                                onChange={setTimeDuration}
                             />
                         </View>
 
@@ -435,14 +258,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                                 </Text>
                             </View>
                             <TimeDurationSelector
-                                value={settingsStore.breakDuration}
-                                onChange={settingsStore.setBreakDuration}
+                                value={breakDuration}
+                                onChange={setBreakDuration}
                             />
                         </View>
                     </View>
                 </AnimatedSection>
 
-                {/* Appearance */}
                 <AnimatedSection delay={200}>
                     <SectionHeader title="APPEARANCE" />
                     <View style={[styles.section, { backgroundColor: theme.surface }]}>
@@ -451,7 +273,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             subtitle="Personalize colors and timer style"
                             icon="color-palette-outline"
                             showArrow={true}
-                            onPress={() => navigation?.navigate('ThemeCustomization')}
+                            onPress={handleThemeCustomization}
                         />
                         <SettingItem
                             title="Dark Mode"
@@ -459,12 +281,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             icon="moon-outline"
                             hasSwitch={true}
                             switchValue={isDark}
-                            onSwitchToggle={() => setMode(isDark ? 'light' : 'dark')}
+                            onSwitchToggle={handleTheme}
                         />
                     </View>
                 </AnimatedSection>
 
-                {/* Notifications */}
                 <AnimatedSection delay={300}>
                     <SectionHeader title="NOTIFICATIONS" />
                     <View style={[styles.section, { backgroundColor: theme.surface }]}>
@@ -473,29 +294,28 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             subtitle="Receive flow reminders and updates"
                             icon="notifications-outline"
                             hasSwitch={true}
-                            switchValue={settingsStore.notifications}
-                            onSwitchToggle={() => settingsStore.toggleSetting('notifications')}
+                            switchValue={notifications}
+                            onSwitchToggle={() => toggleSetting('notifications')}
                         />
                         <SettingItem
                             title="Focus Reminders"
                             subtitle="Get reminded to start your focus sessions"
                             icon="time-outline"
                             hasSwitch={true}
-                            switchValue={settingsStore.focusReminders}
-                            onSwitchToggle={() => settingsStore.toggleSetting('focusReminders')}
+                            switchValue={focusReminders}
+                            onSwitchToggle={() => toggleSetting('focusReminders')}
                         />
                         <SettingItem
                             title="Weekly Reports"
                             subtitle="Receive weekly productivity summaries"
                             icon="bar-chart-outline"
                             hasSwitch={true}
-                            switchValue={settingsStore.weeklyReports}
-                            onSwitchToggle={() => settingsStore.toggleSetting('weeklyReports')}
+                            switchValue={weeklyReports}
+                            onSwitchToggle={() => toggleSetting('weeklyReports')}
                         />
                     </View>
                 </AnimatedSection>
 
-                {/* Experience */}
                 <AnimatedSection delay={400}>
                     <SectionHeader title="EXPERIENCE" />
                     <View style={[styles.section, { backgroundColor: theme.surface }]}>
@@ -504,93 +324,50 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             subtitle="Play sounds during flow sessions"
                             icon="volume-medium-outline"
                             hasSwitch={true}
-                            switchValue={settingsStore.soundEffects}
-                            onSwitchToggle={() => settingsStore.toggleSetting('soundEffects')}
+                            switchValue={soundEffects}
+                            onSwitchToggle={() => toggleSetting('soundEffects')}
                         />
                         <SettingItem
                             title="Auto Break"
                             subtitle="Automatically start break sessions"
                             icon="pause-circle-outline"
                             hasSwitch={true}
-                            switchValue={settingsStore.autoBreak}
-                            onSwitchToggle={() => settingsStore.toggleSetting('autoBreak')}
+                            switchValue={autoBreak}
+                            onSwitchToggle={() => toggleSetting('autoBreak')}
                         />
                     </View>
                 </AnimatedSection>
 
-                {/* Data Management & Storage */}
                 <AnimatedSection delay={500}>
-                    <SectionHeader title="DATA MANAGEMENT" />
-                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
-                        <SettingItem
-                            title="Storage Usage"
-                            subtitle={`${formatBytes(storageStats.totalSize)} • ${storageStats.totalKeys} items`}
-                            icon="folder-outline"
-                            showArrow={true}
-                            onPress={() => {
-                                Alert.alert(
-                                    'Storage Breakdown',
-                                    `Total: ${formatBytes(storageStats.totalSize)}\n\n` +
-                                    `Settings: ${formatBytes(storageStats.breakdown.settings.size)}\n` +
-                                    `Goals: ${storageStats.breakdown.goals.goalCount} goals\n` +
-                                    `Statistics: ${storageStats.breakdown.statistics.totalSessions} sessions\n` +
-                                    `Flow Data: ${storageStats.breakdown.pomodoro.sessions} sessions`,
-                                    [{ text: 'OK' }]
-                                );
-                            }}
-                        />
-                        
-                        <SettingItem
-                            title="Export All Data"
-                            subtitle="Download complete backup as JSON"
-                            icon="download-outline"
-                            showArrow={true}
-                            onPress={handleExportAllData}
-                        />
-                        
-                        <SettingItem
-                            title="Export Statistics"
-                            subtitle="Download statistics as CSV"
-                            icon="bar-chart-outline"
-                            showArrow={true}
-                            onPress={handleExportStatisticsCSV}
-                        />
-                        
-                        <SettingItem
-                            title="Export Goals"
-                            subtitle="Download goals as CSV"
-                            icon="flag-outline"
-                            showArrow={true}
-                            onPress={handleExportGoalsCSV}
-                        />
-                        
-                        <SettingItem
-                            title="Clear Cache"
-                            subtitle="Clear temporary data"
-                            icon="refresh-outline"
-                            showArrow={true}
-                            onPress={handleClearCache}
-                        />
-                    </View>
-                </AnimatedSection>
-
-                {/* Cloud Sync */}
-                <AnimatedSection delay={600}>
-                    <SectionHeader title="SYNC & BACKUP" />
+                    <SectionHeader title="DATA & SYNC" />
                     <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <SettingItem
                             title="Cloud Sync"
                             subtitle="Sync your data across devices"
                             icon="cloud-outline"
                             hasSwitch={true}
-                            switchValue={settingsStore.dataSync}
-                            onSwitchToggle={() => settingsStore.toggleSetting('dataSync')}
+                            switchValue={dataSync}
+                            onSwitchToggle={() => toggleSetting('dataSync')}
+                        />
+                        <SettingItem
+                            title="Export Data"
+                            subtitle="Download your flow statistics"
+                            icon="download-outline"
+                            showArrow={true}
+                            onPress={handleExportData}
+                        />
+                        <SettingItem
+                            title="Storage Usage"
+                            subtitle="Manage app storage"
+                            icon="folder-outline"
+                            value="12.4 MB"
+                            showArrow={true}
+                            onPress={handleStorage}
                         />
                     </View>
                 </AnimatedSection>
 
-                {/* Support */}
-                <AnimatedSection delay={700}>
+                <AnimatedSection delay={600}>
                     <SectionHeader title="SUPPORT" />
                     <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <SettingItem
@@ -598,69 +375,59 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             subtitle="Get help with the app"
                             icon="help-circle-outline"
                             showArrow={true}
-                            onPress={settingsStore.openSupport}
+                            onPress={handleSupport}
                         />
                         <SettingItem
                             title="Rate App"
                             subtitle="Rate us on the App Store"
                             icon="star-outline"
                             showArrow={true}
-                            onPress={settingsStore.rateApp}
+                            onPress={handleRateApp}
                         />
                         <SettingItem
                             title="Send Feedback"
                             subtitle="Share your thoughts with us"
                             icon="chatbubble-outline"
                             showArrow={true}
-                            onPress={settingsStore.openFeedback}
+                            onPress={handleFeedback}
                         />
                     </View>
                 </AnimatedSection>
 
-                {/* Legal */}
-                <AnimatedSection delay={800}>
+                <AnimatedSection delay={700}>
                     <SectionHeader title="LEGAL" />
                     <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <SettingItem
                             title="Privacy Policy"
                             icon="shield-outline"
                             showArrow={true}
-                            onPress={settingsStore.openPrivacy}
+                            onPress={handlePrivacy}
                         />
                         <SettingItem
                             title="Terms of Service"
                             icon="document-text-outline"
                             showArrow={true}
-                            onPress={settingsStore.openTerms}
+                            onPress={handleTerms}
                         />
                     </View>
                 </AnimatedSection>
 
-                {/* Danger Zone */}
-                <AnimatedSection delay={900}>
+                <AnimatedSection delay={800}>
                     <SectionHeader title="DANGER ZONE" />
                     <View style={[styles.section, styles.dangerSection, { backgroundColor: theme.surface }]}>
                         <SettingItem
                             title="Delete All Data"
-                            subtitle="Permanently remove all your data"
+                            subtitle="Permanently remove all your flow data"
                             icon="trash-outline"
                             showArrow={true}
-                            onPress={handleDeleteAllData}
+                            onPress={handleDeleteData}
                         />
                     </View>
                 </AnimatedSection>
 
-                {/* App Information */}
                 <View style={styles.footer}>
-                    <Text style={[styles.versionText, { color: theme.textSecondary }]}>
-                        Flow Focus v1.2.3
-                    </Text>
-                    <Text style={[styles.storageText, { color: theme.textSecondary }]}>
-                        MMKV Storage • {formatBytes(storageStats.totalSize)} used
-                    </Text>
-                    <Text style={[styles.copyrightText, { color: theme.textSecondary }]}>
-                        © 2025 Flow Focus App
-                    </Text>
+                    <Text style={[styles.versionText, { color: theme.textSecondary }]}>Flow Focus v1.2.3</Text>
+                    <Text style={[styles.copyrightText, { color: theme.textSecondary }]}>© 2025 Flow Focus App</Text>
                 </View>
             </Animated.ScrollView>
         </SafeAreaView>
@@ -697,13 +464,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    refreshButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
     headerContent: {
         flex: 1,
         alignItems: 'center',
@@ -717,6 +477,9 @@ const styles = StyleSheet.create({
         fontSize: 14,
         marginTop: 4,
         opacity: 0.7,
+    },
+    placeholder: {
+        width: 40,
     },
     scrollView: {
         flex: 1,
@@ -770,11 +533,6 @@ const styles = StyleSheet.create({
     },
     versionText: {
         fontSize: 14,
-        marginBottom: 4,
-        fontWeight: '600',
-    },
-    storageText: {
-        fontSize: 12,
         marginBottom: 4,
     },
     copyrightText: {
