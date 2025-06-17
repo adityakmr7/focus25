@@ -9,6 +9,8 @@ import {
   TextInput,
   Alert,
   Dimensions,
+  Share,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../providers/ThemeProvider';
@@ -36,7 +38,7 @@ const goalTypes: { key: GoalType; label: string }[] = [
 
 export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
   const { theme } = useTheme();
-  const { goals, createGoal, deleteGoal, getActiveGoals, getCompletedGoals } = useGoalsStore();
+  const { goals, createGoal, deleteGoal, getActiveGoals, getCompletedGoals, exportGoalsToCSV } = useGoalsStore();
   
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'active' | 'completed'>('active');
@@ -95,6 +97,34 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
         },
       ]
     );
+  };
+
+  const handleExportData = async () => {
+    try {
+      const csvData = exportGoalsToCSV();
+      
+      if (Platform.OS === 'web') {
+        // For web, create a download link
+        const blob = new Blob([csvData], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `goals_export_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        Alert.alert('Success', 'Goals exported successfully!');
+      } else {
+        // For mobile, use Share API
+        await Share.share({
+          message: csvData,
+          title: 'Goals Export',
+        });
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to export goals');
+    }
   };
 
   const getCategoryInfo = (category: GoalCategory) => {
@@ -297,9 +327,18 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
               </View>
             </View>
             
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={theme.textSecondary} />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity 
+                onPress={handleExportData}
+                style={[styles.exportButton, { backgroundColor: theme.background }]}
+              >
+                <Ionicons name="download-outline" size={20} color={theme.accent} />
+              </TouchableOpacity>
+              
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <Ionicons name="close" size={24} color={theme.textSecondary} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {!showCreateForm && (
@@ -431,6 +470,18 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 14,
     marginTop: 2,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  exportButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   closeButton: {
     width: 36,

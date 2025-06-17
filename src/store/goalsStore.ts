@@ -42,6 +42,7 @@ interface GoalsState {
     currentStreak: number;
     weeklyConsistency: number;
   }) => void;
+  exportGoalsToCSV: () => string;
 }
 
 const defaultGoals: Omit<Goal, 'id' | 'current' | 'isCompleted' | 'createdAt'>[] = [
@@ -197,6 +198,28 @@ export const useGoalsStore = create<GoalsState>()(
             get().updateGoalProgress(goal.id, newProgress);
           }
         });
+      },
+
+      exportGoalsToCSV: () => {
+        const { goals } = get();
+        const headers = ['Title', 'Description', 'Category', 'Type', 'Target', 'Current', 'Unit', 'Completed', 'Created At', 'Completed At'];
+        const csvContent = [
+          headers.join(','),
+          ...goals.map(goal => [
+            `"${goal.title}"`,
+            `"${goal.description}"`,
+            goal.category,
+            goal.type,
+            goal.target,
+            goal.current,
+            goal.unit,
+            goal.isCompleted,
+            goal.createdAt,
+            goal.completedAt || ''
+          ].join(','))
+        ].join('\n');
+        
+        return csvContent;
       },
     }),
     {
