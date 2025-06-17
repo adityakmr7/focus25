@@ -14,7 +14,7 @@ import { SessionDots } from '../components/SessionDots';
 import { PlayPauseButton } from '../components/PlayPauseButton';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { useSettingsStore } from '../store/settingsStore';
-import { useAudioPlayer } from "expo-audio";
+import { useAudioPlayer } from "expo-av";
 import { Ionicons } from '@expo/vector-icons'
 import { FlowMetrics } from '../components/FlowMetrics';
 import { FlowIntensityIndicator } from '../components/FlowIntensityIndicator';
