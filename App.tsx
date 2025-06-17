@@ -158,10 +158,10 @@ const AppContent = () => {
       </NavigationContainer>
       
       {/* Onboarding Flow */}
-      <OnboardingFlow
+      {/* <OnboardingFlow
         visible={showOnboarding}
         onComplete={() => setShowOnboarding(false)}
-      />
+      /> */}
     </>
   );
 };

@@ -81,7 +81,7 @@ const AppStackNavigation = () => {
                 component={FlowAnalyticsScreen}
                 options={{
                     title: 'Focus Analytics',
-                    headerShown: true
+                    headerShown:false 
                 }}
             />
             <Stack.Screen 
