@@ -9,6 +9,7 @@ import {
     TouchableOpacity,
     StatusBar,
     Platform,
+  ScrollView
 } from 'react-native';
 import { SessionDots } from '../components/SessionDots';
 import { PlayPauseButton } from '../components/PlayPauseButton';
@@ -221,7 +222,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     return (
         <SafeAreaView className="flex-1 bg-bg-100 dark:bg-dark-bg-100">
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-            
+            <ScrollView>
+           
             {/* Dynamic Background */}
             <DynamicBackground 
                 isRunning={timer.isRunning}
@@ -340,6 +342,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     animationValue={achievementAnimation}
                 />
             </Animated.View>
+            </ScrollView>
         </SafeAreaView>
     );
 };
