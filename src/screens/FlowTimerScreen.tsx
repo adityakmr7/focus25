@@ -361,7 +361,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingTop: Platform.OS === 'ios' ? 0 : 20,
         paddingBottom: 10,
-      paddingTop:20
+      paddingTop:20,
+      marginBottom:20
     },
     headerButton: {
         width: 44,
