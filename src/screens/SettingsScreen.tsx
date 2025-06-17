@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     View,
     Text,
@@ -9,6 +9,7 @@ import {
     Animated,
     Platform,
     TouchableOpacity,
+    Share,
 } from 'react-native';
 import { SettingItem } from '../components/SettingItem';
 import { SectionHeader } from '../components/SectionHeader';
@@ -16,6 +17,10 @@ import { TimeDurationSelector } from '../components/TimeDurationSelector';
 import { useSettingsStore } from '../store/settingsStore';
 import { useTheme } from '../providers/ThemeProvider';
 import { useThemeStore } from '../store/themeStore';
+import { useGoalsStore } from '../store/goalsStore';
+import { useStatisticsStore } from '../store/statisticsStore';
+import { usePomodoroStore } from '../store/pomodoroStore';
+import { databaseService } from '../services/database';
 import { Ionicons } from '@expo/vector-icons';
 
 interface SettingsScreenProps {
@@ -23,6 +28,18 @@ interface SettingsScreenProps {
         goBack: () => void;
         navigate: (screen: string) => void;
     };
+}
+
+interface StorageInfo {
+    totalSize: number;
+    breakdown: {
+        goals: number;
+        statistics: number;
+        settings: number;
+        theme: number;
+        flowMetrics: number;
+    };
+    formattedSize: string;
 }
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
@@ -50,6 +67,25 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         setBreakDuration
     } = useSettingsStore();
 
+    const { goals } = useGoalsStore();
+    const { flows, breaks, interruptions } = useStatisticsStore();
+    const { flowMetrics } = usePomodoroStore();
+
+    const [storageInfo, setStorageInfo] = useState<StorageInfo>({
+        totalSize: 0,
+        breakdown: {
+            goals: 0,
+            statistics: 0,
+            settings: 0,
+            theme: 0,
+            flowMetrics: 0,
+        },
+        formattedSize: '0 KB'
+    });
+
+    const [isExporting, setIsExporting] = useState(false);
+    const [isCalculatingStorage, setIsCalculatingStorage] = useState(false);
+
     const headerAnimation = useRef(new Animated.Value(0)).current;
     const sectionsAnimation = useRef(new Animated.Value(0)).current;
 
@@ -66,33 +102,147 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 useNativeDriver: true,
             }),
         ]).start();
+
+        calculateStorageUsage();
     }, []);
+
+    // Recalculate storage when data changes
+    useEffect(() => {
+        calculateStorageUsage();
+    }, [goals.length, flows, breaks, interruptions, flowMetrics]);
+
+    const calculateStorageUsage = async () => {
+        setIsCalculatingStorage(true);
+        try {
+            // Calculate approximate storage size for each data type
+            const goalsSize = JSON.stringify(goals).length;
+            const statisticsSize = JSON.stringify({ flows, breaks, interruptions }).length;
+            const settingsSize = JSON.stringify({
+                timeDuration,
+                breakDuration,
+                soundEffects,
+                notifications,
+                autoBreak,
+                focusReminders,
+                weeklyReports,
+                dataSync
+            }).length;
+            const themeSize = 500; // Approximate theme data size
+            const flowMetricsSize = JSON.stringify(flowMetrics).length;
+
+            const totalSize = goalsSize + statisticsSize + settingsSize + themeSize + flowMetricsSize;
+
+            const formatBytes = (bytes: number): string => {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            };
+
+            setStorageInfo({
+                totalSize,
+                breakdown: {
+                    goals: goalsSize,
+                    statistics: statisticsSize,
+                    settings: settingsSize,
+                    theme: themeSize,
+                    flowMetrics: flowMetricsSize,
+                },
+                formattedSize: formatBytes(totalSize)
+            });
+        } catch (error) {
+            console.error('Failed to calculate storage usage:', error);
+        } finally {
+            setIsCalculatingStorage(false);
+        }
+    };
 
     const showAlert = (title: string, message: string): void => {
         Alert.alert(title, message, [{ text: 'OK' }]);
     };
 
-    const handleExportData = (): void => {
-        exportData();
-        showAlert('Export Data', 'Your data has been exported successfully.');
+    const handleExportData = async (): Promise<void> => {
+        setIsExporting(true);
+        try {
+            const exportedData = await exportData();
+            
+            if (Platform.OS === 'web') {
+                // For web, create a download link
+                const blob = new Blob([exportedData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `flow_focus_backup_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showAlert('Export Successful', 'Your data has been downloaded successfully.');
+            } else {
+                // For mobile, use Share API
+                await Share.share({
+                    message: exportedData,
+                    title: 'Flow Focus Data Export',
+                });
+            }
+        } catch (error) {
+            console.error('Export failed:', error);
+            showAlert('Export Failed', 'Failed to export your data. Please try again.');
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     const handleDeleteData = (): void => {
         Alert.alert(
             'Delete All Data',
-            'Are you sure you want to delete all your flow data? This action cannot be undone.',
+            `Are you sure you want to delete all your flow data? This will permanently remove:\n\n• ${goals.length} goals\n• All statistics and flow metrics\n• Custom settings and themes\n\nThis action cannot be undone.`,
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'Delete',
                     style: 'destructive',
-                    onPress: () => {
-                        deleteData();
-                        showAlert('Data Deleted', 'All your data has been deleted.');
+                    onPress: async () => {
+                        try {
+                            await deleteData();
+                            showAlert('Data Deleted', 'All your data has been permanently deleted.');
+                            // Recalculate storage after deletion
+                            setTimeout(calculateStorageUsage, 500);
+                        } catch (error) {
+                            showAlert('Delete Failed', 'Failed to delete data. Please try again.');
+                        }
                     }
                 }
             ]
         );
+    };
+
+    const handleStorageDetails = (): void => {
+        const breakdown = storageInfo.breakdown;
+        const total = storageInfo.totalSize;
+        
+        const formatBytes = (bytes: number): string => {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        };
+
+        const getPercentage = (size: number): string => {
+            return total > 0 ? `${Math.round((size / total) * 100)}%` : '0%';
+        };
+
+        const message = `Storage Breakdown:\n\n` +
+            `📊 Goals: ${formatBytes(breakdown.goals)} (${getPercentage(breakdown.goals)})\n` +
+            `📈 Statistics: ${formatBytes(breakdown.statistics)} (${getPercentage(breakdown.statistics)})\n` +
+            `🔥 Flow Metrics: ${formatBytes(breakdown.flowMetrics)} (${getPercentage(breakdown.flowMetrics)})\n` +
+            `⚙️ Settings: ${formatBytes(breakdown.settings)} (${getPercentage(breakdown.settings)})\n` +
+            `🎨 Theme: ${formatBytes(breakdown.theme)} (${getPercentage(breakdown.theme)})\n\n` +
+            `Total: ${storageInfo.formattedSize}`;
+
+        Alert.alert('Storage Details', message, [{ text: 'OK' }]);
     };
 
     const handleRateApp = (): void => {
@@ -117,11 +267,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
     const handleTheme = (): void => {
         setMode(isDark ? 'light' : 'dark');
-    };
-
-    const handleStorage = (): void => {
-        openStorage();
-        showAlert('Storage', 'Storage details coming soon!');
     };
 
     const handleFeedback = (): void => {
@@ -350,19 +495,19 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             onSwitchToggle={() => toggleSetting('dataSync')}
                         />
                         <SettingItem
-                            title="Export Data"
-                            subtitle="Download your flow statistics"
+                            title={isExporting ? "Exporting..." : "Export Data"}
+                            subtitle={`Download ${goals.length} goals, statistics & settings`}
                             icon="download-outline"
-                            showArrow={true}
-                            onPress={handleExportData}
+                            showArrow={!isExporting}
+                            onPress={isExporting ? undefined : handleExportData}
                         />
                         <SettingItem
                             title="Storage Usage"
-                            subtitle="Manage app storage"
+                            subtitle={isCalculatingStorage ? "Calculating..." : `${storageInfo.formattedSize} used`}
                             icon="folder-outline"
-                            value="12.4 MB"
+                            value={isCalculatingStorage ? "..." : storageInfo.formattedSize}
                             showArrow={true}
-                            onPress={handleStorage}
+                            onPress={handleStorageDetails}
                         />
                     </View>
                 </AnimatedSection>
@@ -417,7 +562,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     <View style={[styles.section, styles.dangerSection, { backgroundColor: theme.surface }]}>
                         <SettingItem
                             title="Delete All Data"
-                            subtitle="Permanently remove all your flow data"
+                            subtitle={`Permanently remove ${goals.length} goals and all statistics`}
                             icon="trash-outline"
                             showArrow={true}
                             onPress={handleDeleteData}
