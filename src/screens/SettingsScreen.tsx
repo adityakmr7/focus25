@@ -39,6 +39,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         openTheme,
         openStorage,
         openFeedback,
+        breakDuration,
+        setBreakDuration
     } = useSettingsStore();
 
     const showAlert = (title: string, message: string): void => {
@@ -120,6 +122,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         <TimeDurationSelector
                             value={timeDuration}
                             onChange={setTimeDuration}
+                        />
+                    </View>
+
+                    <View style={styles.timeDurationContainer}>
+                        <Text className={"text-text-primary dark:text-dark-text-primary"} style={styles.timeDurationLabel}>
+                            Break Duration
+                        </Text>
+                        <TimeDurationSelector
+                            value={breakDuration}
+                            onChange={setBreakDuration}
                         />
                     </View>
                 </View>

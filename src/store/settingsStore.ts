@@ -2,9 +2,11 @@ import { create } from 'zustand';
 import { settingsService } from '../services/database';
 
 export type TimeDuration = 1 | 5 | 10 | 15 | 20 | 25;
+export type BreakDuration = 1 | 5 | 10 | 15 | 20 | 25;
 
 interface Settings {
     timeDuration: TimeDuration;
+    breakDuration:BreakDuration;
     soundEffects: boolean;
     notifications: boolean;
     darkMode: boolean;
@@ -22,6 +24,7 @@ interface SettingsState extends Settings {
     updateSettings: (userId: string, settings: Partial<Settings>) => Promise<void>;
     toggleSetting: (key: keyof Settings) => void;
     setTimeDuration: (duration: TimeDuration) => void;
+    setBreakDuration:(duration:BreakDuration) => void;
     resetSettings: () => void;
     exportData: () => void;
     deleteData: () => void;
@@ -37,6 +40,7 @@ interface SettingsState extends Settings {
 
 const initialSettings: Settings = {
     timeDuration: 25,
+    breakDuration:5,
     soundEffects: true,
     notifications: true,
     darkMode: false,
@@ -52,6 +56,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     isLoading: false,
     error: null,
 
+    setBreakDuration(duration) {
+       set({breakDuration:duration})
+    },
     toggleSetting: (key: keyof Settings) => {
         set((state) => ({
             [key]: !state[key],

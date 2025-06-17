@@ -35,8 +35,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         handleTimerComplete,
         setTimer,
         updateTimerFromSettings,
+        startBreak,
+        endBreak,
     } = usePomodoroStore();
-    const { timeDuration } = useSettingsStore();
+    
+    const { timeDuration, breakDuration } = useSettingsStore();
     const player = useAudioPlayer(audioSource);
 
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -52,6 +55,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             setTimeout(() => {
                 player.pause();
             }, 2000);
+            startBreak();
         } catch (error) {
             console.error('Error playing sound:', error);
         }
@@ -160,7 +164,9 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             <StatusBar barStyle="light-content" backgroundColor="#000000" />
 
             <View style={styles.timerContainer}>
-                <Text className={"color-text-primary dark:color-dark-text-primary"} style={styles.flowLabel}>Flow</Text>
+                <Text className={"color-text-primary dark:color-dark-text-primary"} style={styles.flowLabel}>
+                    {timer.isBreak ? 'Break' : 'Flow'}
+                </Text>
 
                 <Animated.View
                     style={[
@@ -173,10 +179,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     </Text>
                 </Animated.View>
 
-                <SessionDots
-                    currentSession={timer.currentSession}
-                    totalSessions={timer.totalSessions}
-                />
+                {!timer.isBreak && (
+                    <SessionDots
+                        currentSession={timer.currentSession}
+                        totalSessions={timer.totalSessions}
+                    />
+                )}
 
                 <PlayPauseButton
                     isRunning={timer.isRunning}

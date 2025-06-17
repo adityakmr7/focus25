@@ -12,6 +12,7 @@ interface TimerState {
     initialSeconds: number;
     currentSession: number;
     totalSessions: number;
+    isBreak: boolean;
 }
 
 interface PomodoroState {
@@ -26,6 +27,8 @@ interface PomodoroState {
     stopTimer: () => void;
     handleTimerComplete: () => void;
     updateTimerFromSettings: () => void;
+    startBreak: () => void;
+    endBreak: () => void;
 }
 
 const getInitialTimerState = (duration: number): TimerState => ({
@@ -37,11 +40,12 @@ const getInitialTimerState = (duration: number): TimerState => ({
     initialSeconds: duration * 60,
     currentSession: 1,
     totalSessions: 4,
+    isBreak: false,
 });
 
 export const usePomodoroStore = create<PomodoroState>((set, get) => ({
-    workDuration: 25,
-    breakDuration: 5,
+    workDuration: 1,
+    breakDuration: 1,
     timer: getInitialTimerState(25),
 
     setWorkDuration: (duration) => set((state) => ({
@@ -101,27 +105,90 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
         }
     })),
 
+    startBreak: () => {
+        const settings = useSettingsStore.getState();
+        const statistics = useStatisticsStore.getState();
+        
+        statistics.incrementBreakStarted();
+        
+        set((state) => ({
+            timer: {
+                ...state.timer,
+                isBreak: true,
+                isRunning: false,
+                isPaused: false,
+                totalSeconds: settings.breakDuration * 60,
+                initialSeconds: settings.breakDuration * 60,
+                minutes: settings.breakDuration,
+                seconds: 0,
+            }
+        }));
+    },
+
+    endBreak: () => {
+        const settings = useSettingsStore.getState();
+        const statistics = useStatisticsStore.getState();
+        
+        statistics.incrementBreakCompleted(settings.breakDuration);
+        
+        set((state) => ({
+            timer: {
+                ...state.timer,
+                isBreak: false,
+                isRunning: false,
+                isPaused: false,
+                totalSeconds: settings.timeDuration * 60,
+                initialSeconds: settings.timeDuration * 60,
+                minutes: settings.timeDuration,
+                seconds: 0,
+            }
+        }));
+    },
+
     handleTimerComplete: () => {
         const state = get();
         const settings = useSettingsStore.getState();
         const statistics = useStatisticsStore.getState();
 
-        // Update statistics
-        const minutes = Math.floor(state.timer.initialSeconds / 60);
-        statistics.incrementFlowCompleted(minutes);
+        if (!state.timer.isBreak) {
+            // Flow session completed
+            const minutes = Math.floor(state.timer.initialSeconds / 60);
+            statistics.incrementFlowCompleted(minutes);
 
-        // Trigger notification if enabled
-        if (settings.notifications) {
-            Notifications.scheduleNotificationAsync({
-                content: {
-                    title: "Flow Session Complete! 🎉",
-                    body: "Great job! Time for a break.",
-                    sound: true,
-                },
-                trigger: null,
-            });
+            // Trigger notification if enabled
+            if (settings.notifications) {
+                Notifications.scheduleNotificationAsync({
+                    content: {
+                        title: "Flow Session Complete! 🎉",
+                        body: "Time for a break!",
+                        sound: true,
+                    },
+                    trigger: null,
+                });
+            }
+
+            // Start break if auto break is enabled
+            if (settings.autoBreak) {
+                get().startBreak();
+                return;
+            }
+        } else {
+            // Break completed
+            if (settings.notifications) {
+                Notifications.scheduleNotificationAsync({
+                    content: {
+                        title: "Break Complete!",
+                        body: "Ready for your next flow session?",
+                        sound: true,
+                    },
+                    trigger: null,
+                });
+            }
+            get().endBreak();
+            return;
         }
 
+        // Handle session completion
         if (state.timer.currentSession < state.timer.totalSessions) {
             set((state) => ({
                 timer: {
@@ -152,8 +219,9 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     updateTimerFromSettings: () => {
         const settings = useSettingsStore.getState();
         set((state) => ({
-            workDuration: settings?.timeDuration,
-            timer: getInitialTimerState(settings?.timeDuration)
+            workDuration: settings.timeDuration,
+            breakDuration: settings.breakDuration,
+            timer: getInitialTimerState(settings.timeDuration)
         }));
     },
 }));
