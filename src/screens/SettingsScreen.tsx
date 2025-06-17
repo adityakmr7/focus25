@@ -15,21 +15,23 @@ import { SectionHeader } from '../components/SectionHeader';
 import { TimeDurationSelector } from '../components/TimeDurationSelector';
 import { useSettingsStore } from '../store/settingsStore';
 import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
 import { Ionicons } from '@expo/vector-icons';
 
 interface SettingsScreenProps {
     navigation?: {
         goBack: () => void;
+        navigate: (screen: string) => void;
     };
 }
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
-    const { theme, toggleTheme } = useTheme();
+    const { theme, isDark } = useTheme();
+    const { setMode } = useThemeStore();
     const {
         timeDuration,
         soundEffects,
         notifications,
-        darkMode,
         autoBreak,
         focusReminders,
         weeklyReports,
@@ -114,7 +116,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     };
 
     const handleTheme = (): void => {
-        toggleTheme();
+        setMode(isDark ? 'light' : 'dark');
     };
 
     const handleStorage = (): void => {
@@ -185,29 +187,29 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     };
 
     return (
-        <SafeAreaView className="bg-bg-100 flex-1 dark:bg-dark-bg-100">
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Enhanced Header */}
             <Animated.View
                 style={[
                     styles.header,
+                    { borderBottomColor: theme.surface },
                     {
                         opacity: headerOpacity,
                         transform: [{ translateY: headerTranslateY }],
                     },
                 ]}
-                className="border-b-bg-200 dark:border-b-dark-bg-200"
             >
                 <TouchableOpacity 
                     onPress={() => navigation?.goBack()}
-                    style={styles.backButton}
+                    style={[styles.backButton, { backgroundColor: theme.surface }]}
                 >
-                    <Ionicons name="arrow-back" size={24} color="#6B7280" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
                 <View style={styles.headerContent}>
-                    <Text className="color-text-primary dark:color-dark-text-primary" style={styles.title}>
+                    <Text style={[styles.title, { color: theme.text }]}>
                         Settings
                     </Text>
-                    <Text className="color-text-secondary dark:color-dark-text-secondary" style={styles.subtitle}>
+                    <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
                         Customize your flow experience
                     </Text>
                 </View>
@@ -226,11 +228,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             >
                 <AnimatedSection delay={100}>
                     <SectionHeader title="TIMER SETTINGS" />
-                    <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.section}>
+                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <View style={styles.timeDurationContainer}>
                             <View style={styles.durationContent}>
-                                <Ionicons name="timer" size={20} color="#4CAF50" style={styles.durationIcon} />
-                                <Text className="text-text-primary dark:text-dark-text-primary" style={styles.timeDurationLabel}>
+                                <Ionicons name="timer" size={20} color={theme.accent} style={styles.durationIcon} />
+                                <Text style={[styles.timeDurationLabel, { color: theme.text }]}>
                                     Focus Duration
                                 </Text>
                             </View>
@@ -242,8 +244,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
                         <View style={styles.timeDurationContainer}>
                             <View style={styles.durationContent}>
-                                <Ionicons name="cafe" size={20} color="#4CAF50" style={styles.durationIcon} />
-                                <Text className="text-text-primary dark:text-dark-text-primary" style={styles.timeDurationLabel}>
+                                <Ionicons name="cafe" size={20} color={theme.accent} style={styles.durationIcon} />
+                                <Text style={[styles.timeDurationLabel, { color: theme.text }]}>
                                     Break Duration
                                 </Text>
                             </View>
@@ -256,8 +258,29 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 </AnimatedSection>
 
                 <AnimatedSection delay={200}>
+                    <SectionHeader title="APPEARANCE" />
+                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
+                        <SettingItem
+                            title="Theme Customization"
+                            subtitle="Personalize colors and timer style"
+                            icon="color-palette-outline"
+                            showArrow={true}
+                            onPress={() => navigation?.navigate('ThemeCustomization')}
+                        />
+                        <SettingItem
+                            title="Dark Mode"
+                            subtitle="Toggle dark/light theme"
+                            icon="moon-outline"
+                            hasSwitch={true}
+                            switchValue={isDark}
+                            onSwitchToggle={handleTheme}
+                        />
+                    </View>
+                </AnimatedSection>
+
+                <AnimatedSection delay={300}>
                     <SectionHeader title="NOTIFICATIONS" />
-                    <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.section}>
+                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <SettingItem
                             title="Push Notifications"
                             subtitle="Receive flow reminders and updates"
@@ -285,9 +308,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     </View>
                 </AnimatedSection>
 
-                <AnimatedSection delay={300}>
+                <AnimatedSection delay={400}>
                     <SectionHeader title="EXPERIENCE" />
-                    <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.section}>
+                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <SettingItem
                             title="Sound Effects"
                             subtitle="Play sounds during flow sessions"
@@ -295,14 +318,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             hasSwitch={true}
                             switchValue={soundEffects}
                             onSwitchToggle={() => toggleSetting('soundEffects')}
-                        />
-                        <SettingItem
-                            title="Dark Mode"
-                            subtitle="Toggle dark/light theme"
-                            icon="moon-outline"
-                            hasSwitch={true}
-                            switchValue={theme === 'dark'}
-                            onSwitchToggle={handleTheme}
                         />
                         <SettingItem
                             title="Auto Break"
@@ -315,9 +330,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     </View>
                 </AnimatedSection>
 
-                <AnimatedSection delay={400}>
+                <AnimatedSection delay={500}>
                     <SectionHeader title="DATA & SYNC" />
-                    <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.section}>
+                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <SettingItem
                             title="Cloud Sync"
                             subtitle="Sync your data across devices"
@@ -344,9 +359,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     </View>
                 </AnimatedSection>
 
-                <AnimatedSection delay={500}>
+                <AnimatedSection delay={600}>
                     <SectionHeader title="SUPPORT" />
-                    <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.section}>
+                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <SettingItem
                             title="Help & Support"
                             subtitle="Get help with the app"
@@ -371,9 +386,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     </View>
                 </AnimatedSection>
 
-                <AnimatedSection delay={600}>
+                <AnimatedSection delay={700}>
                     <SectionHeader title="LEGAL" />
-                    <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.section}>
+                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <SettingItem
                             title="Privacy Policy"
                             icon="shield-outline"
@@ -389,9 +404,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     </View>
                 </AnimatedSection>
 
-                <AnimatedSection delay={700}>
+                <AnimatedSection delay={800}>
                     <SectionHeader title="DANGER ZONE" />
-                    <View className="bg-bg-200 dark:bg-dark-bg-200" style={[styles.section, styles.dangerSection]}>
+                    <View style={[styles.section, styles.dangerSection, { backgroundColor: theme.surface }]}>
                         <SettingItem
                             title="Delete All Data"
                             subtitle="Permanently remove all your flow data"
@@ -403,8 +418,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 </AnimatedSection>
 
                 <View style={styles.footer}>
-                    <Text style={styles.versionText}>Flow Focus v1.2.3</Text>
-                    <Text style={styles.copyrightText}>© 2025 Flow Focus App</Text>
+                    <Text style={[styles.versionText, { color: theme.textSecondary }]}>Flow Focus v1.2.3</Text>
+                    <Text style={[styles.copyrightText, { color: theme.textSecondary }]}>© 2025 Flow Focus App</Text>
                 </View>
             </Animated.ScrollView>
         </SafeAreaView>
@@ -412,6 +427,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -435,7 +453,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: 'rgba(107, 114, 128, 0.1)',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -508,12 +525,10 @@ const styles = StyleSheet.create({
     },
     versionText: {
         fontSize: 14,
-        color: '#666666',
         marginBottom: 4,
     },
     copyrightText: {
         fontSize: 12,
-        color: '#444444',
     },
 });
 

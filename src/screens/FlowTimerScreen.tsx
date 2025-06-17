@@ -9,7 +9,6 @@ import {
     TouchableOpacity,
     StatusBar,
     Platform,
-  ScrollView
 } from 'react-native';
 import { SessionDots } from '../components/SessionDots';
 import { PlayPauseButton } from '../components/PlayPauseButton';
@@ -23,7 +22,9 @@ import { DynamicBackground } from '../components/DynamicBackground';
 import { BreathingAnimation } from '../components/BreathingAnimation';
 import { GamificationOverlay } from '../components/GamificationOverlay';
 import { FocusMusicPlayer } from '../components/FocusMusicPlayer';
-import { useSharedValue } from 'react-native-reanimated';
+import { TimerDisplay } from '../components/TimerDisplay';
+import { useSharedValue, withTiming } from 'react-native-reanimated';
+import { useTheme } from '../providers/ThemeProvider';
 
 const { width, height } = Dimensions.get('window');
 
@@ -52,13 +53,14 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     
     const { timeDuration, breakDuration } = useSettingsStore();
     const player = useAudioPlayer(audioSource);
+    const { theme } = useTheme();
 
     const [showBreathingAnimation, setShowBreathingAnimation] = useState(false);
     const [showMusicPlayer, setShowMusicPlayer] = useState(false);
     const [achievements, setAchievements] = useState<string[]>([]);
 
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
-    const pulseAnimation = useRef(new Animated.Value(1)).current;
+    const pulseAnimation = useSharedValue(1);
     const progressAnimation = useRef(new Animated.Value(0)).current;
     const containerAnimation = useRef(new Animated.Value(0)).current;
     const achievementAnimation = useSharedValue(0);
@@ -89,9 +91,9 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         if (newAchievements.length > achievements.length) {
             setAchievements(newAchievements);
             // Animate achievement
-            achievementAnimation.value = 1;
+            achievementAnimation.value = withTiming(1, { duration: 500 });
             setTimeout(() => {
-                achievementAnimation.value = 0;
+                achievementAnimation.value = withTiming(0, { duration: 500 });
             }, 3000);
         }
     }, [flowMetrics]);
@@ -166,37 +168,14 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     // Pulse animation when running
     useEffect(() => {
         if (timer.isRunning && !timer.isPaused) {
-            const pulse = () => {
-                Animated.sequence([
-                    Animated.timing(pulseAnimation, {
-                        toValue: 1.05,
-                        duration: 1000,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(pulseAnimation, {
-                        toValue: 1,
-                        duration: 1000,
-                        useNativeDriver: true,
-                    }),
-                ]).start(() => {
-                    if (timer.isRunning && !timer.isPaused) {
-                        pulse();
-                    }
-                });
-            };
-            pulse();
+            pulseAnimation.value = withTiming(1.05, { duration: 1000 });
+            setTimeout(() => {
+                pulseAnimation.value = withTiming(1, { duration: 1000 });
+            }, 1000);
         } else {
-            Animated.timing(pulseAnimation, {
-                toValue: 1,
-                duration: 300,
-                useNativeDriver: true,
-            }).start();
+            pulseAnimation.value = withTiming(1, { duration: 300 });
         }
     }, [timer.isRunning, timer.isPaused]);
-
-    const formatTime = (minutes: number, seconds: number): string => {
-        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    };
 
     const handleReset = () => {
         resetTimer();
@@ -220,13 +199,9 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     });
 
     return (
-        <SafeAreaView className="flex-1 bg-bg-100 dark:bg-dark-bg-100">
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-            <ScrollView style={{
-              flex:1,
-          
-            }}>
-           
+            
             {/* Dynamic Background */}
             <DynamicBackground 
                 isRunning={timer.isRunning}
@@ -237,87 +212,55 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
             <Animated.View
                 style={[
-                    styles.container,
+                    styles.content,
                     {
                         opacity: containerOpacity,
                         transform: [{ translateY: containerTranslateY }],
                     },
                 ]}
             >
-                {/* Header */}
+                {/* Minimal Header - Only Reset Button */}
                 <View style={styles.header}>
-                    <TouchableOpacity 
-                        onPress={() => setShowMusicPlayer(!showMusicPlayer)}
-                        style={styles.headerButton}
-                    >
-                        <Ionicons name="musical-notes" size={24} color="#48BB78" />
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity 
-                        onPress={() => setShowBreathingAnimation(!showBreathingAnimation)}
-                        style={styles.headerButton}
-                    >
-                        <Ionicons name="leaf" size={24} color="#48BB78" />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={handleReset} style={styles.headerButton}>
-                        <Ionicons name="refresh" size={24} color="#48BB78" />
+                    <View style={styles.placeholder} />
+                    <TouchableOpacity onPress={handleReset} style={[styles.headerButton, { backgroundColor: theme.surface }]}>
+                        <Ionicons name="refresh" size={20} color={theme.accent} />
                     </TouchableOpacity>
                 </View>
 
-                {/* Flow Metrics */}
-                <FlowMetrics showDetailed={false} />
-
                 {/* Timer Container */}
                 <View style={styles.timerContainer}>
-                    <Text className="color-text-primary dark:color-dark-text-primary" style={styles.flowLabel}>
+                    <Text style={[styles.flowLabel, { color: theme.text }]}>
                         {timer.isBreak ? 'Break Time' : 'Flow State'}
                     </Text>
 
-                    {/* Session duration info */}
-                    {!timer.isBreak && (
-                        <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.sessionInfo}>
+                    {/* Session duration info - only show when not running for minimal distraction */}
+                    {!timer.isBreak && !timer.isRunning && (
+                        <Text style={[styles.sessionInfo, { color: theme.textSecondary }]}>
                             {getSessionDurationText()}
                         </Text>
                     )}
 
-                    {/* Breathing Animation */}
+                    {/* Breathing Animation - only when running and enabled */}
                     {showBreathingAnimation && timer.isRunning && (
-                        <BreathingAnimation />
+                        <View style={styles.breathingContainer}>
+                            <BreathingAnimation />
+                        </View>
                     )}
 
                     {/* Timer Display */}
-                    <Animated.View
-                        style={[
-                            styles.timerDisplay,
-                            { transform: [{ scale: pulseAnimation }] }
-                        ]}
-                    >
-                        <View style={styles.timerCircle}>
-                            <Animated.View
-                                style={[
-                                    styles.progressRing,
-                                    {
-                                        transform: [{
-                                            rotate: progressAnimation.interpolate({
-                                                inputRange: [0, 1],
-                                                outputRange: ['0deg', '360deg'],
-                                            })
-                                        }]
-                                    }
-                                ]}
-                            />
-                            <Text className="text-text-primary dark:text-text-primary" style={styles.timerText}>
-                                {formatTime(timer.minutes, timer.seconds)}
-                            </Text>
-                        </View>
-                    </Animated.View>
+                    <TimerDisplay
+                        minutes={timer.minutes}
+                        seconds={timer.seconds}
+                        progress={1 - (timer.totalSeconds / timer.initialSeconds)}
+                        isRunning={timer.isRunning}
+                        pulseAnimation={pulseAnimation}
+                    />
 
-                    {/* Flow Intensity Indicator */}
-                    {!timer.isBreak && <FlowIntensityIndicator />}
+                    {/* Flow Intensity Indicator - minimal when running */}
+                    {!timer.isBreak && !timer.isRunning && <FlowIntensityIndicator />}
 
-                    {/* Session Dots */}
-                    {!timer.isBreak && (
+                    {/* Session Dots - only when not running */}
+                    {!timer.isBreak && !timer.isRunning && (
                         <SessionDots
                             currentSession={timer.currentSession}
                             totalSessions={timer.totalSessions}
@@ -330,6 +273,33 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         isPaused={timer.isPaused}
                         onPress={toggleTimer}
                     />
+
+                    {/* Minimal Controls - only when not running */}
+                    {!timer.isRunning && (
+                        <View style={styles.controls}>
+                            <TouchableOpacity 
+                                onPress={() => setShowBreathingAnimation(!showBreathingAnimation)}
+                                style={[styles.controlButton, { backgroundColor: theme.surface }]}
+                            >
+                                <Ionicons 
+                                    name="leaf" 
+                                    size={16} 
+                                    color={showBreathingAnimation ? theme.accent : theme.textSecondary} 
+                                />
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity 
+                                onPress={() => setShowMusicPlayer(!showMusicPlayer)}
+                                style={[styles.controlButton, { backgroundColor: theme.surface }]}
+                            >
+                                <Ionicons 
+                                    name="musical-notes" 
+                                    size={16} 
+                                    color={showMusicPlayer ? theme.accent : theme.textSecondary} 
+                                />
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 </View>
 
                 {/* Focus Music Player */}
@@ -345,13 +315,15 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     animationValue={achievementAnimation}
                 />
             </Animated.View>
-            </ScrollView>
         </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
+    },
+    content: {
         flex: 1,
     },
     header: {
@@ -361,27 +333,22 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingTop: Platform.OS === 'ios' ? 0 : 20,
         paddingBottom: 10,
-      paddingTop:20,
-      marginBottom:20
+        marginBottom: 20,
+    },
+    placeholder: {
+        width: 40,
     },
     headerButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: 'rgba(72, 187, 120, 0.1)',
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-            },
-            android: {
-                elevation: 2,
-            },
-        }),
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
     timerContainer: {
         flex: 1,
@@ -390,10 +357,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 40,
     },
     flowLabel: {
-        fontSize: 28,
+        fontSize: 24,
         fontWeight: '300',
         marginBottom: 20,
-        letterSpacing: 2,
+        letterSpacing: 1,
         textAlign: 'center',
     },
     sessionInfo: {
@@ -402,46 +369,28 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         opacity: 0.7,
     },
-    timerDisplay: {
-        marginBottom: 60,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    timerCircle: {
-        width: 280,
-        height: 280,
-        borderRadius: 140,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.1,
-                shadowRadius: 24,
-            },
-            android: {
-                elevation: 8,
-            },
-        }),
-    },
-    progressRing: {
+    breathingContainer: {
         position: 'absolute',
-        width: 290,
-        height: 290,
-        borderRadius: 145,
-        borderWidth: 3,
-        borderColor: '#48BB78',
-        borderTopColor: 'transparent',
-        borderRightColor: 'transparent',
+        top: '30%',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    timerText: {
-        fontSize: 64,
-        fontWeight: '200',
-        fontFamily: Platform.OS === 'ios' ? 'Helvetica Neue' : 'Roboto',
-        letterSpacing: -2,
+    controls: {
+        flexDirection: 'row',
+        gap: 16,
+        marginTop: 40,
+    },
+    controlButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
 });
 
