@@ -19,7 +19,6 @@ import { useGoalsStore } from '../store/goalsStore';
 import { FlowMetrics } from '../components/FlowMetrics';
 import { GoalsModal } from '../components/GoalsModal';
 import { useTheme } from '../providers/ThemeProvider';
-import cn from "../lib/cn";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -52,15 +51,15 @@ interface StatCardProps {
   onPress?: () => void;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ 
-  title, 
-  value, 
-  subtitle, 
-  icon, 
-  gradient, 
-  trend, 
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  subtitle,
+  icon,
+  gradient,
+  trend,
   delay = 0,
-  onPress 
+  onPress
 }) => {
   const { theme } = useTheme();
   const animatedValue = useRef(new Animated.Value(0)).current;
@@ -104,7 +103,7 @@ const StatCard: React.FC<StatCardProps> = ({
         },
       ]}
     >
-      <TouchableOpacity 
+      <TouchableOpacity
         onPress={onPress}
         style={[styles.cardContent, { backgroundColor: theme.surface }]}
         activeOpacity={onPress ? 0.7 : 1}
@@ -115,10 +114,10 @@ const StatCard: React.FC<StatCardProps> = ({
           </View>
           {trend !== undefined && (
             <View style={[styles.trendContainer, { backgroundColor: trend >= 0 ? '#10B98120' : '#EF444420' }]}>
-              <Icon 
-                name={trend >= 0 ? "trending-up" : "trending-down"} 
-                size={16} 
-                color={trend >= 0 ? '#10B981' : '#EF4444'} 
+              <Icon
+                name={trend >= 0 ? "trending-up" : "trending-down"}
+                size={16}
+                color={trend >= 0 ? '#10B981' : '#EF4444'}
               />
               <Text style={[styles.trendText, { color: trend >= 0 ? '#10B981' : '#EF4444' }]}>
                 {Math.abs(trend)}%
@@ -126,7 +125,7 @@ const StatCard: React.FC<StatCardProps> = ({
             </View>
           )}
         </View>
-        
+
         <Text style={[styles.cardValue, { color: theme.text }]}>
           {value}
         </Text>
@@ -220,10 +219,10 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     isLoading,
     syncWithDatabase,
   } = useStatisticsStore();
-  
+
   const { flowMetrics } = usePomodoroStore();
   const { goals, getActiveGoals, updateGoalsFromStats } = useGoalsStore();
-  
+
   const [showGoalsModal, setShowGoalsModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
@@ -255,7 +254,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
       currentStreak: flowMetrics.currentStreak,
       weeklyConsistency: flows.completed > 0 ? Math.min(85 + (flows.completed * 5), 100) : 0,
     };
-    
+
     updateGoalsFromStats(stats);
   }, [flows, flowMetrics]);
 
@@ -316,7 +315,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     },
     {
       title: 'Focus Time',
-      value: flows.minutes > 60 
+      value: flows.minutes > 60
         ? `${Math.floor(flows.minutes / 60)}h ${flows.minutes % 60}m`
         : `${flows.minutes}m`,
       subtitle: averageSessionLength > 0 ? `Avg: ${averageSessionLength}m per session` : 'No sessions yet',
@@ -327,7 +326,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     {
       title: 'Breaks Taken',
       value: breaks.completed,
-      subtitle: breaks.minutes > 0 
+      subtitle: breaks.minutes > 0
         ? `${Math.floor(breaks.minutes / 60)}h ${breaks.minutes % 60}m total`
         : 'No breaks yet',
       icon: 'coffee',
@@ -337,7 +336,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     {
       title: 'Focus Score',
       value: `${focusEfficiency}%`,
-      subtitle: interruptions > 0 
+      subtitle: interruptions > 0
         ? `${interruptions} interruption${interruptions !== 1 ? 's' : ''} today`
         : 'Perfect focus!',
       icon: interruptions === 0 ? 'psychology' : 'notifications-off',
@@ -364,7 +363,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    
+
     if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins}m ago`;
     const diffHours = Math.floor(diffMins / 60);
@@ -374,8 +373,8 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView 
-        style={styles.content} 
+      <ScrollView
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
@@ -485,15 +484,15 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
                 >
                   <View style={styles.goalHeader}>
                     <View style={[
-                      styles.goalIcon, 
+                      styles.goalIcon,
                       { backgroundColor: getGoalColor(goal.category) + '20' }
                     ]}>
-                      <Icon 
-                        name={goal.category === 'sessions' ? 'timer' : 
+                      <Icon
+                        name={goal.category === 'sessions' ? 'timer' :
                               goal.category === 'focus_time' ? 'schedule' :
-                              goal.category === 'streak' ? 'local-fire-department' : 'calendar-today'} 
-                        size={16} 
-                        color={getGoalColor(goal.category)} 
+                              goal.category === 'streak' ? 'local-fire-department' : 'calendar-today'}
+                        size={16}
+                        color={getGoalColor(goal.category)}
                       />
                     </View>
                     <Text style={[styles.goalTitle, { color: theme.text }]}>
@@ -503,7 +502,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
                       <Icon name="check-circle" size={16} color="#10B981" />
                     )}
                   </View>
-                  
+
                   <View style={styles.goalProgress}>
                     <Text style={[styles.goalProgressText, { color: theme.textSecondary }]}>
                       {goal.current} / {goal.target} {goal.unit}
@@ -579,11 +578,11 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
             </View>
             <View style={styles.flowIntensityBadge}>
               <Text style={[
-                styles.flowIntensityText, 
-                { color: flowMetrics.flowIntensity === 'high' ? '#10B981' : 
+                styles.flowIntensityText,
+                { color: flowMetrics.flowIntensity === 'high' ? '#10B981' :
                          flowMetrics.flowIntensity === 'medium' ? '#F59E0B' : '#EF4444' }
               ]}>
-                {flowMetrics.flowIntensity.toUpperCase()}
+                {flowMetrics.flowIntensity.toUpperCase() }
               </Text>
             </View>
           </Animated.View>
@@ -608,9 +607,9 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
               </Text>
             </View>
           </Animated.View>
-          
+
           <View style={styles.insightsGrid}>
-            <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.8)' }]}>
+            <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
               <Icon name="trending-up" size={20} color="#10B981" />
               <Text style={[styles.insightTitle, { color: theme.text }]}>
                 Best Time
@@ -620,7 +619,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
               </Text>
             </View>
 
-            <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.8)' }]}>
+            <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
               <Icon name="speed" size={20} color="#4ECDC4" />
               <Text style={[styles.insightTitle, { color: theme.text }]}>
                 Streak
@@ -630,7 +629,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
               </Text>
             </View>
 
-            <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.8)' }]}>
+            <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
               <Icon name="emoji-events" size={20} color="#FFD93D" />
               <Text style={[styles.insightTitle, { color: theme.text }]}>
                 This Week
@@ -951,10 +950,10 @@ const styles = StyleSheet.create({
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 8,
+        shadowRadius: 12,
       },
       android: {
-        elevation: 4,
+        elevation: 6,
       },
     }),
   },
