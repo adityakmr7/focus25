@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
     View,
     Text,
@@ -6,11 +6,17 @@ import {
     SafeAreaView,
     ScrollView,
     Alert,
-    Animated,
     Platform,
-    TouchableOpacity,
     Share,
 } from 'react-native';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+    withDelay,
+    interpolate,
+    runOnJS,
+} from 'react-native-reanimated';
 import { SettingItem } from '../components/SettingItem';
 import { SectionHeader } from '../components/SectionHeader';
 import { TimeDurationSelector } from '../components/TimeDurationSelector';
@@ -85,30 +91,28 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
     const [isExporting, setIsExporting] = useState(false);
     const [isCalculatingStorage, setIsCalculatingStorage] = useState(false);
+    const [hasAnimated, setHasAnimated] = useState(false); // Track if animations have run
 
-    const headerAnimation = useRef(new Animated.Value(0)).current;
-    const sectionsAnimation = useRef(new Animated.Value(0)).current;
+    // Reanimated shared values
+    const headerProgress = useSharedValue(0);
+    const sectionsProgress = useSharedValue(0);
 
     useEffect(() => {
-        Animated.stagger(200, [
-            Animated.timing(headerAnimation, {
-                toValue: 1,
-                duration: 800,
-                useNativeDriver: true,
-            }),
-            Animated.timing(sectionsAnimation, {
-                toValue: 1,
-                duration: 800,
-                useNativeDriver: true,
-            }),
-        ]).start();
+        // Only animate on first mount
+        if (!hasAnimated) {
+            headerProgress.value = withTiming(1, { duration: 800 });
+            sectionsProgress.value = withDelay(200, withTiming(1, { duration: 800 }));
+            setHasAnimated(true);
+        }
 
         calculateStorageUsage();
-    }, []);
+    }, []); // Empty dependency array - only run on mount
 
-    // Recalculate storage when data changes
+    // Separate effect for storage recalculation
     useEffect(() => {
-        calculateStorageUsage();
+        if (hasAnimated) { // Only recalculate if initial animation has completed
+            calculateStorageUsage();
+        }
     }, [goals.length, flows, breaks, interruptions, flowMetrics]);
 
     const calculateStorageUsage = async () => {
@@ -158,6 +162,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         }
     };
 
+    // ... (rest of your handler functions remain the same)
     const showAlert = (title: string, message: string): void => {
         Alert.alert(title, message, [{ text: 'OK' }]);
     };
@@ -166,24 +171,22 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         setIsExporting(true);
         try {
             const exportedData = await exportData();
-            
+
             if (Platform.OS === 'web') {
-                // For web, create a download link
                 const blob = new Blob([exportedData], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `flow_focus_backup_${new Date().toISOString().split('T')[0]}.json`;
+                a.download = `focus25_backup_${new Date().toISOString().split('T')[0]}.json`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 showAlert('Export Successful', 'Your data has been downloaded successfully.');
             } else {
-                // For mobile, use Share API
                 await Share.share({
                     message: exportedData,
-                    title: 'Flow Focus Data Export',
+                    title: 'Focus25 Data Export',
                 });
             }
         } catch (error) {
@@ -197,7 +200,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const handleDeleteData = (): void => {
         Alert.alert(
             'Delete All Data',
-            `Are you sure you want to delete all your flow data? This will permanently remove:\n\n• ${goals.length} goals\n• All statistics and flow metrics\n• Custom settings and themes\n\nThis action cannot be undone.`,
+            `Are you sure you want to delete all your focus data? This will permanently remove:\n\n• ${goals.length} goals\n• All statistics and flow metrics\n• Custom settings and themes\n\nThis action cannot be undone.`,
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
@@ -207,7 +210,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         try {
                             await deleteData();
                             showAlert('Data Deleted', 'All your data has been permanently deleted.');
-                            // Recalculate storage after deletion
                             setTimeout(calculateStorageUsage, 500);
                         } catch (error) {
                             showAlert('Delete Failed', 'Failed to delete data. Please try again.');
@@ -221,7 +223,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const handleStorageDetails = (): void => {
         const breakdown = storageInfo.breakdown;
         const total = storageInfo.totalSize;
-        
+
         const formatBytes = (bytes: number): string => {
             if (bytes === 0) return '0 B';
             const k = 1024;
@@ -247,7 +249,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
     const handleRateApp = (): void => {
         rateApp();
-        showAlert('Rate App', 'Thank you for using our app! Redirecting to app store...');
+        showAlert('Rate App', 'Thank you for using Focus25! Redirecting to app store...');
     };
 
     const handleSupport = (): void => {
@@ -282,62 +284,62 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         }
     };
 
-    const headerOpacity = headerAnimation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, 1],
+    // Animated styles
+    const headerAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            opacity: interpolate(headerProgress.value, [0, 1], [0, 1]),
+            transform: [
+                {
+                    translateY: interpolate(headerProgress.value, [0, 1], [-30, 0])
+                }
+            ]
+        };
     });
 
-    const headerTranslateY = headerAnimation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [-30, 0],
+    const sectionsAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            opacity: interpolate(sectionsProgress.value, [0, 1], [0, 1]),
+            transform: [
+                {
+                    translateY: interpolate(sectionsProgress.value, [0, 1], [20, 0])
+                }
+            ]
+        };
     });
 
-    const sectionsOpacity = sectionsAnimation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, 1],
-    });
-
-    const sectionsTranslateY = sectionsAnimation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [20, 0],
-    });
-
-    const AnimatedSection: React.FC<{ 
-        children: React.ReactNode; 
+    // Fixed AnimatedSection component
+    const AnimatedSection: React.FC<{
+        children: React.ReactNode;
         delay?: number;
-    }> = ({ children, delay = 0 }) => {
-        const sectionAnimation = useRef(new Animated.Value(0)).current;
+    }> = React.memo(({ children, delay = 0 }) => {
+        const sectionProgress = useSharedValue(0);
+        const [sectionAnimated, setSectionAnimated] = useState(false);
 
         useEffect(() => {
-            Animated.timing(sectionAnimation, {
-                toValue: 1,
-                duration: 600,
-                delay,
-                useNativeDriver: true,
-            }).start();
-        }, []);
+            // Only animate if parent has animated and this section hasn't animated yet
+            if (hasAnimated && !sectionAnimated) {
+                sectionProgress.value = withDelay(delay, withTiming(1, { duration: 600 }));
+                setSectionAnimated(true);
+            }
+        }, [hasAnimated, sectionAnimated, delay]);
 
-        const opacity = sectionAnimation.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 1],
-        });
-
-        const translateY = sectionAnimation.interpolate({
-            inputRange: [0, 1],
-            outputRange: [20, 0],
+        const sectionAnimatedStyle = useAnimatedStyle(() => {
+            return {
+                opacity: interpolate(sectionProgress.value, [0, 1], [0, 1]),
+                transform: [
+                    {
+                        translateY: interpolate(sectionProgress.value, [0, 1], [20, 0])
+                    }
+                ]
+            };
         });
 
         return (
-            <Animated.View
-                style={{
-                    opacity,
-                    transform: [{ translateY }],
-                }}
-            >
+            <Animated.View style={sectionAnimatedStyle}>
                 {children}
             </Animated.View>
         );
-    };
+    });
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -346,10 +348,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 style={[
                     styles.header,
                     { borderBottomColor: theme.surface },
-                    {
-                        opacity: headerOpacity,
-                        transform: [{ translateY: headerTranslateY }],
-                    },
+                    headerAnimatedStyle,
                 ]}
             >
                 <View style={styles.headerContent}>
@@ -357,20 +356,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         Settings
                     </Text>
                     <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                        Customize your flow experience
+                        Customize your focus experience
                     </Text>
                 </View>
                 <View style={styles.placeholder} />
             </Animated.View>
 
             <Animated.ScrollView
-                style={[
-                    styles.scrollView,
-                    {
-                        opacity: sectionsOpacity,
-                        transform: [{ translateY: sectionsTranslateY }],
-                    },
-                ]}
+                style={[styles.scrollView, sectionsAnimatedStyle]}
                 showsVerticalScrollIndicator={false}
             >
                 <AnimatedSection delay={100}>
@@ -430,7 +423,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <SettingItem
                             title="Push Notifications"
-                            subtitle="Receive flow reminders and updates"
+                            subtitle="Receive focus reminders and updates"
                             icon="notifications-outline"
                             hasSwitch={true}
                             switchValue={notifications}
@@ -460,7 +453,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <SettingItem
                             title="Sound Effects"
-                            subtitle="Play sounds during flow sessions"
+                            subtitle="Play sounds during focus sessions"
                             icon="volume-medium-outline"
                             hasSwitch={true}
                             switchValue={soundEffects}
@@ -565,14 +558,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 </AnimatedSection>
 
                 <View style={styles.footer}>
-                    <Text style={[styles.versionText, { color: theme.textSecondary }]}>Flow Focus v1.2.3</Text>
-                    <Text style={[styles.copyrightText, { color: theme.textSecondary }]}>© 2025 Flow Focus App</Text>
+                    <Text style={[styles.versionText, { color: theme.textSecondary }]}>Focus25 v1.2.3</Text>
+                    <Text style={[styles.copyrightText, { color: theme.textSecondary }]}>© 2025 Focus25 App</Text>
                 </View>
             </Animated.ScrollView>
         </SafeAreaView>
     );
 };
 
+// ... (styles remain the same)
 const styles = StyleSheet.create({
     container: {
         flex: 1,
