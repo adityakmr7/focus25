@@ -18,6 +18,7 @@ import { usePomodoroStore } from '../store/pomodoroStore';
 import { useGoalsStore } from '../store/goalsStore';
 import { FlowMetrics } from '../components/FlowMetrics';
 import { GoalsModal } from '../components/GoalsModal';
+import { useTheme } from '../providers/ThemeProvider';
 import cn from "../lib/cn";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -61,6 +62,7 @@ const StatCard: React.FC<StatCardProps> = ({
   delay = 0,
   onPress 
 }) => {
+  const { theme } = useTheme();
   const animatedValue = useRef(new Animated.Value(0)).current;
   const scaleValue = useRef(new Animated.Value(0.8)).current;
 
@@ -104,8 +106,7 @@ const StatCard: React.FC<StatCardProps> = ({
     >
       <TouchableOpacity 
         onPress={onPress}
-        style={styles.cardContent}
-        className="bg-bg-200 dark:bg-dark-bg-200"
+        style={[styles.cardContent, { backgroundColor: theme.surface }]}
         activeOpacity={onPress ? 0.7 : 1}
       >
         <View style={styles.cardHeader}>
@@ -126,14 +127,14 @@ const StatCard: React.FC<StatCardProps> = ({
           )}
         </View>
         
-        <Text className="text-text-primary dark:text-dark-text-primary" style={styles.cardValue}>
+        <Text style={[styles.cardValue, { color: theme.text }]}>
           {value}
         </Text>
-        <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.cardTitle}>
+        <Text style={[styles.cardTitle, { color: theme.textSecondary }]}>
           {title}
         </Text>
         {subtitle && (
-          <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.cardSubtitle}>
+          <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>
             {subtitle}
           </Text>
         )}
@@ -149,6 +150,7 @@ const ActionButton: React.FC<{
   gradient: string[];
   delay?: number;
 }> = ({ icon, label, onPress, gradient, delay = 0 }) => {
+  const { theme } = useTheme();
   const animatedValue = useRef(new Animated.Value(0)).current;
   const scaleValue = useRef(new Animated.Value(0.9)).current;
 
@@ -190,14 +192,14 @@ const ActionButton: React.FC<{
       ]}
     >
       <TouchableOpacity
-        style={[styles.actionButton, { backgroundColor: gradient[0] + '15' }]}
+        style={[styles.actionButton, { backgroundColor: theme.surface }]}
         onPress={onPress}
         activeOpacity={0.8}
       >
         <View style={[styles.actionIconContainer, { backgroundColor: gradient[0] }]}>
           <Icon name={icon} size={20} color="#FFFFFF" />
         </View>
-        <Text className="text-text-primary dark:text-dark-text-primary" style={styles.actionButtonText}>
+        <Text style={[styles.actionButtonText, { color: theme.text }]}>
           {label}
         </Text>
       </TouchableOpacity>
@@ -206,6 +208,7 @@ const ActionButton: React.FC<{
 };
 
 const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
+  const { theme } = useTheme();
   const {
     selectedPeriod,
     currentDate,
@@ -370,7 +373,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView className="bg-bg-100 dark:bg-dark-bg-100" style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
@@ -379,8 +382,8 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#4ECDC4"
-            colors={['#4ECDC4']}
+            tintColor={theme.accent}
+            colors={[theme.accent]}
           />
         }
       >
@@ -395,22 +398,22 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
           ]}
         >
           <View style={styles.headerContent}>
-            <Text className="text-text-primary dark:text-dark-text-primary" style={styles.headerTitle}>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>
               Statistics
             </Text>
-            <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.headerSubtitle}>
+            <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
               Track your productivity journey
             </Text>
           </View>
           <View style={styles.headerStats}>
-            <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.lastUpdate}>
+            <Text style={[styles.lastUpdate, { color: theme.textSecondary }]}>
               Updated {formatLastUpdate(lastUpdateTime)}
             </Text>
             <View style={styles.todayStats}>
-              <Text className="text-text-primary dark:text-dark-text-primary" style={styles.todayValue}>
+              <Text style={[styles.todayValue, { color: theme.text }]}>
                 {flows.completed}
               </Text>
-              <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.todayLabel}>
+              <Text style={[styles.todayLabel, { color: theme.textSecondary }]}>
                 Today
               </Text>
             </View>
@@ -451,16 +454,16 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
             ]}
           >
             <View style={styles.sectionTitleContainer}>
-              <Icon name="flag" size={24} color="#9F7AEA" />
-              <Text className="text-text-primary dark:text-dark-text-primary" style={styles.sectionTitle}>
+              <Icon name="flag" size={24} color={theme.accent} />
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
                 Active Goals ({activeGoals.length})
               </Text>
             </View>
             <TouchableOpacity
-              style={[styles.viewAllButton, { backgroundColor: '#9F7AEA' + '20' }]}
+              style={[styles.viewAllButton, { backgroundColor: theme.accent + '20' }]}
               onPress={() => setShowGoalsModal(true)}
             >
-              <Text style={[styles.viewAllText, { color: '#9F7AEA' }]}>
+              <Text style={[styles.viewAllText, { color: theme.accent }]}>
                 {activeGoals.length > 3 ? `View All ${activeGoals.length}` : 'Manage'}
               </Text>
             </TouchableOpacity>
@@ -473,7 +476,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
                   key={goal.id}
                   style={[
                     styles.goalCard,
-                    { backgroundColor: 'rgba(255, 255, 255, 0.8)' },
+                    { backgroundColor: theme.surface },
                     {
                       opacity: headerOpacity,
                       transform: [{ translateY: headerTranslateY }],
@@ -493,7 +496,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
                         color={getGoalColor(goal.category)} 
                       />
                     </View>
-                    <Text className="text-text-primary dark:text-dark-text-primary" style={styles.goalTitle}>
+                    <Text style={[styles.goalTitle, { color: theme.text }]}>
                       {goal.title}
                     </Text>
                     {goal.isCompleted && (
@@ -502,7 +505,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
                   </View>
                   
                   <View style={styles.goalProgress}>
-                    <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.goalProgressText}>
+                    <Text style={[styles.goalProgressText, { color: theme.textSecondary }]}>
                       {goal.current} / {goal.target} {goal.unit}
                     </Text>
                     <View style={[styles.goalProgressBar, { backgroundColor: '#E5E7EB' }]}>
@@ -516,7 +519,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
                         ]}
                       />
                     </View>
-                    <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.goalPercentage}>
+                    <Text style={[styles.goalPercentage, { color: theme.textSecondary }]}>
                       {Math.round(getGoalProgress(goal))}% complete
                     </Text>
                   </View>
@@ -525,14 +528,14 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
             </View>
           ) : (
             <TouchableOpacity
-              style={[styles.emptyGoalsCard, { backgroundColor: 'rgba(255, 255, 255, 0.8)' }]}
+              style={[styles.emptyGoalsCard, { backgroundColor: theme.surface }]}
               onPress={() => setShowGoalsModal(true)}
             >
-              <Icon name="flag-outline" size={32} color="#9F7AEA" />
-              <Text className="text-text-primary dark:text-dark-text-primary" style={styles.emptyGoalsTitle}>
+              <Icon name="flag-outline" size={32} color={theme.accent} />
+              <Text style={[styles.emptyGoalsTitle, { color: theme.text }]}>
                 Set Your First Goal
               </Text>
-              <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.emptyGoalsSubtitle}>
+              <Text style={[styles.emptyGoalsSubtitle, { color: theme.textSecondary }]}>
                 Track your progress and stay motivated
               </Text>
             </TouchableOpacity>
@@ -570,7 +573,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
           >
             <View style={styles.sectionTitleContainer}>
               <Icon name="psychology" size={24} color="#4ECDC4" />
-              <Text className="text-text-primary dark:text-dark-text-primary" style={styles.sectionTitle}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
                 Flow State Analysis
               </Text>
             </View>
@@ -600,7 +603,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
           >
             <View style={styles.sectionTitleContainer}>
               <Icon name="lightbulb" size={24} color="#FFD93D" />
-              <Text className="text-text-primary dark:text-dark-text-primary" style={styles.sectionTitle}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
                 Quick Insights
               </Text>
             </View>
@@ -609,30 +612,30 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
           <View style={styles.insightsGrid}>
             <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.8)' }]}>
               <Icon name="trending-up" size={20} color="#10B981" />
-              <Text className="text-text-primary dark:text-dark-text-primary" style={styles.insightTitle}>
+              <Text style={[styles.insightTitle, { color: theme.text }]}>
                 Best Time
               </Text>
-              <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.insightValue}>
+              <Text style={[styles.insightValue, { color: theme.textSecondary }]}>
                 {flows.completed > 0 ? '2:00 PM' : 'Not enough data'}
               </Text>
             </View>
 
             <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.8)' }]}>
               <Icon name="speed" size={20} color="#4ECDC4" />
-              <Text className="text-text-primary dark:text-dark-text-primary" style={styles.insightTitle}>
+              <Text style={[styles.insightTitle, { color: theme.text }]}>
                 Streak
               </Text>
-              <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.insightValue}>
+              <Text style={[styles.insightValue, { color: theme.textSecondary }]}>
                 {flowMetrics.currentStreak} days
               </Text>
             </View>
 
             <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.8)' }]}>
               <Icon name="emoji-events" size={20} color="#FFD93D" />
-              <Text className="text-text-primary dark:text-dark-text-primary" style={styles.insightTitle}>
+              <Text style={[styles.insightTitle, { color: theme.text }]}>
                 This Week
               </Text>
-              <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.insightValue}>
+              <Text style={[styles.insightValue, { color: theme.textSecondary }]}>
                 {flows.completed * 7} sessions
               </Text>
             </View>

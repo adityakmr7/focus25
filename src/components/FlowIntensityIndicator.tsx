@@ -10,9 +10,11 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { usePomodoroStore } from '../store/pomodoroStore';
+import { useTheme } from '../providers/ThemeProvider';
 
 export const FlowIntensityIndicator: React.FC = () => {
   const { flowMetrics } = usePomodoroStore();
+  const { theme } = useTheme();
 
   const pulse = useSharedValue(1);
   const glow = useSharedValue(0);
@@ -43,10 +45,10 @@ export const FlowIntensityIndicator: React.FC = () => {
   }, [flowMetrics.flowIntensity]);
 
   const colors = {
-    high:   { primary: '#10B981', secondary: '#34D399', glow: '#10B981' },
-    medium: { primary: '#F59E0B', secondary: '#FBBF24', glow: '#F59E0B' },
-    low:    { primary: '#EF4444', secondary: '#F87171', glow: '#EF4444' },
-  }[flowMetrics.flowIntensity] || { primary: '#6B7280', secondary: '#9CA3AF', glow: '#6B7280' };
+    high:   { primary: theme.success, secondary: theme.success + '80', glow: theme.success },
+    medium: { primary: theme.warning, secondary: theme.warning + '80', glow: theme.warning },
+    low:    { primary: theme.error, secondary: theme.error + '80', glow: theme.error },
+  }[flowMetrics.flowIntensity] || { primary: theme.textSecondary, secondary: theme.textSecondary + '80', glow: theme.textSecondary };
 
   const glowStyle = useAnimatedStyle(() => ({
     opacity: interpolate(glow.value, [0, 1], [0, 0.3]),

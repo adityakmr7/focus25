@@ -67,10 +67,10 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
         id: 'completion',
         title: 'Session Completion',
         value: `${Math.round(completionRate)}%`,
-        change: 12, // Mock change - would be calculated from historical data
+        change: 12,
         trend: 'up',
         description: 'Sessions completed vs started',
-        color: '#10B981',
+        color: theme.success,
         icon: 'checkmark-circle',
       },
       {
@@ -80,7 +80,7 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
         change: 8,
         trend: 'up',
         description: 'Average session duration',
-        color: '#3B82F6',
+        color: theme.primary,
         icon: 'time',
       },
       {
@@ -90,7 +90,7 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
         change: -3,
         trend: 'down',
         description: 'Based on interruption frequency',
-        color: '#8B5CF6',
+        color: theme.accent,
         icon: 'trending-up',
       },
       {
@@ -100,7 +100,7 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
         change: 15,
         trend: 'up',
         description: 'Goals completed this period',
-        color: '#F59E0B',
+        color: theme.warning,
         icon: 'flag',
       },
       {
@@ -110,7 +110,7 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
         change: 2,
         trend: 'up',
         description: 'Consecutive days of focus',
-        color: '#EF4444',
+        color: theme.error,
         icon: 'flame',
       },
       {
@@ -120,12 +120,12 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
         change: 0,
         trend: 'stable',
         description: 'Current flow state level',
-        color: flowMetrics.flowIntensity === 'high' ? '#10B981' : 
-               flowMetrics.flowIntensity === 'medium' ? '#F59E0B' : '#EF4444',
+        color: flowMetrics.flowIntensity === 'high' ? theme.success : 
+               flowMetrics.flowIntensity === 'medium' ? theme.warning : theme.error,
         icon: 'pulse',
       },
     ];
-  }, [flows, breaks, interruptions, goals, flowMetrics]);
+  }, [flows, breaks, interruptions, goals, flowMetrics, theme]);
 
   // Generate chart data
   const productivityChartData = useMemo(() => {
@@ -159,44 +159,44 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
       datasets: [
         {
           data: focusData,
-          color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
+          color: (opacity = 1) => `rgba(${hexToRgb(theme.success)}, ${opacity})`,
           strokeWidth: 3,
         },
         {
           data: breakData,
-          color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
+          color: (opacity = 1) => `rgba(${hexToRgb(theme.primary)}, ${opacity})`,
           strokeWidth: 3,
         },
       ],
       legend: ['Focus Time', 'Break Time'],
     };
-  }, [timeRange]);
+  }, [timeRange, theme]);
 
   const focusDistributionData = useMemo(() => {
     return [
       {
         name: 'Deep Focus',
         population: 45,
-        color: '#10B981',
+        color: theme.success,
         legendFontColor: theme.text,
         legendFontSize: 12,
       },
       {
         name: 'Medium Focus',
         population: 35,
-        color: '#F59E0B',
+        color: theme.warning,
         legendFontColor: theme.text,
         legendFontSize: 12,
       },
       {
         name: 'Light Focus',
         population: 20,
-        color: '#EF4444',
+        color: theme.error,
         legendFontColor: theme.text,
         legendFontSize: 12,
       },
     ];
-  }, [theme.text]);
+  }, [theme]);
 
   const goalProgressData = useMemo(() => {
     const completedGoals = goals.filter(g => g.isCompleted).length;
@@ -207,19 +207,19 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
       datasets: [{
         data: [completedGoals, activeGoals],
         colors: [
-          (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
-          (opacity = 1) => `rgba(245, 158, 11, ${opacity})`,
+          (opacity = 1) => `rgba(${hexToRgb(theme.success)}, ${opacity})`,
+          (opacity = 1) => `rgba(${hexToRgb(theme.warning)}, ${opacity})`,
         ],
       }],
     };
-  }, [goals]);
+  }, [goals, theme]);
 
   const chartConfig = {
     backgroundColor: theme.surface,
     backgroundGradientFrom: theme.surface,
     backgroundGradientTo: theme.surface,
     decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
+    color: (opacity = 1) => `rgba(${hexToRgb(theme.primary)}, ${opacity})`,
     labelColor: (opacity = 1) => theme.text,
     style: {
       borderRadius: 16,
@@ -246,7 +246,7 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
   }));
 
   const renderInsightCard = (insight: AnalyticsInsight) => (
-    <View key={insight.id} style={[styles.insightCard, { backgroundColor: theme.background }]}>
+    <View key={insight.id} style={[styles.insightCard, { backgroundColor: theme.surface }]}>
       <View style={styles.insightHeader}>
         <View style={[styles.insightIcon, { backgroundColor: insight.color + '20' }]}>
           <Ionicons name={insight.icon as any} size={20} color={insight.color} />
@@ -255,11 +255,11 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
           <Ionicons
             name={insight.trend === 'up' ? 'trending-up' : insight.trend === 'down' ? 'trending-down' : 'remove'}
             size={16}
-            color={insight.trend === 'up' ? '#10B981' : insight.trend === 'down' ? '#EF4444' : '#6B7280'}
+            color={insight.trend === 'up' ? theme.success : insight.trend === 'down' ? theme.error : theme.textSecondary}
           />
           <Text style={[
             styles.changeText,
-            { color: insight.trend === 'up' ? '#10B981' : insight.trend === 'down' ? '#EF4444' : '#6B7280' }
+            { color: insight.trend === 'up' ? theme.success : insight.trend === 'down' ? theme.error : theme.textSecondary }
           ]}>
             {insight.change > 0 ? '+' : ''}{insight.change}%
           </Text>
@@ -278,6 +278,12 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
     </View>
   );
 
+  // Helper function to convert hex to RGB
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 0, 0';
+  };
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Time Range Selector */}
@@ -287,7 +293,7 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
             key={range}
             style={[
               styles.timeRangeButton,
-              { backgroundColor: theme.background },
+              { backgroundColor: theme.surface },
               timeRange === range && { backgroundColor: theme.accent + '20' }
             ]}
             onPress={() => onTimeRangeChange(range)}
@@ -319,7 +325,7 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
             key={chart}
             style={[
               styles.chartSelectorButton,
-              { backgroundColor: theme.background },
+              { backgroundColor: theme.surface },
               selectedChart === chart && { backgroundColor: theme.accent + '20' }
             ]}
             onPress={() => setSelectedChart(chart)}
@@ -402,7 +408,7 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
           Detailed Metrics
         </Text>
         
-        <View style={[styles.metricCard, { backgroundColor: theme.background }]}>
+        <View style={[styles.metricCard, { backgroundColor: theme.surface }]}>
           <View style={styles.metricRow}>
             <Text style={[styles.metricLabel, { color: theme.textSecondary }]}>
               Total Focus Sessions
@@ -443,7 +449,7 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
             <Text style={[styles.metricLabel, { color: theme.textSecondary }]}>
               Interruptions Today
             </Text>
-            <Text style={[styles.metricValue, { color: interruptions > 5 ? '#EF4444' : theme.text }]}>
+            <Text style={[styles.metricValue, { color: interruptions > 5 ? theme.error : theme.success }]}>
               {interruptions}
             </Text>
           </View>

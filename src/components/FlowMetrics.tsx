@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
 import { usePomodoroStore } from '../store/pomodoroStore';
+import { useTheme } from '../providers/ThemeProvider';
 
 interface FlowMetricsProps {
     showDetailed?: boolean;
@@ -8,6 +9,7 @@ interface FlowMetricsProps {
 
 export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }) => {
     const { flowMetrics } = usePomodoroStore();
+    const { theme } = useTheme();
     const animatedValue = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -20,10 +22,10 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }
 
     const getFlowIntensityColor = (intensity: string) => {
         switch (intensity) {
-            case 'high': return '#10B981'; // Green
-            case 'medium': return '#F59E0B'; // Yellow
-            case 'low': return '#EF4444'; // Red
-            default: return '#6B7280'; // Gray
+            case 'high': return theme.success;
+            case 'medium': return theme.warning;
+            case 'low': return theme.error;
+            default: return theme.textSecondary;
         }
     };
 
@@ -38,10 +40,10 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }
 
     const getFlowIntensityGradient = (intensity: string) => {
         switch (intensity) {
-            case 'high': return ['#10B981', '#34D399'];
-            case 'medium': return ['#F59E0B', '#FBBF24'];
-            case 'low': return ['#EF4444', '#F87171'];
-            default: return ['#6B7280', '#9CA3AF'];
+            case 'high': return [theme.success, theme.success + '80'];
+            case 'medium': return [theme.warning, theme.warning + '80'];
+            case 'low': return [theme.error, theme.error + '80'];
+            default: return [theme.textSecondary, theme.textSecondary + '80'];
         }
     };
 
@@ -66,7 +68,7 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }
                     },
                 ]}
             >
-                <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.compactCard}>
+                <View style={[styles.compactCard, { backgroundColor: theme.surface }]}>
                     <View style={styles.flowIndicator}>
                         <View style={[
                             styles.flowIconContainer,
@@ -85,14 +87,16 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }
                             >
                                 {flowMetrics.flowIntensity.toUpperCase()} FLOW
                             </Text>
-                            <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.flowSubtext}>
+                            <Text style={[styles.flowSubtext, { color: theme.textSecondary }]}>
                                 Current state
                             </Text>
                         </View>
                     </View>
                     <View style={styles.streakContainer}>
-                        <Text style={styles.streakNumber}>{flowMetrics.currentStreak}</Text>
-                        <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.streakLabel}>
+                        <Text style={[styles.streakNumber, { color: theme.accent }]}>
+                            {flowMetrics.currentStreak}
+                        </Text>
+                        <Text style={[styles.streakLabel, { color: theme.textSecondary }]}>
                             day streak
                         </Text>
                     </View>
@@ -111,30 +115,30 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }
                 },
             ]}
         >
-            <Text className="text-text-primary dark:text-dark-text-primary" style={styles.title}>
+            <Text style={[styles.title, { color: theme.text }]}>
                 Flow State Metrics
             </Text>
             
             <View style={styles.metricsGrid}>
-                <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.metricCard}>
-                    <Text className="text-text-primary dark:text-dark-text-primary" style={styles.metricValue}>
+                <View style={[styles.metricCard, { backgroundColor: theme.surface }]}>
+                    <Text style={[styles.metricValue, { color: theme.text }]}>
                         {flowMetrics.currentStreak}
                     </Text>
-                    <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.metricLabel}>
+                    <Text style={[styles.metricLabel, { color: theme.textSecondary }]}>
                         Current Streak
                     </Text>
                 </View>
                 
-                <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.metricCard}>
-                    <Text className="text-text-primary dark:text-dark-text-primary" style={styles.metricValue}>
+                <View style={[styles.metricCard, { backgroundColor: theme.surface }]}>
+                    <Text style={[styles.metricValue, { color: theme.text }]}>
                         {flowMetrics.longestStreak}
                     </Text>
-                    <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.metricLabel}>
+                    <Text style={[styles.metricLabel, { color: theme.textSecondary }]}>
                         Best Streak
                     </Text>
                 </View>
                 
-                <View className="bg-bg-200 dark:bg-dark-bg-200" style={[
+                <View style={[
                     styles.metricCard,
                     { backgroundColor: getFlowIntensityColor(flowMetrics.flowIntensity) + '10' }
                 ]}>
@@ -144,56 +148,56 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }
                     ]}>
                         {getFlowIntensityEmoji(flowMetrics.flowIntensity)}
                     </Text>
-                    <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.metricLabel}>
+                    <Text style={[styles.metricLabel, { color: theme.textSecondary }]}>
                         Flow Intensity
                     </Text>
                 </View>
                 
-                <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.metricCard}>
-                    <Text className="text-text-primary dark:text-dark-text-primary" style={styles.metricValue}>
+                <View style={[styles.metricCard, { backgroundColor: theme.surface }]}>
+                    <Text style={[styles.metricValue, { color: theme.text }]}>
                         {Math.round(flowMetrics.averageSessionLength)}m
                     </Text>
-                    <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.metricLabel}>
+                    <Text style={[styles.metricLabel, { color: theme.textSecondary }]}>
                         Avg Session
                     </Text>
                 </View>
             </View>
 
-            <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.detailedStats}>
-                <View style={styles.statRow}>
-                    <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.statLabel}>
+            <View style={[styles.detailedStats, { backgroundColor: theme.surface }]}>
+                <View style={[styles.statRow, { borderBottomColor: theme.border }]}>
+                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
                         Total Focus Time:
                     </Text>
-                    <Text className="text-text-primary dark:text-dark-text-primary" style={styles.statValue}>
+                    <Text style={[styles.statValue, { color: theme.text }]}>
                         {Math.floor(flowMetrics.totalFocusTime / 60)}h {flowMetrics.totalFocusTime % 60}m
                     </Text>
                 </View>
                 
-                <View style={styles.statRow}>
-                    <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.statLabel}>
+                <View style={[styles.statRow, { borderBottomColor: theme.border }]}>
+                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
                         Best Flow Duration:
                     </Text>
-                    <Text className="text-text-primary dark:text-dark-text-primary" style={styles.statValue}>
+                    <Text style={[styles.statValue, { color: theme.text }]}>
                         {Math.round(flowMetrics.bestFlowDuration)}m
                     </Text>
                 </View>
                 
-                <View style={styles.statRow}>
-                    <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.statLabel}>
+                <View style={[styles.statRow, { borderBottomColor: theme.border }]}>
+                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
                         Consecutive Sessions:
                     </Text>
-                    <Text className="text-text-primary dark:text-dark-text-primary" style={styles.statValue}>
+                    <Text style={[styles.statValue, { color: theme.text }]}>
                         {flowMetrics.consecutiveSessions}
                     </Text>
                 </View>
                 
-                <View style={styles.statRow}>
-                    <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.statLabel}>
+                <View style={[styles.statRow, { borderBottomColor: theme.border }]}>
+                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
                         Distractions Today:
                     </Text>
                     <Text style={[
                         styles.statValue, 
-                        { color: flowMetrics.distractionCount > 5 ? '#EF4444' : '#10B981' }
+                        { color: flowMetrics.distractionCount > 5 ? theme.error : theme.success }
                     ]}>
                         {flowMetrics.distractionCount}
                     </Text>
@@ -261,7 +265,6 @@ const styles = StyleSheet.create({
     streakNumber: {
         fontSize: 24,
         fontWeight: '800',
-        color: '#FF6B6B',
     },
     streakLabel: {
         fontSize: 12,
@@ -332,7 +335,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#E2E8F0',
     },
     statLabel: {
         fontSize: 14,

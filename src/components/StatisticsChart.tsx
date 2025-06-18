@@ -9,7 +9,7 @@ import {
     Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import cn from "../lib/cn";
+import { useTheme } from '../providers/ThemeProvider';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -27,6 +27,7 @@ interface StatisticsChartProps {
 }
 
 const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => {
+    const { theme } = useTheme();
     const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('D');
     const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
@@ -124,25 +125,21 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => 
         const periods: PeriodType[] = ['D', 'W', 'M', 'Y'];
 
         return (
-            <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.periodSelector}>
+            <View style={[styles.periodSelector, { backgroundColor: theme.surface }]}>
                 {periods.map((period) => (
                     <TouchableOpacity
                         key={period}
                         style={[
                             styles.periodButton,
-                            selectedPeriod === period && styles.selectedPeriod,
+                            selectedPeriod === period && { backgroundColor: theme.accent + '15' },
                         ]}
                         onPress={() => handlePeriodChange(period)}
                         activeOpacity={0.7}
                     >
                         <Text
-                            className={cn(
-                                "color-text-secondary dark:color-dark-text-secondary",
-                                selectedPeriod === period ? "color-text-primary dark:color-dark-text-primary" : ''
-                            )}
                             style={[
                                 styles.periodText,
-                                selectedPeriod === period && styles.selectedPeriodText,
+                                { color: selectedPeriod === period ? theme.accent : theme.textSecondary }
                             ]}
                         >
                             {period}
@@ -173,10 +170,10 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => 
 
         const getBarColor = () => {
             const intensity = value / maxValue;
-            if (intensity > 0.8) return '#FF6B6B';
-            if (intensity > 0.5) return '#4ECDC4';
-            if (intensity > 0.2) return '#45B7D1';
-            return '#E2E8F0';
+            if (intensity > 0.8) return theme.error;
+            if (intensity > 0.5) return theme.accent;
+            if (intensity > 0.2) return theme.primary;
+            return theme.surface;
         };
 
         return (
@@ -193,7 +190,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => 
                         ]}
                     />
                 </View>
-                <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.barLabel}>
+                <Text style={[styles.barLabel, { color: theme.textSecondary }]}>
                     {label}
                 </Text>
             </View>
@@ -224,20 +221,20 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => 
                 },
             ]}
         >
-            <View className="bg-bg-200 dark:bg-dark-bg-200" style={styles.chartCard}>
+            <View style={[styles.chartCard, { backgroundColor: theme.surface }]}>
                 {/* Total Count and Period Selector */}
                 <View style={styles.topSection}>
                     <View style={styles.totalCountSection}>
                         <View style={styles.totalCountHeader}>
-                            <Text className="color-text-secondary dark:color-dark-text-secondary" style={styles.totalCountLabel}>
+                            <Text style={[styles.totalCountLabel, { color: theme.textSecondary }]}>
                                 Total Flows
                             </Text>
-                            <View style={styles.trendIndicator}>
-                                <Icon name="trending-up" size={16} color="#10B981" />
-                                <Text style={styles.trendText}>+12%</Text>
+                            <View style={[styles.trendIndicator, { backgroundColor: theme.success + '15' }]}>
+                                <Icon name="trending-up" size={16} color={theme.success} />
+                                <Text style={[styles.trendText, { color: theme.success }]}>+12%</Text>
                             </View>
                         </View>
-                        <Text className="text-text-primary dark:text-dark-text-primary" style={styles.totalCountValue}>
+                        <Text style={[styles.totalCountValue, { color: theme.text }]}>
                             {getTotalFlows()}
                         </Text>
                     </View>
@@ -249,20 +246,20 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => 
                 <View style={styles.dateNavigation}>
                     <TouchableOpacity 
                         onPress={() => navigateDate('prev')}
-                        style={styles.dateNavButton}
+                        style={[styles.dateNavButton, { backgroundColor: theme.surface }]}
                         activeOpacity={0.7}
                     >
-                        <Icon name="chevron-left" size={24} color="#666" />
+                        <Icon name="chevron-left" size={24} color={theme.textSecondary} />
                     </TouchableOpacity>
-                    <Text className="text-text-primary dark:text-dark-text-primary" style={styles.dateText}>
+                    <Text style={[styles.dateText, { color: theme.text }]}>
                         {formatDate(currentDate)}
                     </Text>
                     <TouchableOpacity 
                         onPress={() => navigateDate('next')}
-                        style={styles.dateNavButton}
+                        style={[styles.dateNavButton, { backgroundColor: theme.surface }]}
                         activeOpacity={0.7}
                     >
-                        <Icon name="chevron-right" size={24} color="#666" />
+                        <Icon name="chevron-right" size={24} color={theme.textSecondary} />
                     </TouchableOpacity>
                 </View>
 
@@ -282,16 +279,16 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => 
                 </View>
 
                 {/* Chart Insights */}
-                <View style={styles.insightsSection}>
+                <View style={[styles.insightsSection, { borderTopColor: theme.border }]}>
                     <View style={styles.insightItem}>
-                        <Icon name="local-fire-department" size={16} color="#FF6B6B" />
-                        <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.insightText}>
+                        <Icon name="local-fire-department" size={16} color={theme.error} />
+                        <Text style={[styles.insightText, { color: theme.textSecondary }]}>
                             Peak: {Math.max(...currentChartData.data)} flows
                         </Text>
                     </View>
                     <View style={styles.insightItem}>
-                        <Icon name="trending-up" size={16} color="#4ECDC4" />
-                        <Text className="text-text-secondary dark:text-dark-text-secondary" style={styles.insightText}>
+                        <Icon name="trending-up" size={16} color={theme.accent} />
+                        <Text style={[styles.insightText, { color: theme.textSecondary }]}>
                             Avg: {Math.round(getTotalFlows() / currentChartData.data.length)} flows
                         </Text>
                     </View>
@@ -340,7 +337,6 @@ const styles = StyleSheet.create({
     trendIndicator: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#10B98115',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 8,
@@ -349,7 +345,6 @@ const styles = StyleSheet.create({
     trendText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#10B981',
     },
     totalCountValue: {
         fontSize: 48,
@@ -379,15 +374,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRadius: 8,
     },
-    selectedPeriod: {
-        backgroundColor: '#4ECDC415',
-    },
     periodText: {
         fontSize: 14,
         fontWeight: '600',
-    },
-    selectedPeriodText: {
-        color: '#4ECDC4',
     },
     dateNavigation: {
         flexDirection: 'row',
@@ -402,7 +391,6 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F7F7F9',
     },
     dateText: {
         fontSize: 16,
@@ -457,7 +445,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         paddingTop: 16,
         borderTopWidth: 1,
-        borderTopColor: '#E2E8F0',
     },
     insightItem: {
         flexDirection: 'row',

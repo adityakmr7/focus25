@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolateColor } from 'react-native-reanimated';
+import { useTheme } from '../providers/ThemeProvider';
 
 interface DynamicBackgroundProps {
   isRunning: boolean;
@@ -15,6 +16,7 @@ export const DynamicBackground: React.FC<DynamicBackgroundProps> = ({
   flowIntensity,
   progress
 }) => {
+  const { theme } = useTheme();
   const animatedValue = useSharedValue(0);
 
   React.useEffect(() => {
@@ -22,14 +24,25 @@ export const DynamicBackground: React.FC<DynamicBackgroundProps> = ({
   }, [isRunning]);
 
   const animatedStyle = useAnimatedStyle(() => {
+    let fromColor = theme.background;
+    let toColor = theme.surface;
+    if (isBreak) {
+      fromColor = theme.background;
+      toColor = theme.warning + '30';
+    } else if (flowIntensity === 'high') {
+      fromColor = theme.background;
+      toColor = theme.success + '30';
+    } else if (flowIntensity === 'medium') {
+      fromColor = theme.background;
+      toColor = theme.accent + '30';
+    } else if (flowIntensity === 'low') {
+      fromColor = theme.background;
+      toColor = theme.error + '30';
+    }
     const backgroundColor = interpolateColor(
       animatedValue.value,
       [0, 1],
-      isBreak 
-        ? ['#1a202c', '#2d3748'] 
-        : flowIntensity === 'high'
-        ? ['#1a202c', '#2a4365']
-        : ['#1a202c', '#2d3748']
+      [fromColor, toColor]
     );
 
     return {
