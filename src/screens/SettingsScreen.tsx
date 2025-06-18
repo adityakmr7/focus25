@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState, useMemo} from 'react';
 import {
     View,
     Text,
@@ -115,10 +115,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         }
     }, [goals.length, flows, breaks, interruptions, flowMetrics]);
 
-    const calculateStorageUsage = async () => {
+    // Memoize storage calculation
+    const calculateStorageUsage = useCallback(async () => {
         setIsCalculatingStorage(true);
         try {
-            // Calculate approximate storage size for each data type
             const goalsSize = JSON.stringify(goals).length;
             const statisticsSize = JSON.stringify({ flows, breaks, interruptions }).length;
             const settingsSize = JSON.stringify({
@@ -131,7 +131,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 weeklyReports,
                 dataSync
             }).length;
-            const themeSize = 500; // Approximate theme data size
+            const themeSize = 500;
             const flowMetricsSize = JSON.stringify(flowMetrics).length;
 
             const totalSize = goalsSize + statisticsSize + settingsSize + themeSize + flowMetricsSize;
@@ -160,14 +160,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         } finally {
             setIsCalculatingStorage(false);
         }
-    };
+    }, [goals, flows, breaks, interruptions, flowMetrics, timeDuration, breakDuration, soundEffects, notifications, autoBreak, focusReminders, weeklyReports, dataSync]);
 
-    // ... (rest of your handler functions remain the same)
-    const showAlert = (title: string, message: string): void => {
+    // Memoize handlers
+    const showAlert = useCallback((title: string, message: string): void => {
         Alert.alert(title, message, [{ text: 'OK' }]);
-    };
+    }, []);
 
-    const handleExportData = async (): Promise<void> => {
+    const handleExportData = useCallback(async (): Promise<void> => {
         setIsExporting(true);
         try {
             const exportedData = await exportData();
@@ -195,9 +195,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         } finally {
             setIsExporting(false);
         }
-    };
+    }, [exportData, showAlert]);
 
-    const handleDeleteData = (): void => {
+    const handleDeleteData = useCallback((): void => {
         Alert.alert(
             'Delete All Data',
             `Are you sure you want to delete all your focus data? This will permanently remove:\n\n• ${goals.length} goals\n• All statistics and flow metrics\n• Custom settings and themes\n\nThis action cannot be undone.`,
@@ -218,9 +218,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 }
             ]
         );
-    };
+    }, [goals.length, deleteData, showAlert, calculateStorageUsage]);
 
-    const handleStorageDetails = (): void => {
+    const handleStorageDetails = useCallback((): void => {
         const breakdown = storageInfo.breakdown;
         const total = storageInfo.totalSize;
 
@@ -245,46 +245,46 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             `Total: ${storageInfo.formattedSize}`;
 
         Alert.alert('Storage Details', message, [{ text: 'OK' }]);
-    };
+    }, [storageInfo]);
 
-    const handleRateApp = (): void => {
+    const handleRateApp = useCallback((): void => {
         rateApp();
         showAlert('Rate App', 'Thank you for using Focus25! Redirecting to app store...');
-    };
+    }, [rateApp, showAlert]);
 
-    const handleSupport = (): void => {
+    const handleSupport = useCallback((): void => {
         openSupport();
         showAlert('Support', 'Opening support page...');
-    };
+    }, [openSupport, showAlert]);
 
-    const handlePrivacy = (): void => {
+    const handlePrivacy = useCallback((): void => {
         openPrivacy();
         showAlert('Privacy Policy', 'Opening privacy policy...');
-    };
+    }, [openPrivacy, showAlert]);
 
-    const handleTerms = (): void => {
+    const handleTerms = useCallback((): void => {
         openTerms();
         showAlert('Terms of Service', 'Opening terms of service...');
-    };
+    }, [openTerms, showAlert]);
 
-    const handleTheme = (): void => {
+    const handleTheme = useCallback((): void => {
         setMode(isDark ? 'light' : 'dark');
-    };
+    }, [isDark, setMode]);
 
-    const handleFeedback = (): void => {
+    const handleFeedback = useCallback((): void => {
         openFeedback();
         showAlert('Feedback', 'Opening feedback form...');
-    };
+    }, [openFeedback, showAlert]);
 
-    const handleThemeCustomization = (): void => {
+    const handleThemeCustomization = useCallback((): void => {
         if (navigation) {
             navigation.navigate('ThemeCustomization');
         } else {
             showAlert('Navigation Error', 'Theme customization is not available.');
         }
-    };
+    }, [navigation, showAlert]);
 
-    // Animated styles
+    // Memoize animated styles
     const headerAnimatedStyle = useAnimatedStyle(() => {
         return {
             opacity: interpolate(headerProgress.value, [0, 1], [0, 1]),
@@ -307,16 +307,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         };
     });
 
-    // Fixed AnimatedSection component
-    const AnimatedSection: React.FC<{
+    // Memoize AnimatedSection component
+    const AnimatedSection = useMemo(() => React.memo(({ children, delay = 0 }: {
         children: React.ReactNode;
         delay?: number;
-    }> = React.memo(({ children, delay = 0 }) => {
+    }) => {
         const sectionProgress = useSharedValue(0);
         const [sectionAnimated, setSectionAnimated] = useState(false);
 
         useEffect(() => {
-            // Only animate if parent has animated and this section hasn't animated yet
             if (hasAnimated && !sectionAnimated) {
                 sectionProgress.value = withDelay(delay, withTiming(1, { duration: 600 }));
                 setSectionAnimated(true);
@@ -339,7 +338,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 {children}
             </Animated.View>
         );
-    });
+    }), [hasAnimated]);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
