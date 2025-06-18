@@ -46,7 +46,8 @@
     "react-native-vector-icons": "^10.2.0",
     "react-native-wheel-color-picker": "^1.1.0",
     "tailwind-merge": "^3.3.1",
-    "zustand": "^5.0.5"
+    "zustand": "^5.0.5",
+    "expo-file-system": "~18.1.10"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

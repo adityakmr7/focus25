@@ -11,7 +11,6 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAudioPlayer, AudioSource } from 'expo-audio';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -22,6 +21,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTheme } from '../providers/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import useBundledAudio from "../hooks/useCachedAudio";
 
 const { height } = Dimensions.get('window');
 const MUSIC_SETTINGS_KEY = 'music_settings';
@@ -32,7 +32,7 @@ interface MusicTrack {
   duration: string;
   type: 'nature' | 'focus' | 'ambient' | 'binaural';
   description: string;
-  source: AudioSource;
+  source: string;
   color: string;
   isLocal: boolean;
 }
@@ -61,7 +61,7 @@ const musicTracks: MusicTrack[] = [
     duration: '45:00',
     type: 'nature',
     description: 'Gentle rainfall in a peaceful forest',
-    source: require('../../assets/sounds/smooth-completed-notify-starting-alert.mp3'),
+    source: 'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//rain-instrument.mp3',
     color: '#10B981',
     isLocal: true,
   },
@@ -71,7 +71,7 @@ const musicTracks: MusicTrack[] = [
     duration: '60:00',
     type: 'nature',
     description: 'Calming ocean sounds for deep focus',
-    source: require('../../assets/sounds/smooth-completed-notify-starting-alert.mp3'),
+    source:  'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//ocean-instrumental.mp3',
     color: '#3B82F6',
     isLocal: true,
   },
@@ -81,7 +81,7 @@ const musicTracks: MusicTrack[] = [
     duration: '30:00',
     type: 'binaural',
     description: 'Alpha waves for enhanced concentration',
-    source: require('../../assets/sounds/smooth-completed-notify-starting-alert.mp3'),
+    source: 'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//rain-instrument.mp3',
     color: '#8B5CF6',
     isLocal: true,
   },
@@ -91,7 +91,7 @@ const musicTracks: MusicTrack[] = [
     duration: '∞',
     type: 'ambient',
     description: 'Pure white noise for blocking distractions',
-    source: require('../../assets/sounds/smooth-completed-notify-starting-alert.mp3'),
+    source: 'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//rain-instrument.mp3',
     color: '#6B7280',
     isLocal: true,
   },
@@ -101,7 +101,7 @@ const musicTracks: MusicTrack[] = [
     duration: '40:00',
     type: 'ambient',
     description: 'Cozy coffee shop atmosphere',
-    source: require('../../assets/sounds/smooth-completed-notify-starting-alert.mp3'),
+    source: 'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//rain-instrument.mp3',
     color: '#F59E0B',
     isLocal: true,
   },
@@ -111,7 +111,7 @@ const musicTracks: MusicTrack[] = [
     duration: '25:00',
     type: 'focus',
     description: 'Specially designed for Pomodoro sessions',
-    source: require('../../assets/sounds/smooth-completed-notify-starting-alert.mp3'),
+    source: 'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//rain-instrument.mp3',
     color: '#EF4444',
     isLocal: true,
   },
@@ -130,21 +130,19 @@ export const EnhancedFocusMusicPlayer: React.FC<EnhancedFocusMusicPlayerProps> =
   const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [settings, setSettings] = useState<MusicSettings>(defaultSettings);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [currentTime, setCurrentTime] = useState<any>(0);
   const [duration, setDuration] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [filteredType, setFilteredType] = useState<string>('all');
 
-  const player = useAudioPlayer(
-    selectedTrack ? musicTracks.find(t => t.id === selectedTrack)?.source : null
+  const {player,status} = useBundledAudio(
+    selectedTrack ? musicTracks.find(t => t.id === selectedTrack)?.source || null : null
   );
-
   const waveAnimation = useSharedValue(0);
   const volumeAnimation = useSharedValue(settings.volume);
 
   useEffect(() => {
     loadSettings();
-    
     if (autoStartTrack) {
       const track = musicTracks.find(t => t.id === autoStartTrack);
       if (track) {
@@ -181,7 +179,6 @@ export const EnhancedFocusMusicPlayer: React.FC<EnhancedFocusMusicPlayerProps> =
       if (settingsString) {
         const savedSettings = JSON.parse(settingsString);
         setSettings({ ...defaultSettings, ...savedSettings });
-        
         if (savedSettings.lastPlayedTrack) {
           setSelectedTrack(savedSettings.lastPlayedTrack);
         }
@@ -201,18 +198,34 @@ export const EnhancedFocusMusicPlayer: React.FC<EnhancedFocusMusicPlayerProps> =
     }
   };
 
+  useEffect(() => {
+    if (!status.isLoaded) return;
+
+    setDuration(status.duration);
+    setCurrentTime(status.currentTime);
+
+    if (status.didJustFinish) {
+      setIsPlaying(false);
+      player.seekTo(0); // resets to start
+    }
+  }, [status]);
+
   const handlePlay = async (trackId: string) => {
     try {
+      if (!status.isLoaded) {
+        Alert.alert('Loading… please wait');
+        return;
+      }
       if (selectedTrack !== trackId) {
         setSelectedTrack(trackId);
         await saveSettings({ lastPlayedTrack: trackId });
       }
 
       if (isPlaying && selectedTrack === trackId) {
-        await player.pause();
+        player.pause();
         setIsPlaying(false);
       } else {
-        await player.play();
+        player.play();
         setIsPlaying(true);
       }
     } catch (error) {
@@ -224,15 +237,14 @@ export const EnhancedFocusMusicPlayer: React.FC<EnhancedFocusMusicPlayerProps> =
   const handleVolumeChange = (delta: number) => {
     const newVolume = Math.max(0, Math.min(1, settings.volume + delta));
     saveSettings({ volume: newVolume });
-    // Apply volume to player
-    // Note: expo-audio volume control would be implemented here
+    player.volume = newVolume;
   };
 
   const toggleFavorite = (trackId: string) => {
     const favorites = settings.favoriteTrackIds.includes(trackId)
       ? settings.favoriteTrackIds.filter(id => id !== trackId)
       : [...settings.favoriteTrackIds, trackId];
-    
+
     saveSettings({ favoriteTrackIds: favorites });
   };
 
@@ -316,6 +328,7 @@ export const EnhancedFocusMusicPlayer: React.FC<EnhancedFocusMusicPlayerProps> =
 
   const selectedTrackData = musicTracks.find(track => track.id === selectedTrack);
 
+  console.log("status",status)
   return (
     <Modal visible={true} animationType="slide" transparent>
       <View style={styles.overlay}>
@@ -341,7 +354,7 @@ export const EnhancedFocusMusicPlayer: React.FC<EnhancedFocusMusicPlayerProps> =
               >
                 <Ionicons name="settings" size={20} color={theme.textSecondary} />
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 onPress={onClose}
                 style={[styles.closeButton, { backgroundColor: theme.background }]}
@@ -477,6 +490,7 @@ export const EnhancedFocusMusicPlayer: React.FC<EnhancedFocusMusicPlayerProps> =
                   <Ionicons name="volume-high" size={20} color={theme.textSecondary} />
                 </TouchableOpacity>
               </View>
+
 
               {/* Volume Indicator */}
               <View style={styles.volumeContainer}>
@@ -655,7 +669,7 @@ const styles = StyleSheet.create({
   },
   nowPlaying: {
     paddingTop: 20,
-    borderTopWidth: 1,
+    // borderTopWidth: 1,
   },
   nowPlayingHeader: {
     alignItems: 'center',
