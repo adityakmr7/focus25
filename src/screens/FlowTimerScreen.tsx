@@ -4,7 +4,6 @@ import {
     Text,
     StyleSheet,
     SafeAreaView,
-    Animated,
     Dimensions,
     TouchableOpacity,
     StatusBar,
@@ -25,7 +24,7 @@ import { BreathingAnimation } from '../components/BreathingAnimation';
 import { GamificationOverlay } from '../components/GamificationOverlay';
 import { EnhancedFocusMusicPlayer } from '../components/EnhancedFocusMusicPlayer';
 import { TimerDisplay } from '../components/TimerDisplay';
-import { useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated,{ useSharedValue, withTiming, useAnimatedStyle, interpolate } from 'react-native-reanimated';
 import { useTheme } from '../providers/ThemeProvider';
 import { backgroundTimerService } from '../services/backgroundTimer';
 import { notificationService } from '../services/notificationService';
@@ -68,29 +67,25 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const [backgroundSessionId, setBackgroundSessionId] = useState<string | null>(null);
     const [isConnectedToBackground, setIsConnectedToBackground] = useState(false);
 
-    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const pulseAnimation = useSharedValue(1);
-    const progressAnimation = useRef(new Animated.Value(0)).current;
-    const containerAnimation = useRef(new Animated.Value(0)).current;
+    const progressAnimation = useSharedValue(0);
+    const containerAnimation = useSharedValue(0);
     const achievementAnimation = useSharedValue(0);
-    const quickActionsAnimation = useRef(new Animated.Value(0)).current;
+    const quickActionsAnimation = useSharedValue(0);
 
     // Initialize container animation
     useEffect(() => {
-        Animated.timing(containerAnimation, {
-            toValue: 1,
+        containerAnimation.value = withTiming(1, {
             duration: 1000,
-            useNativeDriver: true,
-        }).start();
+        });
     }, []);
 
     // Quick actions animation
     useEffect(() => {
-        Animated.timing(quickActionsAnimation, {
-            toValue: showQuickActions ? 1 : 0,
+        quickActionsAnimation.value = withTiming(showQuickActions ? 1 : 0, {
             duration: 300,
-            useNativeDriver: true,
-        }).start();
+        });
     }, [showQuickActions]);
 
     // Check for achievements
@@ -228,11 +223,9 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     // Progress animation
     useEffect(() => {
         const progress = 1 - (timer.totalSeconds / timer.initialSeconds);
-        Animated.timing(progressAnimation, {
-            toValue: progress,
+        progressAnimation.value = withTiming(progress, {
             duration: 300,
-            useNativeDriver: false,
-        }).start();
+        });
     }, [timer.totalSeconds, timer.initialSeconds]);
 
     // Pulse animation when running
@@ -318,24 +311,22 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         return `${Math.floor(timer.initialSeconds / 60)}m session`;
     };
 
-    const containerOpacity = containerAnimation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, 1],
+    const containerAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            opacity: interpolate(containerAnimation.value, [0, 1], [0, 1]),
+            transform: [{
+                translateY: interpolate(containerAnimation.value, [0, 1], [50, 0])
+            }]
+        };
     });
 
-    const containerTranslateY = containerAnimation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [50, 0],
-    });
-
-    const quickActionsOpacity = quickActionsAnimation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, 1],
-    });
-
-    const quickActionsTranslateY = quickActionsAnimation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [20, 0],
+    const quickActionsAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            opacity: interpolate(quickActionsAnimation.value, [0, 1], [0, 1]),
+            transform: [{
+                translateY: interpolate(quickActionsAnimation.value, [0, 1], [20, 0])
+            }]
+        };
     });
 
     return (
@@ -353,10 +344,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             <Animated.View
                 style={[
                     styles.content,
-                    {
-                        opacity: containerOpacity,
-                        transform: [{ translateY: containerTranslateY }],
-                    },
+                    containerAnimatedStyle,
                 ]}
             >
                 {/* Enhanced Header with Background Timer Status */}
@@ -402,10 +390,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     style={[
                         styles.quickActionsPanel,
                         { backgroundColor: theme.surface},
-                        {
-                            opacity: quickActionsOpacity,
-                            transform: [{ translateY: quickActionsTranslateY }],
-                        }
+                        quickActionsAnimatedStyle
                     ]}
                     pointerEvents={showQuickActions ? 'auto' : 'none'}
                 >
