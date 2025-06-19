@@ -447,7 +447,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 {/* Timer Container */}
                 <View style={styles.timerContainer}>
                     <Text style={[styles.flowLabel, { color: theme.text }]}>
-                        {timer.isBreak ? 'Break Time' : 'Flow'}
+                        {timer.isBreak ? 'Break Time' : 'Focus'}
                     </Text>
 
                     {/* Breathing Animation - only when running and enabled */}
