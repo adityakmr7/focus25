@@ -54,7 +54,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         endBreak,
         flowMetrics,
     } = usePomodoroStore();
-    
+
     const { timeDuration, breakDuration } = useSettingsStore();
     const player = useAudioPlayer(audioSource);
     const { theme } = useTheme();
@@ -91,7 +91,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     // Check for achievements
     useEffect(() => {
         const newAchievements = [];
-        
+
         if (flowMetrics.consecutiveSessions >= 5 && flowMetrics.consecutiveSessions % 5 === 0) {
             newAchievements.push('🔥 Flow Master!');
         }
@@ -101,11 +101,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         if (flowMetrics.flowIntensity === 'high' && flowMetrics.consecutiveSessions > 0) {
             newAchievements.push('🚀 Deep Focus!');
         }
-        
+
         if (newAchievements.length > 0 && newAchievements.length !== achievements.length) {
             setAchievements(newAchievements);
             setShowAchievements(true);
-            
+
             // Send achievement notifications
             newAchievements.forEach(achievement => {
                 notificationService.scheduleGoalAchievement(achievement);
@@ -120,15 +120,15 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 if (backgroundTimerService.isSupported()) {
                     const backgroundState = await backgroundTimerService.getTimerState();
                     const remainingTime = await backgroundTimerService.getRemainingTime();
-                    
+
                     if (backgroundState && remainingTime > 0) {
                         setIsConnectedToBackground(true);
                         setBackgroundSessionId(backgroundState.sessionId);
-                        
+
                         // Update local timer state to match background
                         const minutes = Math.floor(remainingTime / 60);
                         const seconds = remainingTime % 60;
-                        
+
                         setTimer({
                             minutes,
                             seconds,
@@ -156,10 +156,10 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             setTimeout(() => {
                 player.pause();
             }, 2000);
-            
+
             // Send completion notification
             await notificationService.scheduleSessionComplete(timer.isBreak);
-            
+
             handleTimerComplete();
         } catch (error) {
             errorHandler.logError(error as Error, {
@@ -188,7 +188,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         setBackgroundSessionId(null);
                         setIsConnectedToBackground(false);
                     }
-                    
+
                     if (timer.isBreak) {
                         endBreak();
                     } else {
@@ -243,10 +243,10 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const handleToggleTimer = async () => {
         try {
             const wasRunning = timer.isRunning;
-            
+
             // Toggle local timer
             toggleTimer();
-            
+
             // Handle background timer
             if (backgroundTimerService.isSupported()) {
                 if (!wasRunning) {
@@ -270,7 +270,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 context: 'Timer Toggle',
                 severity: 'medium',
             });
-            
+
             Alert.alert(
                 'Timer Error',
                 'There was an issue with the timer. Please try again.'
@@ -281,7 +281,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const handleReset = async () => {
         try {
             resetTimer();
-            
+
             // Stop background timer
             if (backgroundTimerService.isSupported()) {
                 await backgroundTimerService.stopTimer();
@@ -334,7 +334,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
            <ScrollView className='flex-1'>
             {/* Dynamic Background */}
-            {/* <DynamicBackground 
+            {/* <DynamicBackground
                 isRunning={timer.isRunning}
                 isBreak={timer.isBreak}
                 flowIntensity={flowMetrics.flowIntensity}
@@ -349,8 +349,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             >
                 {/* Enhanced Header with Background Timer Status */}
                 <View style={styles.header}>
-                    <TouchableOpacity 
-                        onPress={handleShowAchievements} 
+                    <TouchableOpacity
+                        onPress={handleShowAchievements}
                         style={[styles.headerButton, { backgroundColor: theme.surface }]}
                     >
                         <Ionicons name="trophy" size={20} color="#FFD700" />
@@ -372,7 +372,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         )}
                     </View> */}
 
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => setShowQuickActions(!showQuickActions)}
                         style={[styles.menuButton, { backgroundColor: theme.surface }]}
                     >
@@ -386,7 +386,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
                 {/* Quick Actions Panel */}
                 {showQuickActions &&
-                <Animated.View 
+                <Animated.View
                     style={[
                         styles.quickActionsPanel,
                         { backgroundColor: theme.surface},
@@ -394,8 +394,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     ]}
                     pointerEvents={showQuickActions ? 'auto' : 'none'}
                 >
-                    
-                    <TouchableOpacity 
+
+                    <TouchableOpacity
                         style={styles.quickActionItem}
                         onPress={() => {
                             setShowMusicPlayer(true);
@@ -411,7 +411,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.quickActionItem}
                         onPress={() => {
                             setShowBreathingAnimation(!showBreathingAnimation);
@@ -427,21 +427,21 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity 
-                        style={styles.quickActionItem}
-                        onPress={() => {
-                            navigation?.navigate('FlowAnalytics');
-                            setShowQuickActions(false);
-                        }}
-                    >
-                        <View style={[styles.quickActionIcon, { backgroundColor: '#9F7AEA' + '20' }]}>
-                            <Ionicons name="analytics" size={20} color="#9F7AEA" />
-                        </View>
-                        <Text style={[styles.quickActionText, { color: theme.text }]}>Analytics</Text>
-                        <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>
-                            View insights
-                        </Text>
-                    </TouchableOpacity>
+                    {/*<TouchableOpacity */}
+                    {/*    style={styles.quickActionItem}*/}
+                    {/*    onPress={() => {*/}
+                    {/*        navigation?.navigate('FlowAnalytics');*/}
+                    {/*        setShowQuickActions(false);*/}
+                    {/*    }}*/}
+                    {/*>*/}
+                    {/*    <View style={[styles.quickActionIcon, { backgroundColor: '#9F7AEA' + '20' }]}>*/}
+                    {/*        <Ionicons name="analytics" size={20} color="#9F7AEA" />*/}
+                    {/*    </View>*/}
+                    {/*    <Text style={[styles.quickActionText, { color: theme.text }]}>Analytics</Text>*/}
+                    {/*    <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>*/}
+                    {/*        View insights*/}
+                    {/*    </Text>*/}
+                    {/*</TouchableOpacity>*/}
                 </Animated.View>}
 
                 {/* Timer Container */}
@@ -483,7 +483,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
             {/* Enhanced Focus Music Player */}
             {showMusicPlayer && (
-                <EnhancedFocusMusicPlayer 
+                <EnhancedFocusMusicPlayer
                     onClose={() => setShowMusicPlayer(false)}
                     autoStartTrack={timer.isRunning ? 'deep-focus' : undefined}
                 />
@@ -498,7 +498,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 onClose={handleCloseAchievements}
             />
 
-            </ScrollView> 
+            </ScrollView>
         </SafeAreaView>
     );
 };
@@ -589,7 +589,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 80,
         width:Dimensions.get('screen').width * 0.8,
-    
+
     },
     quickActionItem: {
         flexDirection: 'row',

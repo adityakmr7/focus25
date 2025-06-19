@@ -543,13 +543,13 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
 
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
-          <ActionButton
-            icon="analytics"
-            label="Flow Analytics"
-            onPress={() => navigation?.navigate("FlowAnalytics")}
-            gradient={['#f093fb', '#f5576c']}
-            delay={300}
-          />
+          {/*<ActionButton*/}
+          {/*  icon="analytics"*/}
+          {/*  label="Flow Analytics"*/}
+          {/*  onPress={() => navigation?.navigate("FlowAnalytics")}*/}
+          {/*  gradient={['#f093fb', '#f5576c']}*/}
+          {/*  delay={300}*/}
+          {/*/>*/}
           <ActionButton
             icon="flag"
             label="Manage Goals"
