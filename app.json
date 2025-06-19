@@ -4,7 +4,7 @@
     "slug": "focus-25",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon_ios.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -16,6 +16,7 @@
       "**/*"
     ],
     "ios": {
+      "icon": "./assets/icon_ios.png",
       "supportsTablet": true,
       "infoPlist": {
         "UIBackgroundModes": [
@@ -29,6 +30,7 @@
       "bundleIdentifier": "com.focus25.app"
     },
     "android": {
+      "icon": "./assets/icon_android.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#48BB78"
