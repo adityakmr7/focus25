@@ -5,16 +5,11 @@ import {
     StyleSheet,
     TouchableOpacity,
     Dimensions,
+    Animated,
+    Platform,
 } from 'react-native';
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withTiming,
-    interpolate,
-    Extrapolate,
-} from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import cn from "../lib/cn";
+import { useTheme } from '../providers/ThemeProvider';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -32,34 +27,35 @@ interface StatisticsChartProps {
 }
 
 const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => {
+    const { theme } = useTheme();
     const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('D');
     const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
     // Animation values
-    const animationProgress = useSharedValue(0);
-    const chartWidth = useSharedValue(1);
+    const animationProgress = React.useRef(new Animated.Value(0)).current;
+    const chartContainerAnimation = React.useRef(new Animated.Value(0)).current;
 
     // Chart data for different periods
     const chartDataMap: Record<PeriodType, ChartData> = {
         D: {
-            labels: ['4', '8', '12', '16', '20'],
-            data: [0, 2, 4, 3, 1],
-            maxValue: 5,
+            labels: ['6AM', '9AM', '12PM', '3PM', '6PM', '9PM'],
+            data: [2, 5, 8, 6, 4, 1],
+            maxValue: 10,
         },
         W: {
             labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            data: [5, 8, 6, 10, 7, 4, 3],
-            maxValue: 12,
+            data: [12, 18, 15, 22, 19, 8, 5],
+            maxValue: 25,
         },
         M: {
-            labels: ['1', '5', '10', '15', '20', '25', '30'],
-            data: [20, 35, 28, 40, 32, 25, 18],
-            maxValue: 45,
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            data: [45, 52, 38, 61],
+            maxValue: 70,
         },
         Y: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            data: [120, 180, 150, 200, 160, 140, 170, 190, 210, 180, 160, 200],
-            maxValue: 220,
+            labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+            data: [180, 220, 195, 240],
+            maxValue: 260,
         },
     };
 
@@ -67,19 +63,28 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => 
 
     useEffect(() => {
         // Animate chart when period changes
-        animationProgress.value = withTiming(1, { duration: 800 });
-        chartWidth.value = withTiming(getChartWidthMultiplier(), { duration: 600 });
+        Animated.sequence([
+            Animated.timing(animationProgress, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: false,
+            }),
+            Animated.timing(animationProgress, {
+                toValue: 1,
+                duration: 800,
+                useNativeDriver: false,
+            }),
+        ]).start();
     }, [selectedPeriod]);
 
-    const getChartWidthMultiplier = (): number => {
-        switch (selectedPeriod) {
-            case 'D': return 1;
-            case 'W': return 1.2;
-            case 'M': return 0.8;
-            case 'Y': return 0.6;
-            default: return 1;
-        }
-    };
+    useEffect(() => {
+        // Initial container animation
+        Animated.timing(chartContainerAnimation, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+        }).start();
+    }, []);
 
     const formatDate = (date: Date): string => {
         const options: Intl.DateTimeFormatOptions = {
@@ -112,7 +117,6 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => 
     const handlePeriodChange = (period: PeriodType): void => {
         if (period !== selectedPeriod) {
             setSelectedPeriod(period);
-            animationProgress.value = 0;
             onPeriodChange?.(period);
         }
     };
@@ -121,26 +125,21 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => 
         const periods: PeriodType[] = ['D', 'W', 'M', 'Y'];
 
         return (
-            <View className={"bg-bg-200 dark:bg-dark-bg-200"} style={styles.periodSelector}>
+            <View style={[styles.periodSelector, { backgroundColor: theme.surface }]}>
                 {periods.map((period) => (
                     <TouchableOpacity
                         key={period}
-                        className={cn(
-                            "bg-bg-200 dark:bg-dark-bg-200",
-                            selectedPeriod === period ? "bg-dark-bg-200 dark:bg-dark-bg-200" : "bg-bg-100 dark:bg-dark-bg-100",''
-                        )}
                         style={[
                             styles.periodButton,
-                            selectedPeriod === period && styles.selectedPeriod,
+                            selectedPeriod === period && { backgroundColor: theme.accent + '15' },
                         ]}
                         onPress={() => handlePeriodChange(period)}
+                        activeOpacity={0.7}
                     >
                         <Text
-                            className={ cn("color-text-primary dark:color-dark-text-primary",selectedPeriod === period ? "color-primary dark:color-dark-primary":'')}
-
                             style={[
                                 styles.periodText,
-                                selectedPeriod === period && styles.selectedPeriodText,
+                                { color: selectedPeriod === period ? theme.accent : theme.textSecondary }
                             ]}
                         >
                             {period}
@@ -157,34 +156,43 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => 
         index: number;
         label: string;
     }> = ({ value, maxValue, index, label }) => {
-        const barHeight = useAnimatedStyle(() => {
-            const height = interpolate(
-                animationProgress.value,
-                [0, 1],
-                [0, (value / maxValue) * 150],
-                Extrapolate.CLAMP
-            );
-
-            const width = interpolate(
-                chartWidth.value,
-                [0.6, 1.2],
-                [20, 35],
-                Extrapolate.CLAMP
-            );
-
-            return {
-                height: height,
-                width: width,
-                backgroundColor: value > 0 ? '#40E0D0' : '#2a2a2a',
-            };
+        const barHeight = animationProgress.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, (value / maxValue) * 120],
+            extrapolate: 'clamp',
         });
+
+        const barOpacity = animationProgress.interpolate({
+            inputRange: [0, 0.5, 1],
+            outputRange: [0, 0.5, 1],
+            extrapolate: 'clamp',
+        });
+
+        const getBarColor = () => {
+            const intensity = value / maxValue;
+            if (intensity > 0.8) return theme.error;
+            if (intensity > 0.5) return theme.accent;
+            if (intensity > 0.2) return theme.primary;
+            return theme.surface;
+        };
 
         return (
             <View style={styles.barContainer}>
                 <View style={styles.barBackground}>
-                    <Animated.View style={[styles.bar, barHeight]} />
+                    <Animated.View
+                        style={[
+                            styles.bar,
+                            {
+                                height: barHeight,
+                                backgroundColor: getBarColor(),
+                                opacity: barOpacity,
+                            },
+                        ]}
+                    />
                 </View>
-                <Text style={styles.barLabel}>{label}</Text>
+                <Text style={[styles.barLabel, { color: theme.textSecondary }]}>
+                    {label}
+                </Text>
             </View>
         );
     };
@@ -193,58 +201,125 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => 
         return currentChartData.data.reduce((sum, value) => sum + value, 0);
     };
 
+    const containerOpacity = chartContainerAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 1],
+    });
+
+    const containerTranslateY = chartContainerAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [30, 0],
+    });
+
     return (
-        <View className={"bg-bg-200 dark:bg-bg-200 pt-2.5 pl-2.5 pr-2.5 border-r-2"} style={styles.container}>
-            {/* Total Count and Period Selector */}
-            <View style={styles.topSection}>
-                <View style={styles.totalCountSection}>
-                    <View style={styles.totalCountHeader}>
-                        <Text className={"color-text-primary dark:color-dark-text-primary"} style={styles.totalCountLabel}>Total Count</Text>
-                        <Icon name="keyboard-arrow-up" size={20} color="#666" />
+        <Animated.View
+            style={[
+                styles.container,
+                {
+                    opacity: containerOpacity,
+                    transform: [{ translateY: containerTranslateY }],
+                },
+            ]}
+        >
+            <View style={[styles.chartCard, { backgroundColor: theme.surface }]}>
+                {/* Total Count and Period Selector */}
+                <View style={styles.topSection}>
+                    <View style={styles.totalCountSection}>
+                        <View style={styles.totalCountHeader}>
+                            <Text style={[styles.totalCountLabel, { color: theme.textSecondary }]}>
+                                Total Flows
+                            </Text>
+                            <View style={[styles.trendIndicator, { backgroundColor: theme.success + '15' }]}>
+                                <Icon name="trending-up" size={16} color={theme.success} />
+                                <Text style={[styles.trendText, { color: theme.success }]}>+12%</Text>
+                            </View>
+                        </View>
+                        <Text style={[styles.totalCountValue, { color: theme.text }]}>
+                            {getTotalFlows()}
+                        </Text>
                     </View>
-                    <Text className={"text-text-primary dark:text-dark-text-primary"} style={styles.totalCountValue}>
-                        {getTotalFlows()} <Text className={"text-text-primary dark:text-dark-text-primary"}  style={styles.flowsText}>Flows</Text>
+
+                    <PeriodSelector />
+                </View>
+
+                {/* Date Navigation */}
+                <View style={styles.dateNavigation}>
+                    <TouchableOpacity 
+                        onPress={() => navigateDate('prev')}
+                        style={[styles.dateNavButton, { backgroundColor: theme.surface }]}
+                        activeOpacity={0.7}
+                    >
+                        <Icon name="chevron-left" size={24} color={theme.textSecondary} />
+                    </TouchableOpacity>
+                    <Text style={[styles.dateText, { color: theme.text }]}>
+                        {formatDate(currentDate)}
                     </Text>
+                    <TouchableOpacity 
+                        onPress={() => navigateDate('next')}
+                        style={[styles.dateNavButton, { backgroundColor: theme.surface }]}
+                        activeOpacity={0.7}
+                    >
+                        <Icon name="chevron-right" size={24} color={theme.textSecondary} />
+                    </TouchableOpacity>
                 </View>
 
-                <PeriodSelector />
-            </View>
+                {/* Enhanced Animated Chart */}
+                <View style={styles.chartContainer}>
+                    <View style={styles.chartArea}>
+                        {currentChartData.data.map((value, index) => (
+                            <AnimatedBar
+                                key={`${selectedPeriod}-${index}`}
+                                value={value}
+                                maxValue={currentChartData.maxValue}
+                                index={index}
+                                label={currentChartData.labels[index]}
+                            />
+                        ))}
+                    </View>
+                </View>
 
-            {/* Date Navigation */}
-            <View style={styles.dateNavigation}>
-                <TouchableOpacity onPress={() => navigateDate('prev')}>
-                    <Icon name="chevron-left" size={24} color="#fff" />
-                </TouchableOpacity>
-                <Text style={styles.dateText}>{formatDate(currentDate)}</Text>
-                <TouchableOpacity onPress={() => navigateDate('next')}>
-                    <Icon name="chevron-right" size={24} color="#fff" />
-                </TouchableOpacity>
-            </View>
-
-            {/* Animated Chart */}
-            <View style={styles.chartContainer}>
-                <View style={styles.chartArea}>
-                    {currentChartData.data.map((value, index) => (
-                        <AnimatedBar
-                            key={`${selectedPeriod}-${index}`}
-                            value={value}
-                            maxValue={currentChartData.maxValue}
-                            index={index}
-                            label={currentChartData.labels[index]}
-                        />
-                    ))}
+                {/* Chart Insights */}
+                <View style={[styles.insightsSection, { borderTopColor: theme.border }]}>
+                    <View style={styles.insightItem}>
+                        <Icon name="local-fire-department" size={16} color={theme.error} />
+                        <Text style={[styles.insightText, { color: theme.textSecondary }]}>
+                            Peak: {Math.max(...currentChartData.data)} flows
+                        </Text>
+                    </View>
+                    <View style={styles.insightItem}>
+                        <Icon name="trending-up" size={16} color={theme.accent} />
+                        <Text style={[styles.insightText, { color: theme.textSecondary }]}>
+                            Avg: {Math.round(getTotalFlows() / currentChartData.data.length)} flows
+                        </Text>
+                    </View>
                 </View>
             </View>
-        </View>
+        </Animated.View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
+        marginHorizontal: 24,
         marginBottom: 20,
     },
+    chartCard: {
+        borderRadius: 24,
+        padding: 24,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.1,
+                shadowRadius: 24,
+            },
+            android: {
+                elevation: 8,
+            },
+        }),
+    },
     topSection: {
-        marginBottom: 20,
+        marginBottom: 24,
     },
     totalCountSection: {
         marginBottom: 20,
@@ -252,54 +327,77 @@ const styles = StyleSheet.create({
     totalCountHeader: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
         marginBottom: 8,
     },
     totalCountLabel: {
         fontSize: 16,
-        marginRight: 5,
+        fontWeight: '500',
+    },
+    trendIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+        gap: 4,
+    },
+    trendText: {
+        fontSize: 12,
+        fontWeight: '600',
     },
     totalCountValue: {
         fontSize: 48,
-        fontWeight: 'bold',
-    },
-    flowsText: {
-        fontSize: 24,
-        fontWeight: 'normal',
+        fontWeight: '800',
+        letterSpacing: -2,
     },
     periodSelector: {
         flexDirection: 'row',
-        borderRadius: 8,
-        padding: 2,
-        marginBottom: 20,
+        borderRadius: 12,
+        padding: 4,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+            },
+            android: {
+                elevation: 2,
+            },
+        }),
     },
     periodButton: {
         flex: 1,
-        paddingVertical: 8,
+        paddingVertical: 12,
         paddingHorizontal: 16,
         alignItems: 'center',
-        borderRadius: 6,
-    },
-    selectedPeriod: {
+        borderRadius: 8,
     },
     periodText: {
         fontSize: 14,
-        fontWeight: '500',
-    },
-    selectedPeriodText: {
-        // color: '#fff',
+        fontWeight: '600',
     },
     dateNavigation: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 20,
+        marginBottom: 24,
+        paddingHorizontal: 8,
+    },
+    dateNavButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     dateText: {
-        fontSize: 18,
-        fontWeight: '500',
+        fontSize: 16,
+        fontWeight: '600',
     },
     chartContainer: {
-        height: 200,
+        height: 160,
         marginBottom: 20,
     },
     chartArea: {
@@ -307,25 +405,55 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-end',
         justifyContent: 'space-around',
-        paddingHorizontal: 10,
+        paddingHorizontal: 8,
     },
     barContainer: {
         alignItems: 'center',
         flex: 1,
+        maxWidth: 40,
     },
     barBackground: {
-        height: 150,
+        height: 120,
         justifyContent: 'flex-end',
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: 12,
+        width: 24,
     },
     bar: {
-        borderRadius: 2,
-        minHeight: 2,
+        width: 24,
+        borderRadius: 12,
+        minHeight: 4,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 2,
+            },
+        }),
     },
     barLabel: {
-        fontSize: 14,
+        fontSize: 12,
+        fontWeight: '500',
         textAlign: 'center',
+    },
+    insightsSection: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        paddingTop: 16,
+        borderTopWidth: 1,
+    },
+    insightItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    insightText: {
+        fontSize: 12,
+        fontWeight: '500',
     },
 });
 

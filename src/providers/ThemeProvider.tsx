@@ -1,38 +1,33 @@
-import React, { createContext, useContext, useState } from "react";
-import { View } from "react-native";
+import React, { createContext, useContext, useEffect } from "react";
+import { View, useColorScheme } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { colorScheme } from "nativewind";
-import { themes } from "../utils/color-theme";
+import { useThemeStore } from "../store/themeStore";
 
 interface ThemeProviderProps {
     children: React.ReactNode;
 }
 
 type ThemeContextType = {
-    theme: "light" | "dark";
-    toggleTheme: () => void;
+    theme: any;
+    isDark: boolean;
 };
 
 export const ThemeContext = createContext<ThemeContextType>({
-    theme: "light",
-    toggleTheme: () => { },
+    theme: {},
+    isDark: false,
 });
 
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
-    const [currentTheme, setCurrentTheme] = useState<"light" | "dark">("light");
-
-    console.log('ThemeProvider - currentTheme:', currentTheme);
-
-    const toggleTheme = () => {
-        const newTheme = currentTheme === "light" ? "dark" : "light";
-        setCurrentTheme(newTheme);
-        colorScheme.set(newTheme);
-    };
+    const systemColorScheme = useColorScheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
+    const theme = getCurrentTheme();
 
     return (
-        <ThemeContext.Provider value={{ theme: currentTheme, toggleTheme }}>
-            <StatusBar style={currentTheme === "dark" ? "light" : "dark"} />
-            <View style={themes[currentTheme]} className="flex-1">
+        <ThemeContext.Provider value={{ theme, isDark }}>
+            <StatusBar style={isDark ? "light" : "dark"} />
+            <View style={{ flex: 1, backgroundColor: theme.background }}>
                 {children}
             </View>
         </ThemeContext.Provider>
@@ -45,4 +40,4 @@ export const useTheme = () => {
         throw new Error('useTheme must be used within a ThemeProvider');
     }
     return context;
-}; 
+};

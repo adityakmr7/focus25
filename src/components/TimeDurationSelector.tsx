@@ -8,6 +8,7 @@ import {
     FlatList,
 } from 'react-native';
 import { TimeDuration } from '../store/settingsStore';
+import { useTheme } from '../providers/ThemeProvider';
 
 interface TimeDurationSelectorProps {
     value: TimeDuration;
@@ -21,6 +22,7 @@ export const TimeDurationSelector: React.FC<TimeDurationSelectorProps> = ({
     onChange,
 }) => {
     const [modalVisible, setModalVisible] = useState(false);
+    const { theme } = useTheme();
 
     const handleSelect = (duration: TimeDuration) => {
         onChange(duration);
@@ -33,7 +35,7 @@ export const TimeDurationSelector: React.FC<TimeDurationSelectorProps> = ({
                 onPress={() => setModalVisible(true)}
                 style={styles.selector}
             >
-                <Text className={"text-text-primary dark:text-dark-text-primary"}>
+                <Text style={{ color: theme.text }}>
                     {value} minutes
                 </Text>
             </TouchableOpacity>
@@ -45,8 +47,8 @@ export const TimeDurationSelector: React.FC<TimeDurationSelectorProps> = ({
                 onRequestClose={() => setModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View className={"bg-bg-200 dark:bg-dark-bg-200"} style={styles.modalContent}>
-                        <Text className={"text-text-primary dark:text-dark-text-primary"} style={styles.modalTitle}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+                        <Text style={[styles.modalTitle, { color: theme.text }]}>
                             Select Duration
                         </Text>
                         <FlatList
@@ -56,17 +58,17 @@ export const TimeDurationSelector: React.FC<TimeDurationSelectorProps> = ({
                                 <TouchableOpacity
                                     style={[
                                         styles.option,
-                                        value === item && styles.selectedOption
+                                        value === item && { backgroundColor: theme.accent + '20' }
                                     ]}
                                     onPress={() => handleSelect(item)}
                                 >
                                     <Text
-                                        className={`${
-                                            value === item
-                                                ? "text-text-primary dark:text-dark-text-primary"
-                                                : "text-text-secondary dark:text-dark-text-secondary"
-                                        }`}
-                                        style={styles.optionText}
+                                        style={[
+                                            styles.optionText,
+                                            { 
+                                                color: value === item ? theme.accent : theme.text 
+                                            }
+                                        ]}
                                     >
                                         {item} minutes
                                     </Text>
@@ -74,10 +76,10 @@ export const TimeDurationSelector: React.FC<TimeDurationSelectorProps> = ({
                             )}
                         />
                         <TouchableOpacity
-                            style={styles.closeButton}
+                            style={[styles.closeButton, { backgroundColor: theme.background }]}
                             onPress={() => setModalVisible(false)}
                         >
-                            <Text className={"text-text-primary dark:text-dark-text-primary"}>
+                            <Text style={{ color: theme.text }}>
                                 Cancel
                             </Text>
                         </TouchableOpacity>
@@ -115,9 +117,6 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 16,
         borderRadius: 8,
-    },
-    selectedOption: {
-        backgroundColor: 'rgba(76, 175, 80, 0.1)',
     },
     optionText: {
         fontSize: 16,

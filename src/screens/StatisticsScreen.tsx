@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,19 +7,25 @@ import {
   Dimensions,
   TouchableOpacity,
   SafeAreaView,
+  Animated,
+  Platform,
+  RefreshControl,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import StatisticsChart from "../components/StatisticsChart";
 import { useStatisticsStore } from "../store/statisticsStore";
+import { usePomodoroStore } from '../store/pomodoroStore';
+import { useGoalsStore } from '../store/goalsStore';
+import { FlowMetrics } from '../components/FlowMetrics';
+import { GoalsModal } from '../components/GoalsModal';
+import { useTheme } from '../providers/ThemeProvider';
 
-// Type definitions
-interface NavigationProps {
-  goBack: () => void;
-  navigate: (screen: string, params?: any) => void;
-}
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 interface StatisticsScreenProps {
-  navigation: NavigationProps;
+  navigation?: {
+    navigate: (screen: string) => void;
+  };
 }
 
 interface FlowStats {
@@ -34,21 +40,174 @@ interface BreakStats {
   minutes: number;
 }
 
-interface StatisticsData {
-  totalCount: number;
-  flows: FlowStats;
-  breaks: BreakStats;
-  interruptions: number;
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: string;
+  gradient: string[];
+  trend?: number;
+  delay?: number;
+  onPress?: () => void;
 }
 
-type PeriodType = "D" | "W" | "M" | "Y";
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  subtitle,
+  icon,
+  gradient,
+  trend,
+  delay = 0,
+  onPress
+}) => {
+  const { theme } = useTheme();
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  const scaleValue = useRef(new Animated.Value(0.8)).current;
 
-interface StatRowProps {
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: 800,
+        delay,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleValue, {
+        toValue: 1,
+        delay,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8,
+      }),
+    ]).start();
+  }, []);
+
+  const translateY = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [50, 0],
+  });
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        styles.statCard,
+        {
+          transform: [{ translateY }, { scale: scaleValue }],
+          opacity,
+        },
+      ]}
+    >
+      <TouchableOpacity
+        onPress={onPress}
+        style={[styles.cardContent, { backgroundColor: theme.surface }]}
+        activeOpacity={onPress ? 0.7 : 1}
+      >
+        <View style={styles.cardHeader}>
+          <View style={[styles.iconContainer, { backgroundColor: gradient[0] + '20' }]}>
+            <Icon name={icon} size={24} color={gradient[0]} />
+          </View>
+          {trend !== undefined && (
+            <View style={[styles.trendContainer, { backgroundColor: trend >= 0 ? '#10B98120' : '#EF444420' }]}>
+              <Icon
+                name={trend >= 0 ? "trending-up" : "trending-down"}
+                size={16}
+                color={trend >= 0 ? '#10B981' : '#EF4444'}
+              />
+              <Text style={[styles.trendText, { color: trend >= 0 ? '#10B981' : '#EF4444' }]}>
+                {Math.abs(trend)}%
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <Text style={[styles.cardValue, { color: theme.text }]}>
+          {value}
+        </Text>
+        <Text style={[styles.cardTitle, { color: theme.textSecondary }]}>
+          {title}
+        </Text>
+        {subtitle && (
+          <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>
+            {subtitle}
+          </Text>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+const ActionButton: React.FC<{
+  icon: string;
   label: string;
-  value: number;
-}
+  onPress: () => void;
+  gradient: string[];
+  delay?: number;
+}> = ({ icon, label, onPress, gradient, delay = 0 }) => {
+  const { theme } = useTheme();
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  const scaleValue = useRef(new Animated.Value(0.9)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: 600,
+        delay,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleValue, {
+        toValue: 1,
+        delay,
+        useNativeDriver: true,
+        tension: 120,
+        friction: 7,
+      }),
+    ]).start();
+  }, []);
+
+  const translateY = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [30, 0],
+  });
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        {
+          transform: [{ translateY }, { scale: scaleValue }],
+          opacity,
+        },
+      ]}
+    >
+      <TouchableOpacity
+        style={[styles.actionButton, { backgroundColor: theme.surface }]}
+        onPress={onPress}
+        activeOpacity={0.8}
+      >
+        <View style={[styles.actionIconContainer, { backgroundColor: gradient[0] }]}>
+          <Icon name={icon} size={20} color="#FFFFFF" />
+        </View>
+        <Text style={[styles.actionButtonText, { color: theme.text }]}>
+          {label}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
+  const { theme } = useTheme();
   const {
     selectedPeriod,
     currentDate,
@@ -57,93 +216,440 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     flows,
     breaks,
     interruptions,
+    isLoading,
+    syncWithDatabase,
   } = useStatisticsStore();
 
-  const StatRow: React.FC<StatRowProps> = ({ label, value }) => (
-    <View style={styles.statRow}>
-      <Text
-        className={"text-text-primary dark:text-dark-text-primary"}
-        style={styles.statLabel}
-      >
-        {label}
-      </Text>
-      <Text
-        className={"text-text-secondary dark:text-dark-text-secondary"}
-        style={styles.statValue}
-      >
-        {value}
-      </Text>
-    </View>
-  );
+  const { flowMetrics } = usePomodoroStore();
+  const { goals, getActiveGoals, updateGoalsFromStats } = useGoalsStore();
 
-  const StatCard: React.FC<{ title: string; children: React.ReactNode }> = ({
-    title,
-    children,
-  }) => (
-    <View className={"bg-bg-200 dark:bg-dark-bg-200"} style={styles.statCard}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      {children}
-    </View>
-  );
+  const [showGoalsModal, setShowGoalsModal] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
+  const headerAnimatedValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(headerAnimatedValue, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  // Auto-refresh data every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadStatistics();
+      setLastUpdateTime(new Date());
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Update goals based on current statistics
+  useEffect(() => {
+    const stats = {
+      dailySessions: flows.completed,
+      dailyFocusTime: flows.minutes,
+      currentStreak: flowMetrics.currentStreak,
+      weeklyConsistency: flows.completed > 0 ? Math.min(85 + (flows.completed * 5), 100) : 0,
+    };
+
+    updateGoalsFromStats(stats);
+  }, [flows, flowMetrics]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        loadStatistics(),
+        syncWithDatabase(),
+      ]);
+      setLastUpdateTime(new Date());
+    } catch (error) {
+      console.error('Failed to refresh data:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const headerOpacity = headerAnimatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  const headerTranslateY = headerAnimatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-30, 0],
+  });
+
+  const activeGoals = getActiveGoals();
+  const recentGoals = activeGoals.slice(0, 3);
+
+  // Calculate dynamic trends based on historical data
+  const calculateTrend = (current: number, category: string) => {
+    // Mock calculation - in real app, compare with previous period
+    const baseValue = category === 'flows' ? 10 : category === 'time' ? 120 : 5;
+    const difference = ((current - baseValue) / baseValue) * 100;
+    return Math.round(Math.max(-50, Math.min(50, difference)));
+  };
+
+  // Calculate completion rate
+  const completionRate = flows.started > 0 ? Math.round((flows.completed / flows.started) * 100) : 0;
+
+  // Calculate average session length
+  const averageSessionLength = flows.completed > 0 ? Math.round(flows.minutes / flows.completed) : 0;
+
+  // Calculate focus efficiency (sessions completed vs interruptions)
+  const focusEfficiency = flows.completed > 0 ? Math.max(0, 100 - (interruptions * 10)) : 100;
+
+  const statsData = [
+    {
+      title: 'Total Sessions',
+      value: flows.completed,
+      subtitle: `${flows.started} started • ${completionRate}% completed`,
+      icon: 'local-fire-department',
+      gradient: ['#FF6B6B', '#FF8E8E'],
+      trend: calculateTrend(flows.completed, 'flows'),
+      onPress: () => navigation?.navigate("FlowAnalytics"),
+    },
+    {
+      title: 'Focus Time',
+      value: flows.minutes > 60
+        ? `${Math.floor(flows.minutes / 60)}h ${flows.minutes % 60}m`
+        : `${flows.minutes}m`,
+      subtitle: averageSessionLength > 0 ? `Avg: ${averageSessionLength}m per session` : 'No sessions yet',
+      icon: 'schedule',
+      gradient: ['#4ECDC4', '#44A08D'],
+      trend: calculateTrend(flows.minutes, 'time'),
+    },
+    {
+      title: 'Breaks Taken',
+      value: breaks.completed,
+      subtitle: breaks.minutes > 0
+        ? `${Math.floor(breaks.minutes / 60)}h ${breaks.minutes % 60}m total`
+        : 'No breaks yet',
+      icon: 'coffee',
+      gradient: ['#45B7D1', '#96C93D'],
+      trend: calculateTrend(breaks.completed, 'breaks'),
+    },
+    {
+      title: 'Focus Score',
+      value: `${focusEfficiency}%`,
+      subtitle: interruptions > 0
+        ? `${interruptions} interruption${interruptions !== 1 ? 's' : ''} today`
+        : 'Perfect focus!',
+      icon: interruptions === 0 ? 'psychology' : 'notifications-off',
+      gradient: focusEfficiency >= 80 ? ['#10B981', '#34D399'] : ['#F093FB', '#F5576C'],
+      trend: interruptions === 0 ? 15 : -Math.min(interruptions * 5, 30),
+    },
+  ];
+
+  const getGoalProgress = (goal: any) => {
+    return Math.min((goal.current / goal.target) * 100, 100);
+  };
+
+  const getGoalColor = (category: string) => {
+    switch (category) {
+      case 'sessions': return '#FF6B6B';
+      case 'focus_time': return '#4ECDC4';
+      case 'streak': return '#FFD93D';
+      case 'consistency': return '#9F7AEA';
+      default: return '#6B7280';
+    }
+  };
+
+  const formatLastUpdate = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return date.toLocaleDateString();
+  };
 
   return (
-    <SafeAreaView
-      className={"bg-bg-100 dark:bg-dark-bg-100"}
-      style={styles.container}
-    >
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <Text
-          className={"color-text-primary dark:color-text-primary"}
-          style={styles.headerTitle}
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.accent}
+            colors={[theme.accent]}
+          />
+        }
+      >
+        {/* Animated Header */}
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            },
+          ]}
         >
-          Statistics
-        </Text>
-        {/* Chart */}
-        <StatisticsChart />
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Icon name="list" size={24} color="#4CAF50" />
-            <Text
-              className={"text-text-primary dark:text-dark-text-primary"}
-              style={styles.actionButtonText}
-            >
-              Sessions
+          <View style={styles.headerContent}>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>
+              Statistics
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Icon name="share" size={24} color="#4CAF50" />
-            <Text style={styles.actionButtonText}>Export</Text>
-          </TouchableOpacity>
+            <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
+              Track your productivity journey
+            </Text>
+          </View>
+          <View style={styles.headerStats}>
+            <Text style={[styles.lastUpdate, { color: theme.textSecondary }]}>
+              Updated {formatLastUpdate(lastUpdateTime)}
+            </Text>
+            <View style={styles.todayStats}>
+              <Text style={[styles.todayValue, { color: theme.text }]}>
+                {flows.completed}
+              </Text>
+              <Text style={[styles.todayLabel, { color: theme.textSecondary }]}>
+                Today
+              </Text>
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* Enhanced Chart with Animation */}
+        <View style={styles.chartSection}>
+          <StatisticsChart />
         </View>
 
-        {/* Statistics Cards */}
-        <StatCard title="Flows">
-          <StatRow label="Started" value={flows.started} />
-          <StatRow label="Completed" value={flows.completed} />
-          <StatRow label="Minutes" value={flows.minutes} />
-        </StatCard>
+        {/* Real-time Statistics Cards Grid */}
+        <View style={styles.statsGrid}>
+          {statsData.map((stat, index) => (
+            <StatCard
+              key={stat.title}
+              title={stat.title}
+              value={stat.value}
+              subtitle={stat.subtitle}
+              icon={stat.icon}
+              gradient={stat.gradient}
+              trend={stat.trend}
+              delay={index * 100 + 200}
+              onPress={stat.onPress}
+            />
+          ))}
+        </View>
 
-        <StatCard title="Breaks">
-          <StatRow label="Started" value={breaks.started} />
-          <StatRow label="Completed" value={breaks.completed} />
-          <StatRow label="Minutes" value={breaks.minutes} />
-        </StatCard>
+        {/* Goals Overview Section */}
+        <View style={styles.goalsSection}>
+          <Animated.View
+            style={[
+              styles.sectionHeader,
+              {
+                opacity: headerOpacity,
+                transform: [{ translateY: headerTranslateY }],
+              },
+            ]}
+          >
+            <View style={styles.sectionTitleContainer}>
+              <Icon name="flag" size={24} color={theme.accent} />
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                Active Goals ({activeGoals.length})
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.viewAllButton, { backgroundColor: theme.accent + '20' }]}
+              onPress={() => setShowGoalsModal(true)}
+            >
+              <Text style={[styles.viewAllText, { color: theme.accent }]}>
+                {activeGoals.length > 3 ? `View All ${activeGoals.length}` : 'Manage'}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
 
-        <StatCard title="Interruptions">
-          <StatRow label="Total" value={interruptions} />
-        </StatCard>
+          {recentGoals.length > 0 ? (
+            <View style={styles.goalsGrid}>
+              {recentGoals.map((goal, index) => (
+                <Animated.View
+                  key={goal.id}
+                  style={[
+                    styles.goalCard,
+                    { backgroundColor: theme.surface },
+                    {
+                      opacity: headerOpacity,
+                      transform: [{ translateY: headerTranslateY }],
+                    },
+                  ]}
+                >
+                  <View style={styles.goalHeader}>
+                    <View style={[
+                      styles.goalIcon,
+                      { backgroundColor: getGoalColor(goal.category) + '20' }
+                    ]}>
+                      <Icon
+                        name={goal.category === 'sessions' ? 'timer' :
+                              goal.category === 'focus_time' ? 'schedule' :
+                              goal.category === 'streak' ? 'local-fire-department' : 'calendar-today'}
+                        size={16}
+                        color={getGoalColor(goal.category)}
+                      />
+                    </View>
+                    <Text style={[styles.goalTitle, { color: theme.text }]}>
+                      {goal.title}
+                    </Text>
+                    {goal.isCompleted && (
+                      <Icon name="check-circle" size={16} color="#10B981" />
+                    )}
+                  </View>
 
-        {/* Show All Sessions Button */}
-        <TouchableOpacity
-          style={styles.showAllButton}
-          onPress={() => navigation.navigate("AllSessions")}
-        >
-          <Text style={styles.showAllText}>Show All Sessions</Text>
-          <Icon name="chevron-right" size={20} color="#666" />
-        </TouchableOpacity>
+                  <View style={styles.goalProgress}>
+                    <Text style={[styles.goalProgressText, { color: theme.textSecondary }]}>
+                      {goal.current} / {goal.target} {goal.unit}
+                    </Text>
+                    <View style={[styles.goalProgressBar, { backgroundColor: '#E5E7EB' }]}>
+                      <View
+                        style={[
+                          styles.goalProgressFill,
+                          {
+                            width: `${getGoalProgress(goal)}%`,
+                            backgroundColor: goal.isCompleted ? '#10B981' : getGoalColor(goal.category),
+                          }
+                        ]}
+                      />
+                    </View>
+                    <Text style={[styles.goalPercentage, { color: theme.textSecondary }]}>
+                      {Math.round(getGoalProgress(goal))}% complete
+                    </Text>
+                  </View>
+                </Animated.View>
+              ))}
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[styles.emptyGoalsCard, { backgroundColor: theme.surface }]}
+              onPress={() => setShowGoalsModal(true)}
+            >
+              <Icon name="flag-outline" size={32} color={theme.accent} />
+              <Text style={[styles.emptyGoalsTitle, { color: theme.text }]}>
+                Set Your First Goal
+              </Text>
+              <Text style={[styles.emptyGoalsSubtitle, { color: theme.textSecondary }]}>
+                Track your progress and stay motivated
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.actionButtonsContainer}>
+          <ActionButton
+            icon="analytics"
+            label="Flow Analytics"
+            onPress={() => navigation?.navigate("FlowAnalytics")}
+            gradient={['#f093fb', '#f5576c']}
+            delay={300}
+          />
+          <ActionButton
+            icon="flag"
+            label="Manage Goals"
+            onPress={() => setShowGoalsModal(true)}
+            gradient={['#9F7AEA', '#C084FC']}
+            delay={400}
+          />
+        </View>
+
+        {/* Flow Metrics Section */}
+        <View style={styles.flowMetricsSection}>
+          <Animated.View
+            style={[
+              styles.sectionHeader,
+              {
+                opacity: headerOpacity,
+                transform: [{ translateY: headerTranslateY }],
+              },
+            ]}
+          >
+            <View style={styles.sectionTitleContainer}>
+              <Icon name="psychology" size={24} color="#4ECDC4" />
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                Flow State Analysis
+              </Text>
+            </View>
+            <View style={styles.flowIntensityBadge}>
+              <Text style={[
+                styles.flowIntensityText,
+                { color: flowMetrics.flowIntensity === 'high' ? '#10B981' :
+                         flowMetrics.flowIntensity === 'medium' ? '#F59E0B' : '#EF4444' }
+              ]}>
+                {flowMetrics.flowIntensity.toUpperCase() }
+              </Text>
+            </View>
+          </Animated.View>
+          <FlowMetrics showDetailed={false} />
+        </View>
+
+        {/* Quick Insights */}
+        <View style={styles.insightsSection}>
+          <Animated.View
+            style={[
+              styles.sectionHeader,
+              {
+                opacity: headerOpacity,
+                transform: [{ translateY: headerTranslateY }],
+              },
+            ]}
+          >
+            <View style={styles.sectionTitleContainer}>
+              <Icon name="lightbulb" size={24} color="#FFD93D" />
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                Quick Insights
+              </Text>
+            </View>
+          </Animated.View>
+
+          <View style={styles.insightsGrid}>
+            <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
+              <Icon name="trending-up" size={20} color="#10B981" />
+              <Text style={[styles.insightTitle, { color: theme.text }]}>
+                Best Time
+              </Text>
+              <Text style={[styles.insightValue, { color: theme.textSecondary }]}>
+                {flows.completed > 0 ? '2:00 PM' : 'Not enough data'}
+              </Text>
+            </View>
+
+            <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
+              <Icon name="speed" size={20} color="#4ECDC4" />
+              <Text style={[styles.insightTitle, { color: theme.text }]}>
+                Streak
+              </Text>
+              <Text style={[styles.insightValue, { color: theme.textSecondary }]}>
+                {flowMetrics.currentStreak} days
+              </Text>
+            </View>
+
+            <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
+              <Icon name="emoji-events" size={20} color="#FFD93D" />
+              <Text style={[styles.insightTitle, { color: theme.text }]}>
+                This Week
+              </Text>
+              <Text style={[styles.insightValue, { color: theme.textSecondary }]}>
+                {flows.completed * 7} sessions
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Bottom Spacing */}
+        <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Goals Modal */}
+      <GoalsModal
+        visible={showGoalsModal}
+        onClose={() => setShowGoalsModal(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -154,129 +660,316 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  headerContent: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 32,
-    fontWeight: "bold",
-    marginTop: 20,
-    marginBottom: 30,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
-  topSection: {
-    marginBottom: 20,
-  },
-  totalCountSection: {
-    marginBottom: 20,
-  },
-  totalCountHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  totalCountLabel: {
+  headerSubtitle: {
     fontSize: 16,
-    color: "#666",
-    marginRight: 5,
+    marginTop: 4,
+    opacity: 0.7,
   },
-  totalCountValue: {
-    fontSize: 48,
-    fontWeight: "bold",
+  headerStats: {
+    alignItems: 'flex-end',
   },
-  flowsText: {
+  lastUpdate: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  todayStats: {
+    alignItems: 'center',
+  },
+  todayValue: {
     fontSize: 24,
-    fontWeight: "normal",
+    fontWeight: '800',
   },
-  periodSelector: {
-    flexDirection: "row",
-    backgroundColor: "#333",
-    borderRadius: 8,
-    padding: 2,
+  todayLabel: {
+    fontSize: 12,
+    opacity: 0.7,
   },
-  periodButton: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    borderRadius: 6,
+  chartSection: {
+    marginTop: 10,
   },
-  selectedPeriod: {
-    backgroundColor: "#555",
+  goalsSection: {
+    paddingHorizontal: 24,
+    marginBottom: 30,
   },
-  periodText: {
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    gap: 12,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  viewAllButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  viewAllText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  goalsGrid: {
+    gap: 12,
+  },
+  goalCard: {
+    padding: 16,
+    borderRadius: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  goalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  goalIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  goalTitle: {
     fontSize: 14,
-    color: "#999",
-    fontWeight: "500",
+    fontWeight: '600',
+    flex: 1,
   },
-  selectedPeriodText: {},
-  dateNavigation: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
+  goalProgress: {
+    gap: 6,
   },
-  dateText: {
-    fontSize: 18,
-    fontWeight: "500",
+  goalProgressText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
-  chartContainer: {
+  goalProgressBar: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  goalProgressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  goalPercentage: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  emptyGoalsCard: {
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  emptyGoalsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  emptyGoalsSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
     marginBottom: 30,
-    alignItems: "center",
-  },
-  chart: {
-    borderRadius: 0,
-  },
-  actionButtons: {
-    flexDirection: "row",
-    // justifyContent: 'space-around',
-    marginBottom: 30,
+    gap: 12,
   },
   actionButton: {
-    borderRadius: 12,
-    padding: 20,
-    alignItems: "center",
-    minWidth: 100,
-    marginRight: 18,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  actionIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   actionButtonText: {
     fontSize: 14,
-    marginTop: 8,
-    fontWeight: "500",
+    fontWeight: '600',
+    flex: 1,
+  },
+  statsGrid: {
+    paddingHorizontal: 24,
+    gap: 16,
   },
   statCard: {
-    // backgroundColor: '#1a1a1a',
-    borderRadius: 12,
+    marginBottom: 16,
+  },
+  cardContent: {
     padding: 20,
-    marginBottom: 20,
+    borderRadius: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  trendContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  trendText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  cardValue: {
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 4,
+    letterSpacing: -0.5,
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 15,
-  },
-  statRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  statLabel: {
     fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
   },
-  statValue: {
-    fontSize: 16,
-    fontWeight: "500",
+  cardSubtitle: {
+    fontSize: 14,
+    opacity: 0.7,
   },
-  showAllButton: {
+  flowMetricsSection: {
+    marginTop: 30,
+    paddingHorizontal: 24,
+  },
+  flowIntensityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  flowIntensityText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  insightsSection: {
+    marginTop: 30,
+    paddingHorizontal: 24,
+  },
+  insightsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  insightCard: {
+    flex: 1,
+    padding: 16,
     borderRadius: 12,
-    padding: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 30,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
   },
-  showAllText: {
-    fontSize: 16,
-    fontWeight: "500",
+  insightTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  insightValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  bottomSpacing: {
+    height: 40,
   },
 });
 

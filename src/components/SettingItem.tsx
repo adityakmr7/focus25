@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../providers/ThemeProvider';
 
 interface SettingItemProps {
     title: string;
@@ -36,39 +37,42 @@ export const SettingItem: React.FC<SettingItemProps> = ({
     onPress,
     showArrow = false,
     value
-}) => (
-    <TouchableOpacity
-        className={"border-b-bg-100 dark:border-b-dark-bg-100"}
-        style={styles.settingItem}
-        onPress={onPress}
-        disabled={hasSwitch}
-        activeOpacity={hasSwitch ? 1 : 0.7}
-    >
-        <View style={styles.settingLeft}>
-            <View style={styles.iconContainer}>
-                <Ionicons name={icon} size={20} color="#4CAF50" />
+}) => {
+    const { theme } = useTheme();
+    
+    return (
+        <TouchableOpacity
+            style={[styles.settingItem, { borderBottomColor: theme.background }]}
+            onPress={onPress}
+            disabled={hasSwitch}
+            activeOpacity={hasSwitch ? 1 : 0.7}
+        >
+            <View style={styles.settingLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: theme.background }]}>
+                    <Ionicons name={icon} size={20} color={theme.accent} />
+                </View>
+                <View style={styles.settingText}>
+                    <Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text>
+                    {subtitle && <Text style={[styles.settingSubtitle, { color: theme.textSecondary }]}>{subtitle}</Text>}
+                </View>
             </View>
-            <View style={styles.settingText}>
-                <Text className={"color-text-primary dark:color-text-primary"} style={styles.settingTitle}>{title}</Text>
-                {subtitle && <Text className={"color-text-secondary dark:color-text-secondary"} style={styles.settingSubtitle}>{subtitle}</Text>}
+            <View style={styles.settingRight}>
+                {value && <Text style={[styles.settingValue, { color: theme.textSecondary }]}>{value}</Text>}
+                {hasSwitch && switchValue !== undefined && onSwitchToggle && (
+                    <Switch
+                        value={switchValue}
+                        onValueChange={onSwitchToggle}
+                        trackColor={{ false: theme.background, true: theme.accent }}
+                        thumbColor={switchValue ? '#ffffff' : theme.textSecondary}
+                    />
+                )}
+                {showArrow && (
+                    <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+                )}
             </View>
-        </View>
-        <View style={styles.settingRight}>
-            {value && <Text style={styles.settingValue}>{value}</Text>}
-            {hasSwitch && switchValue !== undefined && onSwitchToggle && (
-                <Switch
-                    value={switchValue}
-                    onValueChange={onSwitchToggle}
-                    trackColor={{ false: '#333333', true: '#4CAF50' }}
-                    thumbColor={switchValue ? '#ffffff' : '#888888'}
-                />
-            )}
-            {showArrow && (
-                <Ionicons name="chevron-forward" size={20} color="#666666" />
-            )}
-        </View>
-    </TouchableOpacity>
-);
+        </TouchableOpacity>
+    );
+};
 
 const styles = StyleSheet.create({
     settingItem: {
@@ -88,7 +92,6 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 8,
-        backgroundColor: '#1a1a1a',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -111,6 +114,5 @@ const styles = StyleSheet.create({
     },
     settingValue: {
         fontSize: 16,
-        color: '#666666',
     },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
+import { useTheme } from '../providers/ThemeProvider';
 
 interface SectionHeaderProps {
     title: string;
@@ -9,9 +10,15 @@ interface SectionHeaderProps {
  * A reusable section header component used in settings screens
  * @param title - The section title text
  */
-export const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => (
-    <Text className={"color-text-primary dark:color-dark-text-primary"} style={styles.sectionHeader}>{title}</Text>
-);
+export const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => {
+    const { theme } = useTheme();
+    
+    return (
+        <Text style={[styles.sectionHeader, { color: theme.textSecondary }]}>
+            {title}
+        </Text>
+    );
+};
 
 const styles = StyleSheet.create({
     sectionHeader: {

@@ -4,48 +4,96 @@ import StatisticsScreen from "../screens/StatisticsScreen";
 import {Ionicons} from "@expo/vector-icons";
 import FlowTimerScreen from "../screens/FlowTimerScreen";
 import SettingsScreen from "../screens/SettingsScreen";
+import FlowAnalyticsScreen from "../screens/FlowAnalyticsScreen";
+import ThemeCustomizationScreen from "../screens/ThemeCustomizationScreen";
+import { useTheme } from "../providers/ThemeProvider";
 
-const AppTabNavigation = createBottomTabNavigator({
-    screenOptions:({route}) => ({
-        headerShown:false,
-        tabBarIcon: ({ focused, color, size }) => {
-            let iconName: keyof typeof Ionicons.glyphMap = 'bar-chart-outline';
+const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
-            if(route.name ==='StatisticsScreen')  {
-               iconName = 'bar-chart-outline'
-            }else if(route.name === 'FlowTimerScreen') {
-                iconName = 'timer-outline'
-            }else if(route.name === "SettingsScreen") {
-                iconName = 'person-outline'
-            }
+const AppTabNavigation = () => {
+    const { theme, isDark } = useTheme();
+    
+    return (
+        <Tab.Navigator
+            screenOptions={({route}) => ({
+                headerShown: false,
+                tabBarIcon: ({ focused, color, size }) => {
+                    let iconName: keyof typeof Ionicons.glyphMap = 'bar-chart-outline';
 
-            // You can return any component that you like here!
-            return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: 'tomato',
-        tabBarInactiveTintColor: 'gray',
-        tabBarLabelStyle: {
-            display:'none'
-        }
-    }),
-    initialRouteName:'FlowTimerScreen',
-    screens: {
-        StatisticsScreen: StatisticsScreen,
-        FlowTimerScreen: FlowTimerScreen,
-        SettingsScreen:SettingsScreen,
-    },
-});
+                    if(route.name === 'Statistics')  {
+                       iconName = 'bar-chart-outline'
+                    } else if(route.name === 'FlowTimer') {
+                        iconName = 'timer-outline'
+                    } else if(route.name === "Settings") {
+                        iconName = 'person-outline'
+                    }
 
-const AppStackNavigation = createNativeStackNavigator({
-    screens: {
-        Root: {
-            screen: AppTabNavigation,
-            options:{
-                headerShown:false
-            }
-        },
-    },
-});
+                    return <Ionicons name={iconName} size={size} color={color} />;
+                },
+                tabBarActiveTintColor: theme.accent,
+                tabBarInactiveTintColor: theme.textSecondary,
+                tabBarStyle: {
+                    backgroundColor: theme.surface,
+                    borderTopColor: theme.surface,
+                    borderTopWidth: 1,
+                    paddingBottom: 8,
+                    paddingTop: 8,
+                    height: 80,
+                },
+                tabBarLabelStyle: {
+                    display: 'none'
+                }
+            })}
+            initialRouteName="FlowTimer"
+        >
+            <Tab.Screen name="Statistics" component={StatisticsScreen} />
+            <Tab.Screen name="FlowTimer" component={FlowTimerScreen} />
+            <Tab.Screen name="Settings" component={SettingsScreen} />
+        </Tab.Navigator>
+    );
+};
+
+const AppStackNavigation = () => {
+    const { theme } = useTheme();
+    
+    return (
+        <Stack.Navigator
+            screenOptions={{
+                headerStyle: {
+                    backgroundColor: theme.background,
+                },
+                headerTintColor: theme.text,
+                headerTitleStyle: {
+                    fontWeight: '600',
+                },
+            }}
+        >
+            <Stack.Screen 
+                name="Root" 
+                component={AppTabNavigation}
+                options={{
+                    headerShown: false
+                }}
+            />
+            <Stack.Screen 
+                name="FlowAnalytics" 
+                component={FlowAnalyticsScreen}
+                options={{
+                    title: 'Focus Analytics',
+                    headerShown:false 
+                }}
+            />
+            <Stack.Screen 
+                name="ThemeCustomization" 
+                component={ThemeCustomizationScreen}
+                options={{
+                    title: 'Theme Customization',
+                    headerShown: false
+                }}
+            />
+        </Stack.Navigator>
+    );
+};
 
 export {AppTabNavigation, AppStackNavigation};
-
