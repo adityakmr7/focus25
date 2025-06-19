@@ -39,10 +39,10 @@ const goalTypes: { key: GoalType; label: string }[] = [
 export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
   const { theme } = useTheme();
   const { goals, createGoal, deleteGoal, getActiveGoals, getCompletedGoals, exportGoalsToCSV } = useGoalsStore();
-  
+
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'active' | 'completed'>('active');
-  
+
   // Form state
   const [formData, setFormData] = useState({
     title: '',
@@ -102,7 +102,7 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
   const handleExportData = async () => {
     try {
       const csvData = exportGoalsToCSV();
-      
+
       if (Platform.OS === 'web') {
         // For web, create a download link
         const blob = new Blob([csvData], { type: 'text/csv' });
@@ -138,7 +138,7 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
   const renderGoalCard = (goal: Goal) => {
     const categoryInfo = getCategoryInfo(goal.category);
     const progressPercentage = getProgressPercentage(goal);
-    
+
     return (
       <View key={goal.id} style={[styles.goalCard, { backgroundColor: theme.background }]}>
         <View style={styles.goalHeader}>
@@ -156,7 +156,7 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
               </Text>
             </View>
           </View>
-          
+
           {!goal.isCompleted && (
             <TouchableOpacity
               onPress={() => handleDeleteGoal(goal.id, goal.title)}
@@ -176,7 +176,7 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
               {Math.round(progressPercentage)}%
             </Text>
           </View>
-          
+
           <View style={[styles.progressBar, { backgroundColor: theme.surface }]}>
             <View
               style={[
@@ -188,7 +188,7 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
               ]}
             />
           </View>
-          
+
           {goal.isCompleted && (
             <View style={styles.completedBadge}>
               <Ionicons name="checkmark-circle" size={16} color="#10B981" />
@@ -203,7 +203,7 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
   const renderCreateForm = () => (
     <View style={styles.createForm}>
       <Text style={[styles.formTitle, { color: theme.text }]}>Create New Goal</Text>
-      
+
       <View style={styles.formGroup}>
         <Text style={[styles.formLabel, { color: theme.text }]}>Title</Text>
         <TextInput
@@ -250,7 +250,10 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
         </View>
       </View>
 
-      <View style={styles.formRow}>
+      <View style={[styles.formRow, {
+        flexDirection:'column',
+      }]}>
+
         <View style={[styles.formGroup, { flex: 1 }]}>
           <Text style={[styles.formLabel, { color: theme.text }]}>Type</Text>
           <View style={styles.typeButtons}>
@@ -298,7 +301,7 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
         >
           <Text style={[styles.formButtonText, { color: theme.text }]}>Cancel</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={[styles.formButton, { backgroundColor: theme.accent }]}
           onPress={handleCreateGoal}
@@ -326,15 +329,15 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
                 </Text>
               </View>
             </View>
-            
+
             <View style={styles.headerActions}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={handleExportData}
                 style={[styles.exportButton, { backgroundColor: theme.background }]}
               >
                 <Ionicons name="download-outline" size={20} color={theme.accent} />
               </TouchableOpacity>
-              
+
               <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                 <Ionicons name="close" size={24} color={theme.textSecondary} />
               </TouchableOpacity>
@@ -359,7 +362,7 @@ export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
                     Active ({activeGoals.length})
                   </Text>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity
                   style={[
                     styles.tab,
