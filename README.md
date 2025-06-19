@@ -1,4 +1,4 @@
-# Flow Focus - Advanced Productivity Timer
+# Focus 25 - Advanced Productivity Timer
 
 A production-ready React Native app built with Expo that helps users achieve deep focus through intelligent timer management, flow state tracking, and comprehensive analytics.
 
@@ -262,4 +262,4 @@ For support, email support@flowfocus.app or join our Discord community.
 
 ---
 
-**Flow Focus** - Transform your productivity with intelligent focus tracking and analytics.
+**Focus 25** - Transform your productivity with intelligent focus tracking and analytics.
