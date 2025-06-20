@@ -47,9 +47,12 @@ export class ErrorHandler {
   }
 
   private setupGlobalErrorHandlers(): void {
+    //@ts-ignore
     if (typeof global !== 'undefined' && global.ErrorUtils) {
+      //@ts-ignore
       const originalHandler = global.ErrorUtils.getGlobalHandler();
-      
+
+      // @ts-ignore
       global.ErrorUtils.setGlobalHandler((error: Error, isFatal: boolean) => {
         this.logError(error, {
           context: 'Global Error Handler',
@@ -62,11 +65,11 @@ export class ErrorHandler {
       });
     }
 
-    
+
   }
 
   async logError(
-    error: Error | string, 
+    error: Error | string,
     options: {
       context?: string;
       severity?: 'low' | 'medium' | 'high' | 'critical';
@@ -265,7 +268,7 @@ export const withErrorBoundary = <P extends object>(
           });
         }
 
-        return React.createElement(View, 
+        return React.createElement(View,
           { style: { padding: 20, alignItems: 'center' } },
           React.createElement(Text, null, 'Something went wrong')
         );
