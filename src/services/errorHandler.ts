@@ -2,16 +2,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform, View, Text } from 'react-native';
 import React from 'react';
 
-interface ErrorUtils {
-  getGlobalHandler(): (error: Error, isFatal: boolean) => void;
-  setGlobalHandler(handler: (error: Error, isFatal: boolean) => void): void;
-}
-
-declare global {
-  interface Global {
-    ErrorUtils?: ErrorUtils;
-  }
-}
 
 export interface ErrorLog {
   id: string;

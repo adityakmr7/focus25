@@ -605,7 +605,7 @@ class WebStorageService implements DatabaseService {
     const result = [];
     
     for (const [date, stats] of Object.entries(data.statistics)) {
-      if (date >= startDate && date <= endDate) {
+      if (date >= startDate && date <= endDate && typeof stats === 'object' && stats !== null) {
         result.push({ date, ...stats });
       }
     }

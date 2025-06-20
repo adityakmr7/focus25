@@ -35,6 +35,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -216,10 +218,11 @@ export class NotificationService {
         },
       },
       trigger: {
+        type: 'calendar',
         hour: hours,
         minute: minutes,
         repeats: true,
-      },
+      } as any,
     });
   }
 
@@ -243,7 +246,7 @@ export class NotificationService {
         hour: 9,
         minute: 0,
         repeats: true,
-      },
+      } as any,
     });
   }
 
