@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "938b2033-6996-45ce-8297-481f8df8fb16",
+  "id": "482dca1f-857b-4d7b-a28d-f675ae6fdcc2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "flow_metrics": {

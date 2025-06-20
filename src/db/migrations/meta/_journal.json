@@ -1,12 +1,12 @@
 {
-  "version": "6",
+  "version": "7",
   "dialect": "sqlite",
   "entries": [
     {
       "idx": 0,
       "version": "6",
-      "when": 1704067200000,
-      "tag": "0000_initial_schema",
+      "when": 1750400790520,
+      "tag": "0000_gray_dark_beast",
       "breakpoints": true
     }
   ]
