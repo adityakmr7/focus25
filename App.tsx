@@ -22,7 +22,7 @@ import { DB_NAME, db, expoDB} from "./src/db";
 import migrations from "./src/db/migrations/migrations";
 import {useDrizzleStudio} from "expo-drizzle-studio-plugin";
 import {SQLiteProvider} from "expo-sqlite";
-import flowTimerScreen from "./src/screens/FlowTimerScreen";
+import { seedDatabase, isDatabaseSeeded } from "./src/db/seed";
 
 // Enable screens before any navigation components are rendered
 enableScreens();
@@ -48,6 +48,13 @@ const AppContent = () => {
 
         // Initialize database
         await initializeDatabase();
+
+        // Check if database needs seeding (for development)
+        const isSeeded = await isDatabaseSeeded();
+        if (!isSeeded) {
+          console.log('🌱 Seeding database with dummy data...');
+          await seedDatabase();
+        }
 
         // Initialize all stores in parallel
         await Promise.all([
@@ -90,13 +97,13 @@ const AppContent = () => {
           }
         }
 
-        console.log('App initialized successfully');
+        console.log('✅ App initialized successfully');
         setIsAppReady(true);
 
         // Hide splash screen
         await SplashScreen.hideAsync();
       } catch (error) {
-        console.error('Failed to initialize app:', error);
+        console.error('❌ Failed to initialize app:', error);
         errorHandler.logError(error as Error, {
           context: 'App Initialization',
           severity: 'critical',
@@ -184,30 +191,28 @@ export default function App() {
     }),
   });
 
-
-  useDrizzleStudio(expoDB)
+  // Enable Drizzle Studio for development
+  useDrizzleStudio(expoDB);
 
   const { success, error } = useMigrations(db, migrations);
+  
   useEffect(() => {
     if (success) {
-      console.log('Database migrations successful');
+      console.log('✅ Database migrations successful');
     } else if (error) {
-      console.error('Database migrations failed:', error);
+      console.error('❌ Database migrations failed:', error);
     }
-  }, []);
+  }, [success, error]);
 
   return (
-      <Suspense fallback={<ActivityIndicator  size={"large"}/>}>
-<SQLiteProvider databaseName={DB_NAME} options={{
-  enableChangeListener:true
-}} useSuspense={true}>
-
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
-
-</SQLiteProvider>
-        </Suspense>
+    <Suspense fallback={<ActivityIndicator size={"large"}/>}>
+      <SQLiteProvider databaseName={DB_NAME} options={{
+        enableChangeListener: true
+      }} useSuspense={true}>
+        <ThemeProvider>
+          <AppContent />
+        </ThemeProvider>
+      </SQLiteProvider>
+    </Suspense>
   );
-
 }

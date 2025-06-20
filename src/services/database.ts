@@ -21,6 +21,7 @@ import {
   type NewSession
 } from '../db/schema';
 import { Platform } from 'react-native';
+import { seedDatabase, isDatabaseSeeded } from '../db/seed';
 
 // Database interface
 export interface DatabaseService {
@@ -57,6 +58,18 @@ export interface DatabaseService {
 class DrizzleService implements DatabaseService {
   async initializeDatabase(): Promise<void> {
     try {
+      console.log('🔧 Initializing Drizzle database...');
+
+      // Check if database is already seeded
+      const isSeeded = await isDatabaseSeeded();
+      
+      if (!isSeeded) {
+        console.log('📦 Database not seeded, running initial seed...');
+        await seedDatabase();
+      } else {
+        console.log('✅ Database already seeded, skipping seed process');
+      }
+
       // Initialize default settings if they don't exist
       const existingSettings = await db.select().from(settings).limit(1);
       if (existingSettings.length === 0) {
@@ -102,9 +115,9 @@ class DrizzleService implements DatabaseService {
         });
       }
 
-      console.log('Drizzle database initialized successfully');
+      console.log('✅ Drizzle database initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize Drizzle database:', error);
+      console.error('❌ Failed to initialize Drizzle database:', error);
       throw error;
     }
   }
