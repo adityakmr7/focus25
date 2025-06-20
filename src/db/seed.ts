@@ -8,13 +8,12 @@ export async function seedDatabase() {
   try {
     console.log('🌱 Starting database seeding...');
 
-    // Clear existing data (optional - remove in production)
-    await db.delete(goals);
-    await db.delete(statistics);
-    await db.delete(flowMetrics);
-    await db.delete(settings);
-    await db.delete(theme);
-    await db.delete(sessions);
+    // Check if already seeded to avoid duplicates
+    const existingGoals = await db.select().from(goals).limit(1);
+    if (existingGoals.length > 0) {
+      console.log('📦 Database already contains data, skipping seed');
+      return true;
+    }
 
     // Seed Settings
     await db.insert(settings).values({
@@ -274,8 +273,8 @@ export async function resetDatabase() {
  */
 export async function isDatabaseSeeded(): Promise<boolean> {
   try {
-    const settingsCount = await db.select().from(settings).limit(1);
-    return settingsCount.length > 0;
+    const goalsCount = await db.select().from(goals).limit(1);
+    return goalsCount.length > 0;
   } catch (error) {
     console.error('Error checking if database is seeded:', error);
     return false;

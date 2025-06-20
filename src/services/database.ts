@@ -60,19 +60,10 @@ class DrizzleService implements DatabaseService {
     try {
       console.log('🔧 Initializing Drizzle database...');
 
-      // Check if database is already seeded
-      const isSeeded = await isDatabaseSeeded();
-      
-      if (!isSeeded) {
-        console.log('📦 Database not seeded, running initial seed...');
-        await seedDatabase();
-      } else {
-        console.log('✅ Database already seeded, skipping seed process');
-      }
-
       // Initialize default settings if they don't exist
       const existingSettings = await db.select().from(settings).limit(1);
       if (existingSettings.length === 0) {
+        console.log('📝 Creating default settings...');
         await db.insert(settings).values({
           id: 1,
           timeDuration: 25,
@@ -90,6 +81,7 @@ class DrizzleService implements DatabaseService {
       // Initialize default flow metrics if they don't exist
       const existingMetrics = await db.select().from(flowMetrics).limit(1);
       if (existingMetrics.length === 0) {
+        console.log('📊 Creating default flow metrics...');
         await db.insert(flowMetrics).values({
           id: 1,
           consecutiveSessions: 0,
@@ -106,6 +98,7 @@ class DrizzleService implements DatabaseService {
       // Initialize default theme if it doesn't exist
       const existingTheme = await db.select().from(theme).limit(1);
       if (existingTheme.length === 0) {
+        console.log('🎨 Creating default theme...');
         await db.insert(theme).values({
           id: 1,
           mode: 'auto',
@@ -113,6 +106,15 @@ class DrizzleService implements DatabaseService {
           timerStyle: 'digital',
           customThemes: '{}',
         });
+      }
+
+      // Check if database needs seeding with dummy data
+      const isSeeded = await isDatabaseSeeded();
+      if (!isSeeded) {
+        console.log('🌱 Database not seeded, running initial seed...');
+        await seedDatabase();
+      } else {
+        console.log('✅ Database already seeded');
       }
 
       console.log('✅ Drizzle database initialized successfully');
@@ -712,9 +714,9 @@ export const databaseService: DatabaseService = Platform.OS === 'web'
 export const initializeDatabase = async () => {
   try {
     await databaseService.initializeDatabase();
-    console.log('Database initialized successfully');
+    console.log('✅ Database initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize database:', error);
+    console.error('❌ Failed to initialize database:', error);
     throw error;
   }
 };
