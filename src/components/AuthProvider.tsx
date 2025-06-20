@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useAuth, AuthState } from '@/hooks/useAuth';
-import { RefreshCw, AlertCircle } from 'lucide-react-native';
+import { useAuth, AuthState } from '../hooks/useAuth';
+import { Ionicons } from '@expo/vector-icons';
 
 interface AuthContextType extends AuthState {
   retry: () => Promise<void>;
@@ -29,7 +29,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <RefreshCw size={32} color="#48BB78" />
+          <Ionicons name="refresh" size={32} color="#48BB78" />
           <Text style={styles.loadingText}>Initializing...</Text>
         </View>
       </View>
@@ -40,11 +40,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return (
       <View style={styles.container}>
         <View style={styles.errorContainer}>
-          <AlertCircle size={48} color="#EF4444" />
+          <Ionicons name="alert-circle" size={48} color="#EF4444" />
           <Text style={styles.errorTitle}>Connection Error</Text>
           <Text style={styles.errorMessage}>{auth.error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={auth.retry}>
-            <RefreshCw size={20} color="#FFFFFF" />
+            <Ionicons name="refresh" size={20} color="#FFFFFF" />
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>

@@ -1,19 +1,19 @@
 import { Platform } from 'react-native';
 import { databaseService as localDatabaseService } from './database';
 import { supabaseDatabaseService } from './supabaseDatabase';
-import { useAuthContext } from '@/components/AuthProvider';
 
 // Hybrid database service that uses Supabase when authenticated, local storage otherwise
 class HybridDatabaseService {
+  private isAuthenticated = false;
+  private userId: string | null = null;
+
+  setAuthState(isAuthenticated: boolean, userId?: string) {
+    this.isAuthenticated = isAuthenticated;
+    this.userId = userId || null;
+  }
+
   private useSupabase(): boolean {
-    // Only use Supabase if we have an authenticated user
-    try {
-      const { isAuthenticated } = useAuthContext();
-      return isAuthenticated;
-    } catch {
-      // If we can't access auth context, fall back to local storage
-      return false;
-    }
+    return this.isAuthenticated && !!this.userId;
   }
 
   private getService() {
@@ -29,6 +29,15 @@ class HybridDatabaseService {
   async saveGoal(goal: any): Promise<void> {
     const service = this.getService();
     await service.saveGoal(goal);
+    
+    // If using local storage but authenticated, also sync to Supabase
+    if (!this.useSupabase() && this.isAuthenticated) {
+      try {
+        await supabaseDatabaseService.saveGoal(goal);
+      } catch (error) {
+        console.warn('Failed to sync goal to Supabase:', error);
+      }
+    }
   }
 
   async getGoals(): Promise<any[]> {
@@ -39,17 +48,44 @@ class HybridDatabaseService {
   async updateGoal(id: string, updates: any): Promise<void> {
     const service = this.getService();
     await service.updateGoal(id, updates);
+    
+    // If using local storage but authenticated, also sync to Supabase
+    if (!this.useSupabase() && this.isAuthenticated) {
+      try {
+        await supabaseDatabaseService.updateGoal(id, updates);
+      } catch (error) {
+        console.warn('Failed to sync goal update to Supabase:', error);
+      }
+    }
   }
 
   async deleteGoal(id: string): Promise<void> {
     const service = this.getService();
     await service.deleteGoal(id);
+    
+    // If using local storage but authenticated, also sync to Supabase
+    if (!this.useSupabase() && this.isAuthenticated) {
+      try {
+        await supabaseDatabaseService.deleteGoal(id);
+      } catch (error) {
+        console.warn('Failed to sync goal deletion to Supabase:', error);
+      }
+    }
   }
 
   // Statistics operations
   async saveStatistics(stats: any): Promise<void> {
     const service = this.getService();
     await service.saveStatistics(stats);
+    
+    // If using local storage but authenticated, also sync to Supabase
+    if (!this.useSupabase() && this.isAuthenticated) {
+      try {
+        await supabaseDatabaseService.saveStatistics(stats);
+      } catch (error) {
+        console.warn('Failed to sync statistics to Supabase:', error);
+      }
+    }
   }
 
   async getStatistics(date?: string): Promise<any> {
@@ -66,6 +102,15 @@ class HybridDatabaseService {
   async saveFlowMetrics(metrics: any): Promise<void> {
     const service = this.getService();
     await service.saveFlowMetrics(metrics);
+    
+    // If using local storage but authenticated, also sync to Supabase
+    if (!this.useSupabase() && this.isAuthenticated) {
+      try {
+        await supabaseDatabaseService.saveFlowMetrics(metrics);
+      } catch (error) {
+        console.warn('Failed to sync flow metrics to Supabase:', error);
+      }
+    }
   }
 
   async getFlowMetrics(): Promise<any> {
@@ -77,6 +122,15 @@ class HybridDatabaseService {
   async saveSettings(settings: any): Promise<void> {
     const service = this.getService();
     await service.saveSettings(settings);
+    
+    // If using local storage but authenticated, also sync to Supabase
+    if (!this.useSupabase() && this.isAuthenticated) {
+      try {
+        await supabaseDatabaseService.saveSettings(settings);
+      } catch (error) {
+        console.warn('Failed to sync settings to Supabase:', error);
+      }
+    }
   }
 
   async getSettings(): Promise<any> {
@@ -106,7 +160,7 @@ class HybridDatabaseService {
 
   // Sync operations
   async syncToSupabase(): Promise<void> {
-    if (!this.useSupabase()) {
+    if (!this.isAuthenticated) {
       throw new Error('User not authenticated for Supabase sync');
     }
 
@@ -138,7 +192,7 @@ class HybridDatabaseService {
   }
 
   async syncFromSupabase(): Promise<void> {
-    if (!this.useSupabase()) {
+    if (!this.isAuthenticated) {
       throw new Error('User not authenticated for Supabase sync');
     }
 

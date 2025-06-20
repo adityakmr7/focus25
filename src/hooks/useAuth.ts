@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase, signInAnonymously } from '@/lib/supabase';
+import { supabase, signInAnonymously } from '../lib/supabase';
 
 export interface AuthState {
   user: User | null;

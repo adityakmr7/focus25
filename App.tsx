@@ -11,7 +11,9 @@ import { useStatisticsStore } from "./src/store/statisticsStore";
 import { usePomodoroStore } from "./src/store/pomodoroStore";
 import { useThemeStore } from "./src/store/themeStore";
 import { ThemeProvider } from "./src/providers/ThemeProvider";
+import { AuthProvider } from "./src/components/AuthProvider";
 import { initializeDatabase } from "./src/services/database";
+import { hybridDatabaseService } from "./src/services/hybridDatabase";
 import { backgroundTimerService } from "./src/services/backgroundTimer";
 import { notificationService } from "./src/services/notificationService";
 import { errorHandler } from "./src/services/errorHandler";
@@ -40,8 +42,9 @@ const AppContent = () => {
         // Initialize error handler first
         await errorHandler.initialize();
 
-        // Initialize database
+        // Initialize local database (always available as fallback)
         await initializeDatabase();
+        await hybridDatabaseService.initializeDatabase();
         
         // Initialize all stores in parallel
         await Promise.all([
@@ -179,8 +182,10 @@ export default function App() {
   });
 
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

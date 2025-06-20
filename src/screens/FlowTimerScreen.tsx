@@ -26,6 +26,8 @@ import { EnhancedFocusMusicPlayer } from '../components/EnhancedFocusMusicPlayer
 import { TimerDisplay } from '../components/TimerDisplay';
 import Animated,{ useSharedValue, withTiming, useAnimatedStyle, interpolate } from 'react-native-reanimated';
 import { useTheme } from '../providers/ThemeProvider';
+import { useAuthContext } from '../components/AuthProvider';
+import { hybridDatabaseService } from '../services/hybridDatabase';
 import { backgroundTimerService } from '../services/backgroundTimer';
 import { notificationService } from '../services/notificationService';
 import { errorHandler } from '../services/errorHandler';
@@ -42,6 +44,7 @@ interface FlowTimerScreenProps {
 const audioSource = require('../../assets/sounds/smooth-completed-notify-starting-alert.mp3');
 
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
+    const { user, isAuthenticated } = useAuthContext();
     const {
         timer,
         toggleTimer,
@@ -53,9 +56,15 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         startBreak,
         endBreak,
         flowMetrics,
+        initializeStore: initializePomodoro,
     } = usePomodoroStore();
     
-    const { timeDuration, breakDuration } = useSettingsStore();
+    const { 
+        timeDuration, 
+        breakDuration, 
+        initializeStore: initializeSettings 
+    } = useSettingsStore();
+    
     const player = useAudioPlayer(audioSource);
     const { theme } = useTheme();
 
@@ -73,6 +82,27 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const containerAnimation = useSharedValue(0);
     const achievementAnimation = useSharedValue(0);
     const quickActionsAnimation = useSharedValue(0);
+
+    // Update hybrid database service with auth state
+    useEffect(() => {
+        hybridDatabaseService.setAuthState(isAuthenticated, user?.id);
+    }, [isAuthenticated, user?.id]);
+
+    // Initialize stores when component mounts
+    useEffect(() => {
+        const initializeStores = async () => {
+            try {
+                await Promise.all([
+                    initializeSettings(),
+                    initializePomodoro(),
+                ]);
+            } catch (error) {
+                console.error('Failed to initialize stores:', error);
+            }
+        };
+
+        initializeStores();
+    }, []);
 
     // Initialize container animation
     useEffect(() => {
@@ -334,12 +364,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
            <ScrollView className='flex-1'>
             {/* Dynamic Background */}
-            {/* <DynamicBackground 
+            <DynamicBackground 
                 isRunning={timer.isRunning}
                 isBreak={timer.isBreak}
                 flowIntensity={flowMetrics.flowIntensity}
                 progress={1 - (timer.totalSeconds / timer.initialSeconds)}
-            /> */}
+            />
 
             <Animated.View
                 style={[
@@ -347,7 +377,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     containerAnimatedStyle,
                 ]}
             >
-                {/* Enhanced Header with Background Timer Status */}
+                {/* Enhanced Header with Authentication Status */}
                 <View style={styles.header}>
                     <TouchableOpacity 
                         onPress={handleShowAchievements} 
@@ -361,16 +391,24 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         )}
                     </TouchableOpacity>
 
-                    {/* <View style={styles.centerStatus}>
-                        {isConnectedToBackground && (
-                            <View style={styles.backgroundStatus}>
-                                <Ionicons name="shield-checkmark" size={16} color="#10B981" />
-                                <Text style={[styles.backgroundStatusText, { color: '#10B981' }]}>
-                                    Background Active
+                    <View style={styles.centerStatus}>
+                        {isAuthenticated && (
+                            <View style={styles.authStatus}>
+                                <Ionicons name="cloud-done" size={16} color="#10B981" />
+                                <Text style={[styles.authStatusText, { color: '#10B981' }]}>
+                                    Synced
                                 </Text>
                             </View>
                         )}
-                    </View> */}
+                        {!isAuthenticated && (
+                            <View style={styles.authStatus}>
+                                <Ionicons name="cloud-offline" size={16} color="#F59E0B" />
+                                <Text style={[styles.authStatusText, { color: '#F59E0B' }]}>
+                                    Local Only
+                                </Text>
+                            </View>
+                        )}
+                    </View>
 
                     <TouchableOpacity 
                         onPress={() => setShowQuickActions(!showQuickActions)}
@@ -547,16 +585,16 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
     },
-    backgroundStatus: {
+    authStatus: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 12,
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
         gap: 6,
     },
-    backgroundStatusText: {
+    authStatusText: {
         fontSize: 12,
         fontWeight: '600',
     },

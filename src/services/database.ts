@@ -1,5 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
+import { hybridDatabaseService } from './hybridDatabase';
 
 // Database interface
 export interface DatabaseService {
@@ -673,15 +674,13 @@ class WebStorageService implements DatabaseService {
   }
 }
 
-// Create singleton instance
-export const databaseService: DatabaseService = Platform.OS === 'web' 
-  ? new WebStorageService() 
-  : new SQLiteService();
+// Create singleton instance that uses hybrid service
+export const databaseService: DatabaseService = hybridDatabaseService;
 
 // Initialize database
 export const initializeDatabase = async () => {
   try {
-    await databaseService.initializeDatabase();
+    await hybridDatabaseService.initializeDatabase();
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Failed to initialize database:', error);

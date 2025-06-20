@@ -19,6 +19,8 @@ import { useGoalsStore } from '../store/goalsStore';
 import { FlowMetrics } from '../components/FlowMetrics';
 import { GoalsModal } from '../components/GoalsModal';
 import { useTheme } from '../providers/ThemeProvider';
+import { useAuthContext } from '../components/AuthProvider';
+import { hybridDatabaseService } from '../services/hybridDatabase';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -208,6 +210,7 @@ const ActionButton: React.FC<{
 
 const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
   const { theme } = useTheme();
+  const { user, isAuthenticated } = useAuthContext();
   const {
     selectedPeriod,
     currentDate,
@@ -218,15 +221,30 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     interruptions,
     isLoading,
     syncWithDatabase,
+    initializeStore: initializeStatistics,
   } = useStatisticsStore();
 
-  const { flowMetrics } = usePomodoroStore();
-  const { goals, getActiveGoals, updateGoalsFromStats } = useGoalsStore();
+  const { 
+    flowMetrics, 
+    initializeStore: initializePomodoro 
+  } = usePomodoroStore();
+  
+  const { 
+    goals, 
+    getActiveGoals, 
+    updateGoalsFromStats,
+    initializeStore: initializeGoals 
+  } = useGoalsStore();
 
   const [showGoalsModal, setShowGoalsModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
   const headerAnimatedValue = useRef(new Animated.Value(0)).current;
+
+  // Update hybrid database service with auth state
+  useEffect(() => {
+    hybridDatabaseService.setAuthState(isAuthenticated, user?.id);
+  }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
     Animated.timing(headerAnimatedValue, {
@@ -234,6 +252,23 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
       duration: 1000,
       useNativeDriver: true,
     }).start();
+  }, []);
+
+  // Initialize stores when component mounts
+  useEffect(() => {
+    const initializeStores = async () => {
+      try {
+        await Promise.all([
+          initializeStatistics(),
+          initializePomodoro(),
+          initializeGoals(),
+        ]);
+      } catch (error) {
+        console.error('Failed to initialize stores:', error);
+      }
+    };
+
+    initializeStores();
   }, []);
 
   // Auto-refresh data every 30 seconds
@@ -270,6 +305,17 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
       console.error('Failed to refresh data:', error);
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  const handleSyncData = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      await hybridDatabaseService.syncToSupabase();
+      setLastUpdateTime(new Date());
+    } catch (error) {
+      console.error('Failed to sync data:', error);
     }
   };
 
@@ -408,6 +454,18 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
             <Text style={[styles.lastUpdate, { color: theme.textSecondary }]}>
               Updated {formatLastUpdate(lastUpdateTime)}
             </Text>
+            {isAuthenticated && (
+              <TouchableOpacity onPress={handleSyncData} style={styles.syncStatus}>
+                <Icon name="cloud-done" size={16} color="#10B981" />
+                <Text style={[styles.syncText, { color: '#10B981' }]}>Synced</Text>
+              </TouchableOpacity>
+            )}
+            {!isAuthenticated && (
+              <View style={styles.syncStatus}>
+                <Icon name="cloud-offline" size={16} color="#F59E0B" />
+                <Text style={[styles.syncText, { color: '#F59E0B' }]}>Local Only</Text>
+              </View>
+            )}
             <View style={styles.todayStats}>
               <Text style={[styles.todayValue, { color: theme.text }]}>
                 {flows.completed}
@@ -691,6 +749,16 @@ const styles = StyleSheet.create({
   lastUpdate: {
     fontSize: 12,
     marginBottom: 4,
+  },
+  syncStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 8,
+  },
+  syncText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   todayStats: {
     alignItems: 'center',
