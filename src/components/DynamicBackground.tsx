@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolateColor } from 'react-native-reanimated';
-import { useTheme } from '../providers/ThemeProvider';
+import {Dimensions, StyleSheet} from 'react-native';
+import Animated, {interpolateColor, useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
+import {useTheme} from '../providers/ThemeProvider';
 
 interface DynamicBackgroundProps {
   isRunning: boolean;
@@ -26,7 +26,7 @@ export const DynamicBackground: React.FC<DynamicBackgroundProps> = ({
   const animatedStyle = useAnimatedStyle(() => {
     let fromColor = theme.background || '#FFFFFF';
     let toColor = theme.surface || '#F5F5F5';
-    
+
     if (isBreak) {
       fromColor = theme.background || '#FFFFFF';
       toColor = (theme.warning || '#FFA500') + '30';
@@ -78,5 +78,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: -1,
+    height: Dimensions.get('window').height,
+
   },
 });
