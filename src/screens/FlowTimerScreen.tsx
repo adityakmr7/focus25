@@ -20,7 +20,7 @@ import {Ionicons} from '@expo/vector-icons'
 import {DynamicBackground} from '../components/DynamicBackground';
 import {BreathingAnimation} from '../components/BreathingAnimation';
 import {GamificationOverlay} from '../components/GamificationOverlay';
-import {EnhancedFocusMusicPlayer} from '../components/EnhancedFocusMusicPlayer';
+import {BottomSheetMusicPlayer} from '../components/BottomSheetMusicPlayer';
 import {TimerDisplay} from '../components/TimerDisplay';
 import Animated, {interpolate, useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
 import {useTheme} from '../providers/ThemeProvider';
@@ -29,6 +29,7 @@ import {hybridDatabaseService} from '../services/hybridDatabase';
 import {backgroundTimerService} from '../services/backgroundTimer';
 import {notificationService} from '../services/notificationService';
 import {errorHandler} from '../services/errorHandler';
+import BottomSheet from '@gorhom/bottom-sheet';
 
 const { width, height } = Dimensions.get('window');
 
@@ -67,12 +68,14 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const { theme } = useTheme();
 
     const [showBreathingAnimation, setShowBreathingAnimation] = useState(false);
-    const [showMusicPlayer, setShowMusicPlayer] = useState(false);
     const [achievements, setAchievements] = useState<string[]>([]);
     const [showAchievements, setShowAchievements] = useState(false);
     const [showQuickActions, setShowQuickActions] = useState(false);
     const [backgroundSessionId, setBackgroundSessionId] = useState<string | null>(null);
     const [isConnectedToBackground, setIsConnectedToBackground] = useState(false);
+
+    // Bottom Sheet ref
+    const bottomSheetRef = useRef<BottomSheet>(null);
 
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const pulseAnimation = useSharedValue(1);
@@ -332,6 +335,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         setShowAchievements(false);
     };
 
+    const handleOpenMusicPlayer = () => {
+        bottomSheetRef.current?.expand();
+        setShowQuickActions(false);
+    };
+
     const getSessionDurationText = () => {
         if (timer.adaptedDuration && timer.adaptedDuration !== Math.floor(timer.initialSeconds / 60)) {
             return `${Math.floor(timer.initialSeconds / 60)}m (adapted from ${timer.adaptedDuration}m)`;
@@ -390,8 +398,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         )}
                     </TouchableOpacity>
 
-
-
                     <TouchableOpacity
                         onPress={() => setShowQuickActions(!showQuickActions)}
                         style={[styles.menuButton, { backgroundColor: theme.surface }]}
@@ -417,10 +423,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
                     <TouchableOpacity
                         style={styles.quickActionItem}
-                        onPress={() => {
-                            setShowMusicPlayer(true);
-                            setShowQuickActions(false);
-                        }}
+                        onPress={handleOpenMusicPlayer}
                     >
                         <View style={[styles.quickActionIcon, { backgroundColor: '#4ECDC4' + '20' }]}>
                             <Ionicons name="musical-notes" size={20} color="#4ECDC4" />
@@ -446,22 +449,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                             {showBreathingAnimation ? 'Active' : 'Inactive'}
                         </Text>
                     </TouchableOpacity>
-
-                    {/*<TouchableOpacity*/}
-                    {/*    style={styles.quickActionItem}*/}
-                    {/*    onPress={() => {*/}
-                    {/*        navigation?.navigate('FlowAnalytics');*/}
-                    {/*        setShowQuickActions(false);*/}
-                    {/*    }}*/}
-                    {/*>*/}
-                    {/*    <View style={[styles.quickActionIcon, { backgroundColor: '#9F7AEA' + '20' }]}>*/}
-                    {/*        <Ionicons name="analytics" size={20} color="#9F7AEA" />*/}
-                    {/*    </View>*/}
-                    {/*    <Text style={[styles.quickActionText, { color: theme.text }]}>Analytics</Text>*/}
-                    {/*    <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>*/}
-                    {/*        View insights*/}
-                    {/*    </Text>*/}
-                    {/*</TouchableOpacity>*/}
                 </Animated.View>}
 
                 {/* Timer Container */}
@@ -519,13 +506,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 </View>
             </Animated.View>
 
-            {/* Enhanced Focus Music Player */}
-            {showMusicPlayer && (
-                <EnhancedFocusMusicPlayer
-                    onClose={() => setShowMusicPlayer(false)}
-                    autoStartTrack={timer.isRunning ? 'deep-focus' : undefined}
-                />
-            )}
+            {/* Bottom Sheet Music Player */}
+            <BottomSheetMusicPlayer
+                bottomSheetRef={bottomSheetRef}
+                autoStartTrack={timer.isRunning ? 'deep-focus' : undefined}
+            />
 
             {/* Gamification Overlay */}
             <GamificationOverlay

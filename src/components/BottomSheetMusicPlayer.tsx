@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  Modal,
   FlatList,
   Dimensions,
   Platform,
@@ -19,11 +18,12 @@ import Animated, {
   withSequence,
   interpolate,
 } from 'react-native-reanimated';
+import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { useTheme } from '../providers/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useBundledAudio from "../hooks/useCachedAudio";
 
-const { height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const MUSIC_SETTINGS_KEY = 'music_settings';
 
 interface MusicTrack {
@@ -53,7 +53,6 @@ const defaultSettings: MusicSettings = {
   favoriteTrackIds: [],
 };
 
-// Using the existing audio file for all tracks (in a real app, you'd have different files)
 const musicTracks: MusicTrack[] = [
   {
     id: 'forest-rain',
@@ -71,7 +70,7 @@ const musicTracks: MusicTrack[] = [
     duration: '60:00',
     type: 'nature',
     description: 'Calming ocean sounds for deep focus',
-    source:  'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//ocean-instrumental.mp3',
+    source: 'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//ocean-instrumental.mp3',
     color: '#3B82F6',
     isLocal: true,
   },
@@ -117,13 +116,13 @@ const musicTracks: MusicTrack[] = [
   },
 ];
 
-interface EnhancedFocusMusicPlayerProps {
-  onClose: () => void;
+interface BottomSheetMusicPlayerProps {
+  bottomSheetRef: React.RefObject<BottomSheet>;
   autoStartTrack?: string;
 }
 
-export const EnhancedFocusMusicPlayer: React.FC<EnhancedFocusMusicPlayerProps> = ({
-  onClose,
+export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
+  bottomSheetRef,
   autoStartTrack,
 }) => {
   const { theme } = useTheme();
@@ -135,11 +134,27 @@ export const EnhancedFocusMusicPlayer: React.FC<EnhancedFocusMusicPlayerProps> =
   const [showSettings, setShowSettings] = useState(false);
   const [filteredType, setFilteredType] = useState<string>('all');
 
-  const {player,status} = useBundledAudio(
+  const { player, status } = useBundledAudio(
     selectedTrack ? musicTracks.find(t => t.id === selectedTrack)?.source || null : null
   );
   const waveAnimation = useSharedValue(0);
   const volumeAnimation = useSharedValue(settings.volume);
+
+  // Bottom sheet snap points
+  const snapPoints = useMemo(() => ['25%', '50%', '90%'], []);
+
+  // Backdrop component
+  const renderBackdrop = useCallback(
+    (props: any) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.5}
+      />
+    ),
+    []
+  );
 
   useEffect(() => {
     loadSettings();
@@ -206,7 +221,7 @@ export const EnhancedFocusMusicPlayer: React.FC<EnhancedFocusMusicPlayerProps> =
 
     if (status.didJustFinish) {
       setIsPlaying(false);
-      player.seekTo(0); // resets to start
+      player.seekTo(0);
     }
   }, [status]);
 
@@ -328,196 +343,183 @@ export const EnhancedFocusMusicPlayer: React.FC<EnhancedFocusMusicPlayerProps> =
 
   const selectedTrackData = musicTracks.find(track => track.id === selectedTrack);
 
-  console.log("status",status)
   return (
-    <Modal visible={true} animationType="slide" transparent>
-      <View style={styles.overlay}>
-        <View style={[styles.playerContainer, { backgroundColor: theme.surface }]}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <View style={[styles.musicIcon, { backgroundColor: theme.accent + '20' }]}>
-                <Ionicons name="musical-notes" size={24} color={theme.accent} />
-              </View>
-              <View>
-                <Text style={[styles.title, { color: theme.text }]}>Focus Music</Text>
-                <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                  Choose your perfect focus soundtrack
-                </Text>
-              </View>
+    <BottomSheet
+      ref={bottomSheetRef}
+      index={-1}
+      snapPoints={snapPoints}
+      enablePanDownToClose
+      backdropComponent={renderBackdrop}
+      backgroundStyle={{ backgroundColor: theme.surface }}
+      handleIndicatorStyle={{ backgroundColor: theme.textSecondary }}
+    >
+      <BottomSheetView style={styles.contentContainer}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <View style={[styles.musicIcon, { backgroundColor: theme.accent + '20' }]}>
+              <Ionicons name="musical-notes" size={24} color={theme.accent} />
             </View>
-
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={() => setShowSettings(!showSettings)}
-                style={[styles.settingsButton, { backgroundColor: theme.background }]}
-              >
-                <Ionicons name="settings" size={20} color={theme.textSecondary} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={onClose}
-                style={[styles.closeButton, { backgroundColor: theme.background }]}
-              >
-                <Ionicons name="close" size={24} color={theme.textSecondary} />
-              </TouchableOpacity>
+            <View>
+              <Text style={[styles.title, { color: theme.text }]}>Focus Music</Text>
+              <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                Choose your perfect focus soundtrack
+              </Text>
             </View>
           </View>
 
-          {/* Filter Tabs */}
-          <View style={styles.filterContainer}>
-            {['all', 'nature', 'focus', 'ambient', 'binaural', 'favorites'].map((filter) => (
+          <TouchableOpacity
+            onPress={() => setShowSettings(!showSettings)}
+            style={[styles.settingsButton, { backgroundColor: theme.background }]}
+          >
+            <Ionicons name="settings" size={20} color={theme.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Filter Tabs */}
+        <View style={styles.filterContainer}>
+          {['all', 'nature', 'focus', 'ambient', 'binaural', 'favorites'].map((filter) => (
+            <TouchableOpacity
+              key={filter}
+              style={[
+                styles.filterChip,
+                filteredType === filter && { backgroundColor: theme.accent + '20' }
+              ]}
+              onPress={() => setFilteredType(filter)}
+            >
+              <Ionicons
+                name={
+                  filter === 'all' ? 'apps' :
+                  filter === 'nature' ? 'leaf' :
+                  filter === 'focus' ? 'radio' :
+                  filter === 'ambient' ? 'cafe' :
+                  filter === 'binaural' ? 'pulse' :
+                  'heart'
+                }
+                size={16}
+                color={filteredType === filter ? theme.accent : theme.textSecondary}
+              />
+              <Text style={[
+                styles.filterText,
+                { color: filteredType === filter ? theme.accent : theme.textSecondary }
+              ]}>
+                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Settings Panel */}
+        {showSettings && (
+          <Animated.View style={[styles.settingsPanel, { backgroundColor: theme.background }]}>
+            <View style={styles.settingRow}>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Auto-play</Text>
               <TouchableOpacity
-                key={filter}
+                onPress={() => saveSettings({ autoPlay: !settings.autoPlay })}
                 style={[
-                  styles.filterChip,
-                  filteredType === filter && { backgroundColor: theme.accent + '20' }
+                  styles.toggle,
+                  { backgroundColor: settings.autoPlay ? theme.accent : theme.surface }
                 ]}
-                onPress={() => setFilteredType(filter)}
+              >
+                <View style={[
+                  styles.toggleThumb,
+                  { backgroundColor: '#fff' },
+                  settings.autoPlay && styles.toggleThumbActive
+                ]} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.settingRow}>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Fade in/out</Text>
+              <TouchableOpacity
+                onPress={() => saveSettings({ fadeInOut: !settings.fadeInOut })}
+                style={[
+                  styles.toggle,
+                  { backgroundColor: settings.fadeInOut ? theme.accent : theme.surface }
+                ]}
+              >
+                <View style={[
+                  styles.toggleThumb,
+                  { backgroundColor: '#fff' },
+                  settings.fadeInOut && styles.toggleThumbActive
+                ]} />
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Track List */}
+        <FlatList
+          data={getFilteredTracks()}
+          renderItem={renderTrackItem}
+          keyExtractor={(item) => item.id}
+          style={styles.trackList}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.trackListContent}
+        />
+
+        {/* Now Playing Section */}
+        {selectedTrack && selectedTrackData && (
+          <View style={[styles.nowPlaying, { borderTopColor: theme.background }]}>
+            <View style={styles.nowPlayingHeader}>
+              <Text style={[styles.nowPlayingTitle, { color: theme.text }]}>
+                Now Playing
+              </Text>
+              <Text style={[styles.nowPlayingTrack, { color: theme.textSecondary }]}>
+                {selectedTrackData.name}
+              </Text>
+            </View>
+
+            {/* Progress Bar */}
+            <View style={[styles.progressContainer, { backgroundColor: theme.background }]}>
+              <Animated.View style={[styles.progressBar, { backgroundColor: selectedTrackData.color }, volumeStyle]} />
+            </View>
+
+            {/* Controls */}
+            <View style={styles.controls}>
+              <TouchableOpacity
+                style={[styles.controlButton, { backgroundColor: theme.background }]}
+                onPress={() => handleVolumeChange(-0.1)}
+              >
+                <Ionicons name="volume-low" size={20} color={theme.textSecondary} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.playButton, { backgroundColor: selectedTrackData.color }]}
+                onPress={() => handlePlay(selectedTrack)}
               >
                 <Ionicons
-                  name={
-                    filter === 'all' ? 'apps' :
-                    filter === 'nature' ? 'leaf' :
-                    filter === 'focus' ? 'radio' :
-                    filter === 'ambient' ? 'cafe' :
-                    filter === 'binaural' ? 'pulse' :
-                    'heart'
-                  }
-                  size={16}
-                  color={filteredType === filter ? theme.accent : theme.textSecondary}
+                  name={isPlaying ? "pause" : "play"}
+                  size={28}
+                  color="#FFFFFF"
                 />
-                <Text style={[
-                  styles.filterText,
-                  { color: filteredType === filter ? theme.accent : theme.textSecondary }
-                ]}>
-                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                </Text>
               </TouchableOpacity>
-            ))}
-          </View>
 
-          {/* Settings Panel */}
-          {showSettings && (
-            <Animated.View style={[styles.settingsPanel, { backgroundColor: theme.background }]}>
-              <View style={styles.settingRow}>
-                <Text style={[styles.settingLabel, { color: theme.text }]}>Auto-play</Text>
-                <TouchableOpacity
-                  onPress={() => saveSettings({ autoPlay: !settings.autoPlay })}
-                  style={[
-                    styles.toggle,
-                    { backgroundColor: settings.autoPlay ? theme.accent : theme.surface }
-                  ]}
-                >
-                  <View style={[
-                    styles.toggleThumb,
-                    { backgroundColor: '#fff' },
-                    settings.autoPlay && styles.toggleThumbActive
-                  ]} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.settingRow}>
-                <Text style={[styles.settingLabel, { color: theme.text }]}>Fade in/out</Text>
-                <TouchableOpacity
-                  onPress={() => saveSettings({ fadeInOut: !settings.fadeInOut })}
-                  style={[
-                    styles.toggle,
-                    { backgroundColor: settings.fadeInOut ? theme.accent : theme.surface }
-                  ]}
-                >
-                  <View style={[
-                    styles.toggleThumb,
-                    { backgroundColor: '#fff' },
-                    settings.fadeInOut && styles.toggleThumbActive
-                  ]} />
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
-          )}
-
-          {/* Track List */}
-          <FlatList
-            data={getFilteredTracks()}
-            renderItem={renderTrackItem}
-            keyExtractor={(item) => item.id}
-            style={styles.trackList}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.trackListContent}
-          />
-
-          {/* Now Playing Section */}
-          {selectedTrack && selectedTrackData && (
-            <View style={[styles.nowPlaying, { borderTopColor: theme.background }]}>
-              <View style={styles.nowPlayingHeader}>
-                <Text style={[styles.nowPlayingTitle, { color: theme.text }]}>
-                  Now Playing
-                </Text>
-                <Text style={[styles.nowPlayingTrack, { color: theme.textSecondary }]}>
-                  {selectedTrackData.name}
-                </Text>
-              </View>
-
-              {/* Progress Bar */}
-              <View style={[styles.progressContainer, { backgroundColor: theme.background }]}>
-                <Animated.View style={[styles.progressBar, { backgroundColor: selectedTrackData.color }, volumeStyle]} />
-              </View>
-
-              {/* Controls */}
-              <View style={styles.controls}>
-                <TouchableOpacity
-                  style={[styles.controlButton, { backgroundColor: theme.background }]}
-                  onPress={() => handleVolumeChange(-0.1)}
-                >
-                  <Ionicons name="volume-low" size={20} color={theme.textSecondary} />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.playButton, { backgroundColor: selectedTrackData.color }]}
-                  onPress={() => handlePlay(selectedTrack)}
-                >
-                  <Ionicons
-                    name={isPlaying ? "pause" : "play"}
-                    size={28}
-                    color="#FFFFFF"
-                  />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.controlButton, { backgroundColor: theme.background }]}
-                  onPress={() => handleVolumeChange(0.1)}
-                >
-                  <Ionicons name="volume-high" size={20} color={theme.textSecondary} />
-                </TouchableOpacity>
-              </View>
-
-
-              {/* Volume Indicator */}
-              <View style={styles.volumeContainer}>
-                <Text style={[styles.volumeText, { color: theme.textSecondary }]}>
-                  Volume: {Math.round(settings.volume * 100)}%
-                </Text>
-              </View>
+              <TouchableOpacity
+                style={[styles.controlButton, { backgroundColor: theme.background }]}
+                onPress={() => handleVolumeChange(0.1)}
+              >
+                <Ionicons name="volume-high" size={20} color={theme.textSecondary} />
+              </TouchableOpacity>
             </View>
-          )}
-        </View>
-      </View>
-    </Modal>
+
+            {/* Volume Indicator */}
+            <View style={styles.volumeContainer}>
+              <Text style={[styles.volumeText, { color: theme.textSecondary }]}>
+                Volume: {Math.round(settings.volume * 100)}%
+              </Text>
+            </View>
+          </View>
+        )}
+      </BottomSheetView>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  contentContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'flex-end',
-  },
-  playerContainer: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
     padding: 24,
-    maxHeight: height * 0.9,
-    minHeight: height * 0.7,
   },
   header: {
     flexDirection: 'row',
@@ -546,18 +548,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 2,
   },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
   settingsButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -669,7 +660,7 @@ const styles = StyleSheet.create({
   },
   nowPlaying: {
     paddingTop: 20,
-    // borderTopWidth: 1,
+    borderTopWidth: 1,
   },
   nowPlayingHeader: {
     alignItems: 'center',

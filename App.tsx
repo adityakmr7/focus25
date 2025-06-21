@@ -19,6 +19,7 @@ import { notificationService } from "./src/services/notificationService";
 import { errorHandler } from "./src/services/errorHandler";
 import { OnboardingFlow, shouldShowOnboarding } from "./src/components/OnboardingFlow";
 import * as SplashScreen from 'expo-splash-screen';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Enable screens before any navigation components are rendered
 enableScreens();
@@ -182,10 +183,12 @@ export default function App() {
   });
 
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <AppContent />
-      </ThemeProvider>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <ThemeProvider>
+          <AppContent />
+        </ThemeProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }
