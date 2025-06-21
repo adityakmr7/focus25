@@ -370,7 +370,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
             {/* Dynamic Background */}
 
-           <ScrollView className='flex-1'>
+           <ScrollView className='flex-1' contentContainerStyle={{flex:1}}>
                <DynamicBackground
                    isRunning={timer.isRunning}
                    isBreak={timer.isBreak}
@@ -531,7 +531,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        paddingVertical: 28
+        paddingVertical: 28,
+        flex:1,
     },
     header: {
         flexDirection: 'row',

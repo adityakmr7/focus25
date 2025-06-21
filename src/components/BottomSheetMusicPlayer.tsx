@@ -1,25 +1,16 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  FlatList,
-  Dimensions,
-  Platform,
-  Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {Alert, Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View,} from 'react-native';
+import {Ionicons} from '@expo/vector-icons';
 import Animated, {
-  useSharedValue,
+  interpolate,
   useAnimatedStyle,
-  withTiming,
+  useSharedValue,
   withRepeat,
   withSequence,
-  interpolate,
+  withTiming,
 } from 'react-native-reanimated';
-import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
-import { useTheme } from '../providers/ThemeProvider';
+import BottomSheet, {BottomSheetBackdrop, BottomSheetView} from '@gorhom/bottom-sheet';
+import {useTheme} from '../providers/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useBundledAudio from "../hooks/useCachedAudio";
 
@@ -122,9 +113,9 @@ interface BottomSheetMusicPlayerProps {
 }
 
 export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
-  bottomSheetRef,
-  autoStartTrack,
-}) => {
+                                                                                bottomSheetRef,
+                                                                                autoStartTrack,
+                                                                              }) => {
   const { theme } = useTheme();
   const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -133,10 +124,25 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
   const [duration, setDuration] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [filteredType, setFilteredType] = useState<string>('all');
+  // 🔥 NEW: Add loading state for better UX
+  const [isLoadingTrack, setIsLoadingTrack] = useState(false);
 
-  const { player, status } = useBundledAudio(
-    selectedTrack ? musicTracks.find(t => t.id === selectedTrack)?.source || null : null
+  // 🔥 CHANGED: Get additional states from the hook
+  const { player, status, uri, isDownloading, downloadError } = useBundledAudio(
+      selectedTrack ? musicTracks.find(t => t.id === selectedTrack)?.source || null : null
   );
+
+  console.log("selectedTrack: ", selectedTrack);
+  // 🔥 NEW: Add debug logging
+  console.log("Audio status:", {
+    isLoaded: status.isLoaded,
+    isDownloading,
+    downloadError,
+    uri,
+    currentTime: status.currentTime,
+    duration: status.duration
+  });
+
   const waveAnimation = useSharedValue(0);
   const volumeAnimation = useSharedValue(settings.volume);
 
@@ -145,15 +151,15 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
 
   // Backdrop component
   const renderBackdrop = useCallback(
-    (props: any) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-      />
-    ),
-    []
+      (props: any) => (
+          <BottomSheetBackdrop
+              {...props}
+              disappearsOnIndex={-1}
+              appearsOnIndex={0}
+              opacity={0.5}
+          />
+      ),
+      []
   );
 
   useEffect(() => {
@@ -162,9 +168,8 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
       const track = musicTracks.find(t => t.id === autoStartTrack);
       if (track) {
         setSelectedTrack(autoStartTrack);
-        if (settings.autoPlay) {
-          handlePlay(autoStartTrack);
-        }
+        // 🔥 CHANGED: Don't auto-play immediately, wait for loading
+        // Auto-play will be handled in the status effect
       }
     }
   }, []);
@@ -172,12 +177,12 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
   useEffect(() => {
     if (isPlaying) {
       waveAnimation.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 800 }),
-          withTiming(0.3, { duration: 800 })
-        ),
-        -1,
-        false
+          withSequence(
+              withTiming(1, { duration: 800 }),
+              withTiming(0.3, { duration: 800 })
+          ),
+          -1,
+          false
       );
     } else {
       waveAnimation.value = withTiming(0.3, { duration: 300 });
@@ -213,52 +218,118 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
     }
   };
 
+  // 🔥 CHANGED: Improved status handling with proper loading states
   useEffect(() => {
-    if (!status.isLoaded) return;
+    if (!status) return;
 
-    setDuration(status.duration);
-    setCurrentTime(status.currentTime);
+    setDuration(status.duration || 0);
+    setCurrentTime(status.currentTime || 0);
 
+    // Handle track finishing
     if (status.didJustFinish) {
       setIsPlaying(false);
-      player.seekTo(0);
+      if (player && status.isLoaded) {
+        player.seekTo(0);
+      }
     }
-  }, [status]);
 
+    // 🔥 NEW: Handle auto-play when track is loaded
+    if (status.isLoaded && selectedTrack && settings.autoPlay && !isPlaying && isLoadingTrack) {
+      setIsLoadingTrack(false);
+      handlePlayPause();
+    } else if (status.isLoaded && isLoadingTrack) {
+      setIsLoadingTrack(false);
+    }
+
+    // 🔥 NEW: Set initial volume when track loads
+    if (status.isLoaded && player && settings.volume !== 1) {
+      player.volume = settings.volume;
+    }
+  }, [status, selectedTrack, settings.autoPlay, isLoadingTrack]);
+
+  // 🔥 NEW: Handle download errors
+  useEffect(() => {
+    if (downloadError) {
+      Alert.alert('Download Error', 'Failed to download the audio file. Please check your internet connection.');
+      setIsLoadingTrack(false);
+    }
+  }, [downloadError]);
+
+  // 🔥 COMPLETELY REWRITTEN: Fixed the main play function
   const handlePlay = async (trackId: string) => {
     try {
-      if (!status.isLoaded) {
-        Alert.alert('Loading… please wait');
-        return;
-      }
+      // If selecting a different track
       if (selectedTrack !== trackId) {
+        // Stop current playback first
+        if (isPlaying && player && status.isLoaded) {
+          await player.pause();
+          setIsPlaying(false);
+        }
+
+        // Set loading state and new track
+        setIsLoadingTrack(true);
         setSelectedTrack(trackId);
         await saveSettings({ lastPlayedTrack: trackId });
+
+        // The useEffect will handle auto-play when loaded
+        return;
       }
 
-      if (isPlaying && selectedTrack === trackId) {
-        player.pause();
-        setIsPlaying(false);
-      } else {
-        player.play();
-        setIsPlaying(true);
-      }
+      // Toggle play/pause for same track
+      await handlePlayPause();
     } catch (error) {
-      console.error('Failed to play track:', error);
+      console.error('Failed to handle track selection:', error);
       Alert.alert('Playback Error', 'Failed to play the selected track.');
+      setIsLoadingTrack(false);
     }
   };
 
-  const handleVolumeChange = (delta: number) => {
+  // 🔥 NEW: Separate function for play/pause logic
+  const handlePlayPause = async () => {
+    try {
+      if (!player) {
+        Alert.alert('Error', 'Audio player not available');
+        return;
+      }
+
+      if (isDownloading) {
+        Alert.alert('Loading...', 'Please wait for the track to download');
+        return;
+      }
+
+      if (!status.isLoaded) {
+        Alert.alert('Loading...', 'Please wait for the track to load');
+        return;
+      }
+
+      if (isPlaying) {
+        await player.pause();
+        setIsPlaying(false);
+      } else {
+        await player.play();
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error('Failed to toggle playback:', error);
+      Alert.alert('Playback Error', 'Failed to control playback.');
+    }
+  };
+
+  // 🔥 CHANGED: Fixed volume control method
+  const handleVolumeChange = async (delta: number) => {
     const newVolume = Math.max(0, Math.min(1, settings.volume + delta));
-    saveSettings({ volume: newVolume });
-    player.volume = newVolume;
+    await saveSettings({ volume: newVolume });
+
+    // Apply volume to player if available and loaded
+    if (player && status.isLoaded) {
+      player.volume = newVolume; // 🔥 CHANGED: Use direct property assignment
+    }
   };
 
   const toggleFavorite = (trackId: string) => {
     const favorites = settings.favoriteTrackIds.includes(trackId)
-      ? settings.favoriteTrackIds.filter(id => id !== trackId)
-      : [...settings.favoriteTrackIds, trackId];
+        ? settings.favoriteTrackIds.filter(id => id !== trackId)
+        : [...settings.favoriteTrackIds, trackId];
 
     saveSettings({ favoriteTrackIds: favorites });
   };
@@ -293,226 +364,245 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
   const renderTrackItem = ({ item }: { item: MusicTrack }) => {
     const isSelected = selectedTrack === item.id;
     const isFavorite = settings.favoriteTrackIds.includes(item.id);
+    // 🔥 NEW: Show loading state for selected track
+    const isCurrentlyLoading = isSelected && (isDownloading || isLoadingTrack);
 
     return (
-      <TouchableOpacity
-        style={[
-          styles.trackItem,
-          { backgroundColor: theme.background },
-          isSelected && {
-            backgroundColor: item.color + '15',
-            borderColor: item.color,
-            borderWidth: 1,
-          },
-        ]}
-        onPress={() => handlePlay(item.id)}
-      >
-        <View style={[styles.trackIcon, { backgroundColor: item.color + '20' }]}>
-          <Ionicons name={getTrackIcon(item.type) as any} size={20} color={item.color} />
-        </View>
-
-        <View style={styles.trackInfo}>
-          <View style={styles.trackHeader}>
-            <Text style={[styles.trackName, { color: theme.text }]}>{item.name}</Text>
-            <TouchableOpacity onPress={() => toggleFavorite(item.id)}>
-              <Ionicons
-                name={isFavorite ? 'heart' : 'heart-outline'}
-                size={20}
-                color={isFavorite ? '#EF4444' : theme.textSecondary}
-              />
-            </TouchableOpacity>
+        <TouchableOpacity
+            style={[
+              styles.trackItem,
+              { backgroundColor: theme.background },
+              isSelected && {
+                backgroundColor: item.color + '15',
+                borderColor: item.color,
+                borderWidth: 1,
+              },
+            ]}
+            onPress={() => handlePlay(item.id)}
+            // 🔥 NEW: Disable interaction while loading
+            disabled={isCurrentlyLoading}
+        >
+          <View style={[styles.trackIcon, { backgroundColor: item.color + '20' }]}>
+            {/* 🔥 NEW: Show loading indicator */}
+            {isCurrentlyLoading ? (
+                <Ionicons name="hourglass" size={20} color={item.color} />
+            ) : (
+                <Ionicons name={getTrackIcon(item.type) as any} size={20} color={item.color} />
+            )}
           </View>
-          <Text style={[styles.trackDescription, { color: theme.textSecondary }]}>
-            {item.description}
-          </Text>
-          <Text style={[styles.trackDuration, { color: theme.textSecondary }]}>
-            {item.duration}
-          </Text>
-        </View>
 
-        {isSelected && isPlaying && (
-          <Animated.View style={[styles.playingIndicator, waveStyle]}>
-            <View style={[styles.waveBar, { backgroundColor: item.color }]} />
-            <View style={[styles.waveBar, { backgroundColor: item.color }]} />
-            <View style={[styles.waveBar, { backgroundColor: item.color }]} />
-          </Animated.View>
-        )}
-      </TouchableOpacity>
+          <View style={styles.trackInfo}>
+            <View style={styles.trackHeader}>
+              <Text style={[styles.trackName, { color: theme.text }]}>{item.name}</Text>
+              <TouchableOpacity onPress={() => toggleFavorite(item.id)}>
+                <Ionicons
+                    name={isFavorite ? 'heart' : 'heart-outline'}
+                    size={20}
+                    color={isFavorite ? '#EF4444' : theme.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.trackDescription, { color: theme.textSecondary }]}>
+              {item.description}
+            </Text>
+            <Text style={[styles.trackDuration, { color: theme.textSecondary }]}>
+              {item.duration}
+            </Text>
+          </View>
+
+          {isSelected && isPlaying && (
+              <Animated.View style={[styles.playingIndicator, waveStyle]}>
+                <View style={[styles.waveBar, { backgroundColor: item.color }]} />
+                <View style={[styles.waveBar, { backgroundColor: item.color }]} />
+                <View style={[styles.waveBar, { backgroundColor: item.color }]} />
+              </Animated.View>
+          )}
+        </TouchableOpacity>
     );
   };
 
   const selectedTrackData = musicTracks.find(track => track.id === selectedTrack);
 
   return (
-    <BottomSheet
-      ref={bottomSheetRef}
-      index={-1}
-      snapPoints={snapPoints}
-      enablePanDownToClose
-      backdropComponent={renderBackdrop}
-      backgroundStyle={{ backgroundColor: theme.surface }}
-      handleIndicatorStyle={{ backgroundColor: theme.textSecondary }}
-    >
-      <BottomSheetView style={styles.contentContainer}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={[styles.musicIcon, { backgroundColor: theme.accent + '20' }]}>
-              <Ionicons name="musical-notes" size={24} color={theme.accent} />
+      <BottomSheet
+          ref={bottomSheetRef}
+          index={-1}
+          snapPoints={snapPoints}
+          enablePanDownToClose
+          backdropComponent={renderBackdrop}
+          backgroundStyle={{ backgroundColor: theme.surface }}
+          handleIndicatorStyle={{ backgroundColor: theme.textSecondary }}
+      >
+        <BottomSheetView style={styles.contentContainer}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <View style={[styles.musicIcon, { backgroundColor: theme.accent + '20' }]}>
+                <Ionicons name="musical-notes" size={24} color={theme.accent} />
+              </View>
+              <View>
+                <Text style={[styles.title, { color: theme.text }]}>Focus Music</Text>
+                <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                  Choose your perfect focus soundtrack
+                </Text>
+              </View>
             </View>
-            <View>
-              <Text style={[styles.title, { color: theme.text }]}>Focus Music</Text>
-              <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                Choose your perfect focus soundtrack
-              </Text>
-            </View>
-          </View>
 
-          <TouchableOpacity
-            onPress={() => setShowSettings(!showSettings)}
-            style={[styles.settingsButton, { backgroundColor: theme.background }]}
-          >
-            <Ionicons name="settings" size={20} color={theme.textSecondary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Filter Tabs */}
-        <View style={styles.filterContainer}>
-          {['all', 'nature', 'focus', 'ambient', 'binaural', 'favorites'].map((filter) => (
             <TouchableOpacity
-              key={filter}
-              style={[
-                styles.filterChip,
-                filteredType === filter && { backgroundColor: theme.accent + '20' }
-              ]}
-              onPress={() => setFilteredType(filter)}
+                onPress={() => setShowSettings(!showSettings)}
+                style={[styles.settingsButton, { backgroundColor: theme.background }]}
             >
-              <Ionicons
-                name={
-                  filter === 'all' ? 'apps' :
-                  filter === 'nature' ? 'leaf' :
-                  filter === 'focus' ? 'radio' :
-                  filter === 'ambient' ? 'cafe' :
-                  filter === 'binaural' ? 'pulse' :
-                  'heart'
-                }
-                size={16}
-                color={filteredType === filter ? theme.accent : theme.textSecondary}
-              />
-              <Text style={[
-                styles.filterText,
-                { color: filteredType === filter ? theme.accent : theme.textSecondary }
-              ]}>
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
-              </Text>
+              <Ionicons name="settings" size={20} color={theme.textSecondary} />
             </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Settings Panel */}
-        {showSettings && (
-          <Animated.View style={[styles.settingsPanel, { backgroundColor: theme.background }]}>
-            <View style={styles.settingRow}>
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Auto-play</Text>
-              <TouchableOpacity
-                onPress={() => saveSettings({ autoPlay: !settings.autoPlay })}
-                style={[
-                  styles.toggle,
-                  { backgroundColor: settings.autoPlay ? theme.accent : theme.surface }
-                ]}
-              >
-                <View style={[
-                  styles.toggleThumb,
-                  { backgroundColor: '#fff' },
-                  settings.autoPlay && styles.toggleThumbActive
-                ]} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.settingRow}>
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Fade in/out</Text>
-              <TouchableOpacity
-                onPress={() => saveSettings({ fadeInOut: !settings.fadeInOut })}
-                style={[
-                  styles.toggle,
-                  { backgroundColor: settings.fadeInOut ? theme.accent : theme.surface }
-                ]}
-              >
-                <View style={[
-                  styles.toggleThumb,
-                  { backgroundColor: '#fff' },
-                  settings.fadeInOut && styles.toggleThumbActive
-                ]} />
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-        )}
-
-        {/* Track List */}
-        <FlatList
-          data={getFilteredTracks()}
-          renderItem={renderTrackItem}
-          keyExtractor={(item) => item.id}
-          style={styles.trackList}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.trackListContent}
-        />
-
-        {/* Now Playing Section */}
-        {selectedTrack && selectedTrackData && (
-          <View style={[styles.nowPlaying, { borderTopColor: theme.background }]}>
-            <View style={styles.nowPlayingHeader}>
-              <Text style={[styles.nowPlayingTitle, { color: theme.text }]}>
-                Now Playing
-              </Text>
-              <Text style={[styles.nowPlayingTrack, { color: theme.textSecondary }]}>
-                {selectedTrackData.name}
-              </Text>
-            </View>
-
-            {/* Progress Bar */}
-            <View style={[styles.progressContainer, { backgroundColor: theme.background }]}>
-              <Animated.View style={[styles.progressBar, { backgroundColor: selectedTrackData.color }, volumeStyle]} />
-            </View>
-
-            {/* Controls */}
-            <View style={styles.controls}>
-              <TouchableOpacity
-                style={[styles.controlButton, { backgroundColor: theme.background }]}
-                onPress={() => handleVolumeChange(-0.1)}
-              >
-                <Ionicons name="volume-low" size={20} color={theme.textSecondary} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.playButton, { backgroundColor: selectedTrackData.color }]}
-                onPress={() => handlePlay(selectedTrack)}
-              >
-                <Ionicons
-                  name={isPlaying ? "pause" : "play"}
-                  size={28}
-                  color="#FFFFFF"
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.controlButton, { backgroundColor: theme.background }]}
-                onPress={() => handleVolumeChange(0.1)}
-              >
-                <Ionicons name="volume-high" size={20} color={theme.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Volume Indicator */}
-            <View style={styles.volumeContainer}>
-              <Text style={[styles.volumeText, { color: theme.textSecondary }]}>
-                Volume: {Math.round(settings.volume * 100)}%
-              </Text>
-            </View>
           </View>
-        )}
-      </BottomSheetView>
-    </BottomSheet>
+
+          {/* Filter Tabs */}
+          <View style={styles.filterContainer}>
+            {['all', 'nature', 'focus', 'ambient', 'binaural', 'favorites'].map((filter) => (
+                <TouchableOpacity
+                    key={filter}
+                    style={[
+                      styles.filterChip,
+                      filteredType === filter && { backgroundColor: theme.accent + '20' }
+                    ]}
+                    onPress={() => setFilteredType(filter)}
+                >
+                  <Ionicons
+                      name={
+                        filter === 'all' ? 'apps' :
+                            filter === 'nature' ? 'leaf' :
+                                filter === 'focus' ? 'radio' :
+                                    filter === 'ambient' ? 'cafe' :
+                                        filter === 'binaural' ? 'pulse' :
+                                            'heart'
+                      }
+                      size={16}
+                      color={filteredType === filter ? theme.accent : theme.textSecondary}
+                  />
+                  <Text style={[
+                    styles.filterText,
+                    { color: filteredType === filter ? theme.accent : theme.textSecondary }
+                  ]}>
+                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Settings Panel */}
+          {showSettings && (
+              <Animated.View style={[styles.settingsPanel, { backgroundColor: theme.background }]}>
+                <View style={styles.settingRow}>
+                  <Text style={[styles.settingLabel, { color: theme.text }]}>Auto-play</Text>
+                  <TouchableOpacity
+                      onPress={() => saveSettings({ autoPlay: !settings.autoPlay })}
+                      style={[
+                        styles.toggle,
+                        { backgroundColor: settings.autoPlay ? theme.accent : theme.surface }
+                      ]}
+                  >
+                    <View style={[
+                      styles.toggleThumb,
+                      { backgroundColor: '#fff' },
+                      settings.autoPlay && styles.toggleThumbActive
+                    ]} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.settingRow}>
+                  <Text style={[styles.settingLabel, { color: theme.text }]}>Fade in/out</Text>
+                  <TouchableOpacity
+                      onPress={() => saveSettings({ fadeInOut: !settings.fadeInOut })}
+                      style={[
+                        styles.toggle,
+                        { backgroundColor: settings.fadeInOut ? theme.accent : theme.surface }
+                      ]}
+                  >
+                    <View style={[
+                      styles.toggleThumb,
+                      { backgroundColor: '#fff' },
+                      settings.fadeInOut && styles.toggleThumbActive
+                    ]} />
+                  </TouchableOpacity>
+                </View>
+              </Animated.View>
+          )}
+
+          {/* Track List */}
+          <FlatList
+              data={getFilteredTracks()}
+              renderItem={renderTrackItem}
+              keyExtractor={(item) => item.id}
+              style={styles.trackList}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.trackListContent}
+          />
+
+          {/* Now Playing Section */}
+          {selectedTrack && selectedTrackData && (
+              <View style={[styles.nowPlaying, { borderTopColor: theme.background }]}>
+                <View style={styles.nowPlayingHeader}>
+                  <Text style={[styles.nowPlayingTitle, { color: theme.text }]}>
+                    Now Playing
+                  </Text>
+                  <Text style={[styles.nowPlayingTrack, { color: theme.textSecondary }]}>
+                    {selectedTrackData.name}
+                  </Text>
+                  {/* 🔥 NEW: Show loading/downloading status */}
+                  {(isDownloading || isLoadingTrack) && (
+                      <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+                        {isDownloading ? 'Downloading...' : 'Loading...'}
+                      </Text>
+                  )}
+                </View>
+
+                {/* Progress Bar */}
+                <View style={[styles.progressContainer, { backgroundColor: theme.background }]}>
+                  <Animated.View style={[styles.progressBar, { backgroundColor: selectedTrackData.color }, volumeStyle]} />
+                </View>
+
+                {/* Controls */}
+                <View style={styles.controls}>
+                  <TouchableOpacity
+                      style={[styles.controlButton, { backgroundColor: theme.background }]}
+                      onPress={() => handleVolumeChange(-0.1)}
+                  >
+                    <Ionicons name="volume-low" size={20} color={theme.textSecondary} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                      style={[styles.playButton, { backgroundColor: selectedTrackData.color }]}
+                      onPress={handlePlayPause} // 🔥 CHANGED: Use new function
+                      disabled={isDownloading || !status.isLoaded} // 🔥 NEW: Disable when not ready
+                  >
+                    <Ionicons
+                        name={
+                          isDownloading || isLoadingTrack ? "hourglass" : // 🔥 NEW: Show loading
+                              isPlaying ? "pause" : "play"
+                        }
+                        size={28}
+                        color="#FFFFFF"
+                    />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                      style={[styles.controlButton, { backgroundColor: theme.background }]}
+                      onPress={() => handleVolumeChange(0.1)}
+                  >
+                    <Ionicons name="volume-high" size={20} color={theme.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Volume Indicator */}
+                <View style={styles.volumeContainer}>
+                  <Text style={[styles.volumeText, { color: theme.textSecondary }]}>
+                    Volume: {Math.round(settings.volume * 100)}%
+                  </Text>
+                </View>
+              </View>
+          )}
+        </BottomSheetView>
+      </BottomSheet>
   );
 };
 
@@ -674,6 +764,12 @@ const styles = StyleSheet.create({
   nowPlayingTrack: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  // 🔥 NEW: Loading text style
+  loadingText: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 4,
   },
   progressContainer: {
     height: 4,
