@@ -1,4 +1,4 @@
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
 import {createNativeStackNavigator} from "@react-navigation/native-stack";
 import StatisticsScreen from "../screens/StatisticsScreen";
 import {Ionicons} from "@expo/vector-icons";
@@ -6,14 +6,14 @@ import FlowTimerScreen from "../screens/FlowTimerScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import FlowAnalyticsScreen from "../screens/FlowAnalyticsScreen";
 import ThemeCustomizationScreen from "../screens/ThemeCustomizationScreen";
-import { useTheme } from "../providers/ThemeProvider";
+import {useTheme} from "../providers/ThemeProvider";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 const AppTabNavigation = () => {
     const { theme, isDark } = useTheme();
-    
+
     return (
         <Tab.Navigator
             screenOptions={({route}) => ({
@@ -56,7 +56,7 @@ const AppTabNavigation = () => {
 
 const AppStackNavigation = () => {
     const { theme } = useTheme();
-    
+
     return (
         <Stack.Navigator
             screenOptions={{
@@ -69,23 +69,23 @@ const AppStackNavigation = () => {
                 },
             }}
         >
-            <Stack.Screen 
-                name="Root" 
+            <Stack.Screen
+                name="Root"
                 component={AppTabNavigation}
                 options={{
                     headerShown: false
                 }}
             />
-            <Stack.Screen 
-                name="FlowAnalytics" 
+            <Stack.Screen
+                name="FlowAnalytics"
                 component={FlowAnalyticsScreen}
                 options={{
                     title: 'Focus Analytics',
-                    headerShown:false 
+                    headerShown:false
                 }}
             />
-            <Stack.Screen 
-                name="ThemeCustomization" 
+            <Stack.Screen
+                name="ThemeCustomization"
                 component={ThemeCustomizationScreen}
                 options={{
                     title: 'Theme Customization',

@@ -447,21 +447,21 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={styles.quickActionItem}
-                        onPress={() => {
-                            navigation?.navigate('FlowAnalytics');
-                            setShowQuickActions(false);
-                        }}
-                    >
-                        <View style={[styles.quickActionIcon, { backgroundColor: '#9F7AEA' + '20' }]}>
-                            <Ionicons name="analytics" size={20} color="#9F7AEA" />
-                        </View>
-                        <Text style={[styles.quickActionText, { color: theme.text }]}>Analytics</Text>
-                        <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>
-                            View insights
-                        </Text>
-                    </TouchableOpacity>
+                    {/*<TouchableOpacity*/}
+                    {/*    style={styles.quickActionItem}*/}
+                    {/*    onPress={() => {*/}
+                    {/*        navigation?.navigate('FlowAnalytics');*/}
+                    {/*        setShowQuickActions(false);*/}
+                    {/*    }}*/}
+                    {/*>*/}
+                    {/*    <View style={[styles.quickActionIcon, { backgroundColor: '#9F7AEA' + '20' }]}>*/}
+                    {/*        <Ionicons name="analytics" size={20} color="#9F7AEA" />*/}
+                    {/*    </View>*/}
+                    {/*    <Text style={[styles.quickActionText, { color: theme.text }]}>Analytics</Text>*/}
+                    {/*    <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>*/}
+                    {/*        View insights*/}
+                    {/*    </Text>*/}
+                    {/*</TouchableOpacity>*/}
                 </Animated.View>}
 
                 {/* Timer Container */}
