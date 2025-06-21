@@ -24,25 +24,39 @@ export const DynamicBackground: React.FC<DynamicBackgroundProps> = ({
   }, [isRunning]);
 
   const animatedStyle = useAnimatedStyle(() => {
-    let fromColor = theme.background;
-    let toColor = theme.surface;
+    let fromColor = theme.background || '#FFFFFF';
+    let toColor = theme.surface || '#F5F5F5';
+    
     if (isBreak) {
-      fromColor = theme.background;
-      toColor = theme.warning + '30';
+      fromColor = theme.background || '#FFFFFF';
+      toColor = (theme.warning || '#FFA500') + '30';
     } else if (flowIntensity === 'high') {
-      fromColor = theme.background;
-      toColor = theme.success + '30';
+      fromColor = theme.background || '#FFFFFF';
+      toColor = (theme.success || '#48BB78') + '30';
     } else if (flowIntensity === 'medium') {
-      fromColor = theme.background;
-      toColor = theme.accent + '30';
+      fromColor = theme.background || '#FFFFFF';
+      toColor = (theme.accent || '#4299E1') + '30';
     } else if (flowIntensity === 'low') {
-      fromColor = theme.background;
-      toColor = theme.error + '30';
+      fromColor = theme.background || '#FFFFFF';
+      toColor = (theme.error || '#F56565') + '30';
     }
+
+    // Ensure we have valid colors before interpolation
+    const inputRange = [0, 1];
+    const outputRange = [fromColor, toColor];
+
+    // Validate that both arrays have at least 2 values
+    if (inputRange.length < 2 || outputRange.length < 2) {
+      return {
+        backgroundColor: fromColor,
+        opacity: 0.8 + (progress * 0.2),
+      };
+    }
+
     const backgroundColor = interpolateColor(
       animatedValue.value,
-      [0, 1],
-      [fromColor, toColor]
+      inputRange,
+      outputRange
     );
 
     return {
