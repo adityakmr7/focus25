@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { databaseService as localDatabaseService } from './database';
+import { localDatabaseService } from './localDatabase';
 import { supabaseDatabaseService } from './supabaseDatabase';
 
 // Hybrid database service that uses Supabase when authenticated, local storage otherwise
