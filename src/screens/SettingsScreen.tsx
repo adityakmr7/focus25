@@ -1,33 +1,16 @@
-import React, {useCallback, useEffect, useState, useMemo} from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    SafeAreaView,
-    ScrollView,
-    Alert,
-    Platform,
-    Share,
-} from 'react-native';
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withTiming,
-    withDelay,
-    interpolate,
-    runOnJS,
-} from 'react-native-reanimated';
-import { SettingItem } from '../components/SettingItem';
-import { SectionHeader } from '../components/SectionHeader';
-import { TimeDurationSelector } from '../components/TimeDurationSelector';
-import { useSettingsStore } from '../store/settingsStore';
-import { useTheme } from '../providers/ThemeProvider';
-import { useThemeStore } from '../store/themeStore';
-import { useGoalsStore } from '../store/goalsStore';
-import { useStatisticsStore } from '../store/statisticsStore';
-import { usePomodoroStore } from '../store/pomodoroStore';
-import { databaseService } from '../services/database';
-import { Ionicons } from '@expo/vector-icons';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {Alert, Platform, SafeAreaView, Share, StyleSheet, Text, View,} from 'react-native';
+import Animated, {interpolate, useAnimatedStyle, useSharedValue, withDelay, withTiming,} from 'react-native-reanimated';
+import {SettingItem} from '../components/SettingItem';
+import {SectionHeader} from '../components/SectionHeader';
+import {TimeDurationSelector} from '../components/TimeDurationSelector';
+import {useSettingsStore} from '../store/settingsStore';
+import {useTheme} from '../providers/ThemeProvider';
+import {useThemeStore} from '../store/themeStore';
+import {useGoalsStore} from '../store/goalsStore';
+import {useStatisticsStore} from '../store/statisticsStore';
+import {usePomodoroStore} from '../store/pomodoroStore';
+import {Ionicons} from '@expo/vector-icons';
 
 interface SettingsScreenProps {
     navigation?: {
@@ -577,17 +560,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingVertical: 20,
         borderBottomWidth: 1,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-            },
-            android: {
-                elevation: 2,
-            },
-        }),
     },
     backButton: {
         width: 40,
