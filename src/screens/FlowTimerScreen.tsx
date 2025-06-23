@@ -33,7 +33,7 @@ import {BottomSheetMethods} from "@gorhom/bottom-sheet/lib/typescript/types";
 import {audioSource} from "../utils/constants";
 import MiniAudioPlayer from "../components/MiniAudioPlayer";
 
-
+// Types
 interface FlowTimerScreenProps {
     navigation?: {
         goBack: () => void;
@@ -41,9 +41,236 @@ interface FlowTimerScreenProps {
     };
 }
 
+interface HeaderProps {
+    theme: any;
+    flowMetrics: any;
+    onShowAchievements: () => void;
+    onToggleQuickActions: () => void;
+    onReset: () => void;
+    showQuickActions: boolean;
+}
 
+interface AuthStatusProps {
+    isAuthenticated: boolean;
+}
 
+interface QuickActionsPanelProps {
+    theme: any;
+    showQuickActions: boolean;
+    quickActionsAnimation: any;
+    onOpenMusicPlayer: () => void;
+    onToggleBreathing: () => void;
+    showBreathingAnimation: boolean;
+}
+
+interface TimerContainerProps {
+    theme: any;
+    timer: any;
+    flowMetrics: any;
+    showBreathingAnimation: boolean;
+    pulseAnimation: any;
+    onToggleTimer: () => void;
+    miniAudioPlayerRef: any;
+    isAuthenticated: boolean;
+}
+
+// Components
+const AuthStatus: React.FC<AuthStatusProps> = ({ isAuthenticated }) => {
+    return (
+        <View style={styles.centerStatus}>
+            {isAuthenticated ? (
+                <View style={styles.authStatus}>
+                    <Ionicons name="cloud-done" size={16} color="#10B981" />
+                    <Text style={[styles.authStatusText, { color: '#10B981' }]}>
+                        Synced
+                    </Text>
+                </View>
+            ) : (
+                <View style={styles.authStatus}>
+                    <Ionicons name="cloud-offline" size={16} color="#F59E0B" />
+                    <Text style={[styles.authStatusText, { color: '#F59E0B' }]}>
+                        Local Only
+                    </Text>
+                </View>
+            )}
+        </View>
+    );
+};
+
+const Header: React.FC<HeaderProps> = ({
+                                           theme,
+                                           flowMetrics,
+                                           onShowAchievements,
+                                           onToggleQuickActions,
+                                           onReset,
+                                           showQuickActions
+                                       }) => {
+    return (
+        <View style={styles.header}>
+            <TouchableOpacity
+                onPress={onShowAchievements}
+                style={[styles.headerButton, { backgroundColor: theme.surface }]}
+            >
+                <Ionicons name="trophy" size={20} color="#FFD700" />
+                {flowMetrics.currentStreak > 0 && (
+                    <View style={styles.badge}>
+                        <Text style={styles.badgeText}>{flowMetrics.currentStreak}</Text>
+                    </View>
+                )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                onPress={onToggleQuickActions}
+                style={[styles.menuButton, { backgroundColor: theme.surface }]}
+            >
+                <Ionicons name="ellipsis-horizontal" size={20} color={theme.accent} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                onPress={onReset}
+                style={[styles.headerButton, { backgroundColor: theme.surface }]}
+            >
+                <Ionicons name="refresh" size={20} color={theme.accent} />
+            </TouchableOpacity>
+        </View>
+    );
+};
+
+const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
+                                                                 theme,
+                                                                 showQuickActions,
+                                                                 quickActionsAnimation,
+                                                                 onOpenMusicPlayer,
+                                                                 onToggleBreathing,
+                                                                 showBreathingAnimation
+                                                             }) => {
+    const quickActionsAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            opacity: interpolate(quickActionsAnimation.value, [0, 1], [0, 1]),
+            transform: [{
+                translateY: interpolate(quickActionsAnimation.value, [0, 1], [20, 0])
+            }]
+        };
+    });
+
+    if (!showQuickActions) return null;
+
+    return (
+        <Animated.View
+            style={[
+                styles.quickActionsPanel,
+                { backgroundColor: theme.surface },
+                quickActionsAnimatedStyle
+            ]}
+            pointerEvents={showQuickActions ? 'auto' : 'none'}
+        >
+            <TouchableOpacity
+                style={styles.quickActionItem}
+                onPress={onOpenMusicPlayer}
+            >
+                <View style={[styles.quickActionIcon, { backgroundColor: '#4ECDC4' + '20' }]}>
+                    <Ionicons name="musical-notes" size={20} color="#4ECDC4" />
+                </View>
+                <Text style={[styles.quickActionText, { color: theme.text }]}>Focus Music</Text>
+                <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>
+                    Ambient sounds
+                </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={styles.quickActionItem}
+                onPress={onToggleBreathing}
+            >
+                <View style={[styles.quickActionIcon, { backgroundColor: '#48BB78' + '20' }]}>
+                    <Ionicons name="leaf" size={20} color="#48BB78" />
+                </View>
+                <Text style={[styles.quickActionText, { color: theme.text }]}>Breathing Guide</Text>
+                <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>
+                    {showBreathingAnimation ? 'Active' : 'Inactive'}
+                </Text>
+            </TouchableOpacity>
+        </Animated.View>
+    );
+};
+
+const TimerContainer: React.FC<TimerContainerProps> = ({
+                                                           theme,
+                                                           timer,
+                                                           flowMetrics,
+                                                           showBreathingAnimation,
+                                                           pulseAnimation,
+                                                           onToggleTimer,
+                                                           miniAudioPlayerRef,
+                                                           isAuthenticated
+                                                       }) => {
+    const {
+        handlePlayPause,
+        handleVolumeChange,
+        selectedTrackData,
+        settings,
+        player,
+        volumeStyle,
+        isPlaying
+    } = miniAudioPlayerRef?.current || {};
+
+    return (
+        <View style={styles.timerContainer}>
+            <AuthStatus isAuthenticated={isAuthenticated} />
+
+            <Text style={[styles.flowLabel, { color: theme.text }]}>
+                {timer.isBreak ? 'Break Time' : 'Flow'}
+            </Text>
+
+            {/* Breathing Animation - only when running and enabled */}
+            {showBreathingAnimation && timer.isRunning && (
+                <View style={styles.breathingContainer}>
+                    <BreathingAnimation />
+                </View>
+            )}
+
+            {/* Timer Display */}
+            <TimerDisplay
+                minutes={timer.minutes}
+                seconds={timer.seconds}
+                progress={1 - (timer.totalSeconds / timer.initialSeconds)}
+                isRunning={timer.isRunning}
+                pulseAnimation={pulseAnimation}
+            />
+
+            {/* Session Dots */}
+            <SessionDots
+                currentSession={timer.currentSession}
+                totalSessions={timer.totalSessions}
+            />
+
+            {/* Play/Pause Button */}
+            <PlayPauseButton
+                isRunning={timer.isRunning}
+                isPaused={timer.isPaused}
+                onPress={onToggleTimer}
+            />
+
+            {/* Mini Audio Player */}
+            {miniAudioPlayerRef?.current &&
+                miniAudioPlayerRef.current.selectedTrackData &&
+                player?.isLoaded && (
+                    <MiniAudioPlayer
+                        isPlaying={isPlaying}
+                        handlePlayPause={handlePlayPause}
+                        handleVolumeChange={handleVolumeChange}
+                        selectedTrackData={selectedTrackData}
+                        settings={settings}
+                        player={player}
+                        volumeStyle={volumeStyle}
+                    />
+                )}
+        </View>
+    );
+};
+
+// Main Component
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
+    // Hooks and State
     const { user, isAuthenticated } = useAuthContext();
     const miniAudioPlayerRef = useRef<any>(null);
 
@@ -87,12 +314,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const achievementAnimation = useSharedValue(0);
     const quickActionsAnimation = useSharedValue(0);
 
-    // Update hybrid database service with auth state
+    // Effects (keeping all existing useEffect hooks)
     useEffect(() => {
         hybridDatabaseService.setAuthState(isAuthenticated, user?.id);
     }, [isAuthenticated, user?.id]);
 
-    // Initialize stores when component mounts
     useEffect(() => {
         const initializeStores = async () => {
             try {
@@ -108,21 +334,18 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         initializeStores();
     }, []);
 
-    // Initialize container animation
     useEffect(() => {
         containerAnimation.value = withTiming(1, {
             duration: 1000,
         });
     }, []);
 
-    // Quick actions animation
     useEffect(() => {
         quickActionsAnimation.value = withTiming(showQuickActions ? 1 : 0, {
             duration: 300,
         });
     }, [showQuickActions]);
 
-    // Check for achievements
     useEffect(() => {
         const newAchievements = [];
 
@@ -140,14 +363,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             setAchievements(newAchievements);
             setShowAchievements(true);
 
-            // Send achievement notifications
             newAchievements.forEach(achievement => {
                 notificationService.scheduleGoalAchievement(achievement);
             });
         }
     }, [flowMetrics.consecutiveSessions, flowMetrics.currentStreak, flowMetrics.flowIntensity]);
 
-    // Sync with background timer on app resume
     useEffect(() => {
         const syncWithBackgroundTimer = async () => {
             try {
@@ -159,7 +380,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         setIsConnectedToBackground(true);
                         setBackgroundSessionId(backgroundState.sessionId);
 
-                        // Update local timer state to match background
                         const minutes = Math.floor(remainingTime / 60);
                         const seconds = remainingTime % 60;
 
@@ -183,40 +403,16 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         syncWithBackgroundTimer();
     }, []);
 
-    // Play sound effect with error handling
-    const playCompletionSound = async () => {
-        try {
-            await alertPlayer.play();
-            setTimeout(() => {
-                player.pause();
-            }, 2000);
-
-            // Send completion notification
-            await notificationService.scheduleSessionComplete(timer.isBreak);
-
-            handleTimerComplete();
-        } catch (error) {
-            errorHandler.logError(error as Error, {
-                context: 'Audio Playback',
-                severity: 'low',
-            });
-            handleTimerComplete();
-        }
-    };
-
-    // Update timer when duration changes in settings
     useEffect(() => {
         if (!timer.isRunning) {
             updateTimerFromSettings();
         }
     }, [timeDuration]);
 
-    // Enhanced timer logic with background support
     useEffect(() => {
         if (timer.isRunning && !timer.isPaused) {
             intervalRef.current = setInterval(async () => {
                 if (timer.totalSeconds <= 0) {
-                    // Stop background timer
                     if (backgroundTimerService.isSupported()) {
                         await backgroundTimerService.stopTimer();
                         setBackgroundSessionId(null);
@@ -254,7 +450,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         };
     }, [timer.isRunning, timer.isPaused, timer.totalSeconds, timer.isBreak]);
 
-    // Progress animation
     useEffect(() => {
         const progress = 1 - (timer.totalSeconds / timer.initialSeconds);
         progressAnimation.value = withTiming(progress, {
@@ -262,7 +457,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         });
     }, [timer.totalSeconds, timer.initialSeconds]);
 
-    // Pulse animation when running
     useEffect(() => {
         if (timer.isRunning && !timer.isPaused) {
             pulseAnimation.value = withTiming(1.05, { duration: 1000 });
@@ -274,17 +468,32 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         }
     }, [timer.isRunning, timer.isPaused]);
 
+    // Handler Functions
+    const playCompletionSound = async () => {
+        try {
+            await alertPlayer.play();
+            setTimeout(() => {
+                alertPlayer.pause();
+            }, 2000);
+
+            await notificationService.scheduleSessionComplete(timer.isBreak);
+            handleTimerComplete();
+        } catch (error) {
+            errorHandler.logError(error as Error, {
+                context: 'Audio Playback',
+                severity: 'low',
+            });
+            handleTimerComplete();
+        }
+    };
+
     const handleToggleTimer = async () => {
         try {
             const wasRunning = timer.isRunning;
-
-            // Toggle local timer
             toggleTimer();
 
-            // Handle background timer
             if (backgroundTimerService.isSupported()) {
                 if (!wasRunning) {
-                    // Starting timer
                     const sessionId = await backgroundTimerService.startTimer(
                         Math.floor(timer.totalSeconds / 60),
                         timer.isBreak
@@ -292,10 +501,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     setBackgroundSessionId(sessionId);
                     setIsConnectedToBackground(true);
                 } else if (timer.isPaused) {
-                    // Resuming timer
                     await backgroundTimerService.resumeTimer();
                 } else {
-                    // Pausing timer
                     await backgroundTimerService.pauseTimer();
                 }
             }
@@ -316,7 +523,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         try {
             resetTimer();
 
-            // Stop background timer
             if (backgroundTimerService.isSupported()) {
                 await backgroundTimerService.stopTimer();
                 setBackgroundSessionId(null);
@@ -338,18 +544,21 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         setShowAchievements(false);
     };
 
+    const handleToggleQuickActions = () => {
+        setShowQuickActions(!showQuickActions);
+    };
+
     const handleOpenMusicPlayer = () => {
         bottomSheetRef.current?.expand();
         setShowQuickActions(false);
     };
 
-    const getSessionDurationText = () => {
-        if (timer.adaptedDuration && timer.adaptedDuration !== Math.floor(timer.initialSeconds / 60)) {
-            return `${Math.floor(timer.initialSeconds / 60)}m (adapted from ${timer.adaptedDuration}m)`;
-        }
-        return `${Math.floor(timer.initialSeconds / 60)}m session`;
+    const handleToggleBreathing = () => {
+        setShowBreathingAnimation(!showBreathingAnimation);
+        setShowQuickActions(false);
     };
 
+    // Animation Styles
     const containerAnimatedStyle = useAnimatedStyle(() => {
         return {
             opacity: interpolate(containerAnimation.value, [0, 1], [0, 1]),
@@ -359,191 +568,73 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         };
     });
 
-    const quickActionsAnimatedStyle = useAnimatedStyle(() => {
-        return {
-            opacity: interpolate(quickActionsAnimation.value, [0, 1], [0, 1]),
-            transform: [{
-                translateY: interpolate(quickActionsAnimation.value, [0, 1], [20, 0])
-            }]
-        };
-    });
-
-    const {
-        handlePlayPause,
-        handleVolumeChange,
-        selectedTrackData,
-        settings,
-        player,
-        volumeStyle,
-        isPlaying
-    } = miniAudioPlayerRef.current || {};
-
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-            {/* Dynamic Background */}
 
-           <ScrollView className='flex-1' contentContainerStyle={{flex:1}}>
-               <DynamicBackground
-                   isRunning={timer.isRunning}
-                   isBreak={timer.isBreak}
-                   flowIntensity={flowMetrics.flowIntensity}
-                   progress={1 - (timer.totalSeconds / timer.initialSeconds)}
-               />
+            <ScrollView className='flex-1 ' contentContainerStyle={{flex:1}}>
+                <DynamicBackground
+                    isRunning={timer.isRunning}
+                    isBreak={timer.isBreak}
+                    flowIntensity={flowMetrics.flowIntensity}
+                    progress={1 - (timer.totalSeconds / timer.initialSeconds)}
+                />
 
-            <Animated.View
-                style={[
-                    styles.content,
-                    containerAnimatedStyle,
-                ]}
-            >
-                {/* Enhanced Header with Authentication Status */}
-                <View style={styles.header}>
-                    <TouchableOpacity
-                        onPress={handleShowAchievements}
-                        style={[styles.headerButton, { backgroundColor: theme.surface }]}
-                    >
-                        <Ionicons name="trophy" size={20} color="#FFD700" />
-                        {flowMetrics.currentStreak > 0 && (
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeText}>{flowMetrics.currentStreak}</Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={() => setShowQuickActions(!showQuickActions)}
-                        style={[styles.menuButton, { backgroundColor: theme.surface }]}
-                    >
-                        <Ionicons name="ellipsis-horizontal" size={20} color={theme.accent} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={handleReset} style={[styles.headerButton, { backgroundColor: theme.surface }]}>
-                        <Ionicons name="refresh" size={20} color={theme.accent} />
-                    </TouchableOpacity>
-                </View>
-
-                {/* Quick Actions Panel */}
-                {showQuickActions &&
                 <Animated.View
                     style={[
-                        styles.quickActionsPanel,
-                        { backgroundColor: theme.surface},
-                        quickActionsAnimatedStyle
+                        styles.content,
+                        containerAnimatedStyle,
                     ]}
-                    pointerEvents={showQuickActions ? 'auto' : 'none'}
                 >
+                    <Header
+                        theme={theme}
+                        flowMetrics={flowMetrics}
+                        onShowAchievements={handleShowAchievements}
+                        onToggleQuickActions={handleToggleQuickActions}
+                        onReset={handleReset}
+                        showQuickActions={showQuickActions}
+                    />
 
-                    <TouchableOpacity
-                        style={styles.quickActionItem}
-                        onPress={handleOpenMusicPlayer}
-                    >
-                        <View style={[styles.quickActionIcon, { backgroundColor: '#4ECDC4' + '20' }]}>
-                            <Ionicons name="musical-notes" size={20} color="#4ECDC4" />
-                        </View>
-                        <Text style={[styles.quickActionText, { color: theme.text }]}>Focus Music</Text>
-                        <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>
-                            Ambient sounds
-                        </Text>
-                    </TouchableOpacity>
+                    <QuickActionsPanel
+                        theme={theme}
+                        showQuickActions={showQuickActions}
+                        quickActionsAnimation={quickActionsAnimation}
+                        onOpenMusicPlayer={handleOpenMusicPlayer}
+                        onToggleBreathing={handleToggleBreathing}
+                        showBreathingAnimation={showBreathingAnimation}
+                    />
 
-                    <TouchableOpacity
-                        style={styles.quickActionItem}
-                        onPress={() => {
-                            setShowBreathingAnimation(!showBreathingAnimation);
-                            setShowQuickActions(false);
-                        }}
-                    >
-                        <View style={[styles.quickActionIcon, { backgroundColor: '#48BB78' + '20' }]}>
-                            <Ionicons name="leaf" size={20} color="#48BB78" />
-                        </View>
-                        <Text style={[styles.quickActionText, { color: theme.text }]}>Breathing Guide</Text>
-                        <Text style={[styles.quickActionSubtext, { color: theme.textSecondary }]}>
-                            {showBreathingAnimation ? 'Active' : 'Inactive'}
-                        </Text>
-                    </TouchableOpacity>
-                </Animated.View>}
-
-                {/* Timer Container */}
-                <View style={styles.timerContainer}>
-                    <View style={styles.centerStatus}>
-                        {isAuthenticated && (
-                            <View style={styles.authStatus}>
-                                <Ionicons name="cloud-done" size={16} color="#10B981" />
-                                <Text style={[styles.authStatusText, { color: '#10B981' }]}>
-                                    Synced
-                                </Text>
-                            </View>
-                        )}
-                        {!isAuthenticated && (
-                            <View style={styles.authStatus}>
-                                <Ionicons name="cloud-offline" size={16} color="#F59E0B" />
-                                <Text style={[styles.authStatusText, { color: '#F59E0B' }]}>
-                                    Local Only
-                                </Text>
-                            </View>
-                        )}
-                    </View>
-                    <Text style={[styles.flowLabel, { color: theme.text }]}>
-                        {timer.isBreak ? 'Break Time' : 'Flow'}
-                    </Text>
-
-                    {/* Breathing Animation - only when running and enabled */}
-                    {showBreathingAnimation && timer.isRunning && (
-                        <View style={styles.breathingContainer}>
-                            <BreathingAnimation />
-                        </View>
-                    )}
-
-                    {/* Timer Display */}
-                    <TimerDisplay
-                        minutes={timer.minutes}
-                        seconds={timer.seconds}
-                        progress={1 - (timer.totalSeconds / timer.initialSeconds)}
-                        isRunning={timer.isRunning}
+                    <TimerContainer
+                        theme={theme}
+                        timer={timer}
+                        flowMetrics={flowMetrics}
+                        showBreathingAnimation={showBreathingAnimation}
                         pulseAnimation={pulseAnimation}
+                        onToggleTimer={handleToggleTimer}
+                        miniAudioPlayerRef={miniAudioPlayerRef}
+                        isAuthenticated={isAuthenticated}
                     />
-                    {/* Session Dots - only when not running */}
-                        <SessionDots
-                            currentSession={timer.currentSession}
-                            totalSessions={timer.totalSessions}
-                        />
+                </Animated.View>
 
-                    {/* Play/Pause Button */}
-                    <PlayPauseButton
-                        isRunning={timer.isRunning}
-                        isPaused={timer.isPaused}
-                        onPress={handleToggleTimer}
-                    />
+                <BottomSheetMusicPlayer
+                    miniAudioPlayerRef={miniAudioPlayerRef}
+                    bottomSheetRef={bottomSheetRef}
+                    autoStartTrack={timer.isRunning ? 'deep-focus' : undefined}
+                />
 
-                    {miniAudioPlayerRef?.current && miniAudioPlayerRef.current.selectedTrackData && player.isLoaded &&
-                        <MiniAudioPlayer isPlaying={isPlaying}  handlePlayPause={handlePlayPause} handleVolumeChange={handleVolumeChange} selectedTrackData={selectedTrackData} settings={settings} player={player} volumeStyle={volumeStyle}/>
-                    }
-                </View>
-            </Animated.View>
-
-            {/* Bottom Sheet Music Player */}
-            <BottomSheetMusicPlayer
-                miniAudioPlayerRef={miniAudioPlayerRef}
-                bottomSheetRef={bottomSheetRef}
-                autoStartTrack={timer.isRunning ? 'deep-focus' : undefined}
-            />
-
-
-            {/* Gamification Overlay */}
-            <GamificationOverlay
-                flowMetrics={flowMetrics}
-                isVisible={showAchievements}
-                achievements={achievements}
-                animationValue={achievementAnimation}
-                onClose={handleCloseAchievements}
-            />
-
+                <GamificationOverlay
+                    flowMetrics={flowMetrics}
+                    isVisible={showAchievements}
+                    achievements={achievements}
+                    animationValue={achievementAnimation}
+                    onClose={handleCloseAchievements}
+                />
             </ScrollView>
         </SafeAreaView>
     );
 };
 
+// Styles remain the same
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -631,7 +722,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 80,
         width:Dimensions.get('screen').width * 0.8,
-
     },
     quickActionItem: {
         flexDirection: 'row',
