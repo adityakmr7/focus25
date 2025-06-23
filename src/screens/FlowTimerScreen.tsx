@@ -29,9 +29,9 @@ import {hybridDatabaseService} from '../services/hybridDatabase';
 import {backgroundTimerService} from '../services/backgroundTimer';
 import {notificationService} from '../services/notificationService';
 import {errorHandler} from '../services/errorHandler';
-import BottomSheet from '@gorhom/bottom-sheet';
+import {BottomSheetMethods} from "@gorhom/bottom-sheet/lib/typescript/types";
+import {audioSource} from "../utils/constants";
 
-const { width, height } = Dimensions.get('window');
 
 interface FlowTimerScreenProps {
     navigation?: {
@@ -40,7 +40,7 @@ interface FlowTimerScreenProps {
     };
 }
 
-const audioSource = require('../../assets/sounds/smooth-completed-notify-starting-alert.mp3');
+
 
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const { user, isAuthenticated } = useAuthContext();
@@ -75,7 +75,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const [isConnectedToBackground, setIsConnectedToBackground] = useState(false);
 
     // Bottom Sheet ref
-    const bottomSheetRef = useRef<BottomSheet>(null);
+    const bottomSheetRef = useRef<BottomSheetMethods>(null);
 
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const pulseAnimation = useSharedValue(1);

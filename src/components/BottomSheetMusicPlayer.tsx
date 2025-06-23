@@ -12,21 +12,14 @@ import Animated, {
 import BottomSheet, {BottomSheetBackdrop, BottomSheetView} from '@gorhom/bottom-sheet';
 import {useTheme} from '../providers/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import useBundledAudio from "../hooks/useCachedAudio";
+import {BottomSheetMethods} from "@gorhom/bottom-sheet/lib/typescript/types";
+import useCachedAudio from "../hooks/useCachedAudio";
+import {MusicTrack, musicTracks} from "../utils/constants";
 
 const { width } = Dimensions.get('window');
 const MUSIC_SETTINGS_KEY = 'music_settings';
 
-interface MusicTrack {
-  id: string;
-  name: string;
-  duration: string;
-  type: 'nature' | 'focus' | 'ambient' | 'binaural';
-  description: string;
-  source: string;
-  color: string;
-  isLocal: boolean;
-}
+
 
 interface MusicSettings {
   volume: number;
@@ -44,71 +37,8 @@ const defaultSettings: MusicSettings = {
   favoriteTrackIds: [],
 };
 
-const musicTracks: MusicTrack[] = [
-  {
-    id: 'forest-rain',
-    name: 'Forest Rain',
-    duration: '45:00',
-    type: 'nature',
-    description: 'Gentle rainfall in a peaceful forest',
-    source: 'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//rain-instrument.mp3',
-    color: '#10B981',
-    isLocal: true,
-  },
-  {
-    id: 'ocean-waves',
-    name: 'Ocean Waves',
-    duration: '60:00',
-    type: 'nature',
-    description: 'Calming ocean sounds for deep focus',
-    source: 'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//ocean-instrumental.mp3',
-    color: '#3B82F6',
-    isLocal: true,
-  },
-  {
-    id: 'binaural-alpha',
-    name: 'Alpha Waves',
-    duration: '30:00',
-    type: 'binaural',
-    description: 'Alpha waves for enhanced concentration',
-    source: 'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//rain-instrument.mp3',
-    color: '#8B5CF6',
-    isLocal: true,
-  },
-  {
-    id: 'white-noise',
-    name: 'White Noise',
-    duration: '∞',
-    type: 'ambient',
-    description: 'Pure white noise for blocking distractions',
-    source: 'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//rain-instrument.mp3',
-    color: '#6B7280',
-    isLocal: true,
-  },
-  {
-    id: 'cafe-ambiance',
-    name: 'Cafe Ambiance',
-    duration: '40:00',
-    type: 'ambient',
-    description: 'Cozy coffee shop atmosphere',
-    source: 'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//rain-instrument.mp3',
-    color: '#F59E0B',
-    isLocal: true,
-  },
-  {
-    id: 'deep-focus',
-    name: 'Deep Focus',
-    duration: '25:00',
-    type: 'focus',
-    description: 'Specially designed for Pomodoro sessions',
-    source: 'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//rain-instrument.mp3',
-    color: '#EF4444',
-    isLocal: true,
-  },
-];
-
 interface BottomSheetMusicPlayerProps {
-  bottomSheetRef: React.RefObject<BottomSheet>;
+  bottomSheetRef: React.RefObject<BottomSheetMethods>;
   autoStartTrack?: string;
 }
 
@@ -128,20 +58,10 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
   const [isLoadingTrack, setIsLoadingTrack] = useState(false);
 
   // 🔥 CHANGED: Get additional states from the hook
-  const { player, status, uri, isDownloading, downloadError } = useBundledAudio(
+  const { player, status, uri, isDownloading, downloadError, downloadProgress } = useCachedAudio(
       selectedTrack ? musicTracks.find(t => t.id === selectedTrack)?.source || null : null
   );
 
-  console.log("selectedTrack: ", selectedTrack);
-  // 🔥 NEW: Add debug logging
-  console.log("Audio status:", {
-    isLoaded: status.isLoaded,
-    isDownloading,
-    downloadError,
-    uri,
-    currentTime: status.currentTime,
-    duration: status.duration
-  });
 
   const waveAnimation = useSharedValue(0);
   const volumeAnimation = useSharedValue(settings.volume);
@@ -222,11 +142,10 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
   useEffect(() => {
     if (!status) return;
 
-    setDuration(status.duration || 0);
-    setCurrentTime(status.currentTime || 0);
-
+    setDuration(player.duration || 0);
+    setCurrentTime(player.currentTime || 0);
     // Handle track finishing
-    if (status.didJustFinish) {
+    if (player.currentStatus.didJustFinish) {
       setIsPlaying(false);
       if (player && status.isLoaded) {
         player.seekTo(0);
@@ -234,18 +153,18 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
     }
 
     // 🔥 NEW: Handle auto-play when track is loaded
-    if (status.isLoaded && selectedTrack && settings.autoPlay && !isPlaying && isLoadingTrack) {
+    if (player.isLoaded && selectedTrack && settings.autoPlay && !isPlaying && isLoadingTrack) {
       setIsLoadingTrack(false);
       handlePlayPause();
-    } else if (status.isLoaded && isLoadingTrack) {
+    } else if (player.isLoaded && isLoadingTrack) {
       setIsLoadingTrack(false);
     }
 
     // 🔥 NEW: Set initial volume when track loads
-    if (status.isLoaded && player && settings.volume !== 1) {
+    if (player.isLoaded && player && settings.volume !== 1) {
       player.volume = settings.volume;
     }
-  }, [status, selectedTrack, settings.autoPlay, isLoadingTrack]);
+  }, [ selectedTrack, settings.autoPlay, isLoadingTrack]);
 
   // 🔥 NEW: Handle download errors
   useEffect(() => {
@@ -262,7 +181,7 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
       if (selectedTrack !== trackId) {
         // Stop current playback first
         if (isPlaying && player && status.isLoaded) {
-          await player.pause();
+          player.pause();
           setIsPlaying(false);
         }
 
@@ -292,21 +211,21 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
         return;
       }
 
-      if (isDownloading) {
+      if (player.currentStatus.playbackState !== "readyToPlay") {
         Alert.alert('Loading...', 'Please wait for the track to download');
         return;
       }
 
-      if (!status.isLoaded) {
+      if (!player.isLoaded) {
         Alert.alert('Loading...', 'Please wait for the track to load');
         return;
       }
 
       if (isPlaying) {
-        await player.pause();
+        player.pause();
         setIsPlaying(false);
       } else {
-        await player.play();
+        player.play();
         setIsPlaying(true);
       }
     } catch (error) {
@@ -321,7 +240,7 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
     await saveSettings({ volume: newVolume });
 
     // Apply volume to player if available and loaded
-    if (player && status.isLoaded) {
+    if (player && player.isLoaded) {
       player.volume = newVolume; // 🔥 CHANGED: Use direct property assignment
     }
   };
@@ -385,7 +304,14 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
           <View style={[styles.trackIcon, { backgroundColor: item.color + '20' }]}>
             {/* 🔥 NEW: Show loading indicator */}
             {isCurrentlyLoading ? (
-                <Ionicons name="hourglass" size={20} color={item.color} />
+                <View style={styles.loadingContainer}>
+                  <Ionicons name="cloud-download" size={20} color={item.color} />
+                  {isDownloading && downloadProgress > 0 && (
+                      <Text style={[styles.progressText, { color: item.color }]}>
+                        {Math.round(downloadProgress * 100)}%
+                      </Text>
+                  )}
+                </View>
             ) : (
                 <Ionicons name={getTrackIcon(item.type) as any} size={20} color={item.color} />
             )}
@@ -488,6 +414,7 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
                 </TouchableOpacity>
             ))}
           </View>
+
 
           {/* Settings Panel */}
           {showSettings && (
@@ -813,5 +740,14 @@ const styles = StyleSheet.create({
   volumeText: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressText: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    marginTop: 2,
   },
 });
