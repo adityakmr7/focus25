@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    Modal,
-    StyleSheet,
-    FlatList,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Modal, StyleSheet, FlatList } from 'react-native';
 import { TimeDuration } from '../store/settingsStore';
 import { useTheme } from '../providers/ThemeProvider';
 
@@ -15,12 +8,9 @@ interface TimeDurationSelectorProps {
     onChange: (duration: TimeDuration) => void;
 }
 
-const DURATION_OPTIONS: TimeDuration[] = [1,5, 10, 15, 20, 25];
+const DURATION_OPTIONS: TimeDuration[] = [1, 5, 10, 15, 20, 25];
 
-export const TimeDurationSelector: React.FC<TimeDurationSelectorProps> = ({
-    value,
-    onChange,
-}) => {
+export const TimeDurationSelector: React.FC<TimeDurationSelectorProps> = ({ value, onChange }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const { theme } = useTheme();
 
@@ -31,13 +21,8 @@ export const TimeDurationSelector: React.FC<TimeDurationSelectorProps> = ({
 
     return (
         <>
-            <TouchableOpacity
-                onPress={() => setModalVisible(true)}
-                style={styles.selector}
-            >
-                <Text style={{ color: theme.text }}>
-                    {value} minutes
-                </Text>
+            <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.selector}>
+                <Text style={{ color: theme.text }}>{value} minutes</Text>
             </TouchableOpacity>
 
             <Modal
@@ -58,16 +43,16 @@ export const TimeDurationSelector: React.FC<TimeDurationSelectorProps> = ({
                                 <TouchableOpacity
                                     style={[
                                         styles.option,
-                                        value === item && { backgroundColor: theme.accent + '20' }
+                                        value === item && { backgroundColor: theme.accent + '20' },
                                     ]}
                                     onPress={() => handleSelect(item)}
                                 >
                                     <Text
                                         style={[
                                             styles.optionText,
-                                            { 
-                                                color: value === item ? theme.accent : theme.text 
-                                            }
+                                            {
+                                                color: value === item ? theme.accent : theme.text,
+                                            },
                                         ]}
                                     >
                                         {item} minutes
@@ -79,9 +64,7 @@ export const TimeDurationSelector: React.FC<TimeDurationSelectorProps> = ({
                             style={[styles.closeButton, { backgroundColor: theme.background }]}
                             onPress={() => setModalVisible(false)}
                         >
-                            <Text style={{ color: theme.text }}>
-                                Cancel
-                            </Text>
+                            <Text style={{ color: theme.text }}>Cancel</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

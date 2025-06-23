@@ -37,14 +37,14 @@ export class AudioCacheManager {
     static async clearAllCache(): Promise<void> {
         try {
             const files = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory!);
-            const audioFiles = files.filter(file =>
-                file.endsWith('.mp3') || file.endsWith('.wav') || file.endsWith('.m4a')
+            const audioFiles = files.filter(
+                (file) => file.endsWith('.mp3') || file.endsWith('.wav') || file.endsWith('.m4a'),
             );
 
             await Promise.all(
-                audioFiles.map(file =>
-                    FileSystem.deleteAsync(FileSystem.documentDirectory + file)
-                )
+                audioFiles.map((file) =>
+                    FileSystem.deleteAsync(FileSystem.documentDirectory + file),
+                ),
             );
 
             console.log('All audio cache cleared');

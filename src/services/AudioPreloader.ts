@@ -1,7 +1,7 @@
 // services/AudioPreloader.ts
 import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {MusicTrack} from "../components/BottomSheetMusicPlayer";
+import { MusicTrack } from '../components/BottomSheetMusicPlayer';
 
 const PRELOAD_STATUS_KEY = 'audio_preload_status';
 

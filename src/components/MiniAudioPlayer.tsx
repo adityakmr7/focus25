@@ -1,9 +1,9 @@
-import React, {useEffect} from 'react'
-import {StyleSheet, Text, TouchableOpacity, View, ViewStyle} from 'react-native'
-import {Ionicons} from "@expo/vector-icons";
-import {useTheme} from "../providers/ThemeProvider";
-import {AudioPlayer} from "expo-audio";
-import {MusicTrack} from "../utils/constants";
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../providers/ThemeProvider';
+import { AudioPlayer } from 'expo-audio';
+import { MusicTrack } from '../utils/constants';
 import Animated, {
     Easing,
     interpolate,
@@ -29,16 +29,16 @@ interface MiniAudioPlayerProps {
 }
 
 const MiniAudioPlayer = ({
-                             isPlaying,
-                             selectedTrackData,
-                             handleVolumeChange,
-                             handlePlayPause,
-                             settings,
-                             player,
-                             volumeStyle,
-                             currentTime = 0,
-                             duration = 0
-                         }: MiniAudioPlayerProps) => {
+    isPlaying,
+    selectedTrackData,
+    handleVolumeChange,
+    handlePlayPause,
+    settings,
+    player,
+    volumeStyle,
+    currentTime = 0,
+    duration = 0,
+}: MiniAudioPlayerProps) => {
     const { theme } = useTheme();
 
     // Animations
@@ -62,20 +62,17 @@ const MiniAudioPlayer = ({
             pulseAnimation.value = withRepeat(
                 withSequence(
                     withTiming(1.1, { duration: 1000 }),
-                    withTiming(1, { duration: 1000 })
+                    withTiming(1, { duration: 1000 }),
                 ),
                 -1,
-                false
+                false,
             );
 
             // Wave animation for visualizer
             waveAnimation.value = withRepeat(
-                withSequence(
-                    withTiming(1, { duration: 800 }),
-                    withTiming(0.3, { duration: 800 })
-                ),
+                withSequence(withTiming(1, { duration: 800 }), withTiming(0.3, { duration: 800 })),
                 -1,
-                false
+                false,
             );
         } else {
             pulseAnimation.value = withTiming(1, { duration: 300 });
@@ -92,9 +89,11 @@ const MiniAudioPlayer = ({
     }, [currentTime, duration]);
 
     const containerAnimatedStyle = useAnimatedStyle(() => ({
-        transform: [{
-            translateY: interpolate(slideAnimation.value, [0, 1], [100, 0])
-        }],
+        transform: [
+            {
+                translateY: interpolate(slideAnimation.value, [0, 1], [100, 0]),
+            },
+        ],
         opacity: slideAnimation.value,
     }));
 
@@ -104,9 +103,11 @@ const MiniAudioPlayer = ({
 
     const waveAnimatedStyle = useAnimatedStyle(() => ({
         opacity: waveAnimation.value,
-        transform: [{
-            scaleY: interpolate(waveAnimation.value, [0, 1], [0.5, 1.5])
-        }],
+        transform: [
+            {
+                scaleY: interpolate(waveAnimation.value, [0, 1], [0.5, 1.5]),
+            },
+        ],
     }));
 
     const progressAnimatedStyle = useAnimatedStyle(() => ({
@@ -127,7 +128,7 @@ const MiniAudioPlayer = ({
                     backgroundColor: theme.surface,
                     borderColor: selectedTrackData.color + '30',
                 },
-                containerAnimatedStyle
+                containerAnimatedStyle,
             ]}
         >
             {/* Progress Bar */}
@@ -136,7 +137,7 @@ const MiniAudioPlayer = ({
                     style={[
                         styles.progressBar,
                         { backgroundColor: selectedTrackData.color },
-                        progressAnimatedStyle
+                        progressAnimatedStyle,
                     ]}
                 />
             </View>
@@ -144,12 +145,13 @@ const MiniAudioPlayer = ({
             <View style={styles.content}>
                 {/* Track Info */}
                 <View style={styles.trackInfo}>
-                    <View style={[styles.trackIcon, { backgroundColor: selectedTrackData.color + '20' }]}>
-                        <Ionicons
-                            name="musical-note"
-                            size={16}
-                            color={selectedTrackData.color}
-                        />
+                    <View
+                        style={[
+                            styles.trackIcon,
+                            { backgroundColor: selectedTrackData.color + '20' },
+                        ]}
+                    >
+                        <Ionicons name="musical-note" size={16} color={selectedTrackData.color} />
                     </View>
 
                     <View style={styles.textContainer}>
@@ -188,13 +190,13 @@ const MiniAudioPlayer = ({
                                 {
                                     backgroundColor: selectedTrackData.color,
                                     shadowColor: selectedTrackData.color,
-                                }
+                                },
                             ]}
                             onPress={handlePlayPause}
                             disabled={!player?.isLoaded}
                         >
                             <Ionicons
-                                name={isPlaying ? "pause" : "play"}
+                                name={isPlaying ? 'pause' : 'play'}
                                 size={18}
                                 color="#FFFFFF"
                                 style={!isPlaying && { marginLeft: 2 }} // Optical alignment for play icon
@@ -226,7 +228,7 @@ const MiniAudioPlayer = ({
                                         {
                                             animationDelay: `${index * 100}ms`,
                                             height: 12 + (index % 2) * 4,
-                                        }
+                                        },
                                     ]}
                                 />
                             ))}
@@ -249,7 +251,7 @@ const MiniAudioPlayer = ({
                         style={[
                             styles.volumeFill,
                             { backgroundColor: selectedTrackData.color },
-                            volumeStyle
+                            volumeStyle,
                         ]}
                     />
                 </View>

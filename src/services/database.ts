@@ -5,11 +5,11 @@ export const databaseService = hybridDatabaseService;
 
 // Initialize database
 export const initializeDatabase = async () => {
-  try {
-    await hybridDatabaseService.initializeDatabase();
-    console.log('Database initialized successfully');
-  } catch (error) {
-    console.error('Failed to initialize database:', error);
-    throw error;
-  }
+    try {
+        await hybridDatabaseService.initializeDatabase();
+        console.log('Database initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize database:', error);
+        throw error;
+    }
 };

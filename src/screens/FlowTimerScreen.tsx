@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Alert,
     Dimensions,
@@ -11,27 +11,32 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import {SessionDots} from '../components/SessionDots';
-import {PlayPauseButton} from '../components/PlayPauseButton';
-import {usePomodoroStore} from '../store/pomodoroStore';
-import {useSettingsStore} from '../store/settingsStore';
-import {useAudioPlayer} from "expo-audio";
-import {Ionicons} from '@expo/vector-icons'
-import {DynamicBackground} from '../components/DynamicBackground';
-import {BreathingAnimation} from '../components/BreathingAnimation';
-import {GamificationOverlay} from '../components/GamificationOverlay';
-import {BottomSheetMusicPlayer} from '../components/BottomSheetMusicPlayer';
-import {TimerDisplay} from '../components/TimerDisplay';
-import Animated, {interpolate, useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
-import {useTheme} from '../providers/ThemeProvider';
-import {useAuthContext} from '../components/AuthProvider';
-import {hybridDatabaseService} from '../services/hybridDatabase';
-import {backgroundTimerService} from '../services/backgroundTimer';
-import {notificationService} from '../services/notificationService';
-import {errorHandler} from '../services/errorHandler';
-import {BottomSheetMethods} from "@gorhom/bottom-sheet/lib/typescript/types";
-import {audioSource} from "../utils/constants";
-import MiniAudioPlayer from "../components/MiniAudioPlayer";
+import { SessionDots } from '../components/SessionDots';
+import { PlayPauseButton } from '../components/PlayPauseButton';
+import { usePomodoroStore } from '../store/pomodoroStore';
+import { useSettingsStore } from '../store/settingsStore';
+import { useAudioPlayer } from 'expo-audio';
+import { Ionicons } from '@expo/vector-icons';
+import { DynamicBackground } from '../components/DynamicBackground';
+import { BreathingAnimation } from '../components/BreathingAnimation';
+import { GamificationOverlay } from '../components/GamificationOverlay';
+import { BottomSheetMusicPlayer } from '../components/BottomSheetMusicPlayer';
+import { TimerDisplay } from '../components/TimerDisplay';
+import Animated, {
+    interpolate,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
+} from 'react-native-reanimated';
+import { useTheme } from '../providers/ThemeProvider';
+import { useAuthContext } from '../components/AuthProvider';
+import { hybridDatabaseService } from '../services/hybridDatabase';
+import { backgroundTimerService } from '../services/backgroundTimer';
+import { notificationService } from '../services/notificationService';
+import { errorHandler } from '../services/errorHandler';
+import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types';
+import { audioSource } from '../utils/constants';
+import MiniAudioPlayer from '../components/MiniAudioPlayer';
 
 // Types
 interface FlowTimerScreenProps {
@@ -81,16 +86,12 @@ const AuthStatus: React.FC<AuthStatusProps> = ({ isAuthenticated }) => {
             {isAuthenticated ? (
                 <View style={styles.authStatus}>
                     <Ionicons name="cloud-done" size={16} color="#10B981" />
-                    <Text style={[styles.authStatusText, { color: '#10B981' }]}>
-                        Synced
-                    </Text>
+                    <Text style={[styles.authStatusText, { color: '#10B981' }]}>Synced</Text>
                 </View>
             ) : (
                 <View style={styles.authStatus}>
                     <Ionicons name="cloud-offline" size={16} color="#F59E0B" />
-                    <Text style={[styles.authStatusText, { color: '#F59E0B' }]}>
-                        Local Only
-                    </Text>
+                    <Text style={[styles.authStatusText, { color: '#F59E0B' }]}>Local Only</Text>
                 </View>
             )}
         </View>
@@ -98,13 +99,13 @@ const AuthStatus: React.FC<AuthStatusProps> = ({ isAuthenticated }) => {
 };
 
 const Header: React.FC<HeaderProps> = ({
-                                           theme,
-                                           flowMetrics,
-                                           onShowAchievements,
-                                           onToggleQuickActions,
-                                           onReset,
-                                           showQuickActions
-                                       }) => {
+    theme,
+    flowMetrics,
+    onShowAchievements,
+    onToggleQuickActions,
+    onReset,
+    showQuickActions,
+}) => {
     return (
         <View style={styles.header}>
             <TouchableOpacity
@@ -137,19 +138,21 @@ const Header: React.FC<HeaderProps> = ({
 };
 
 const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
-                                                                 theme,
-                                                                 showQuickActions,
-                                                                 quickActionsAnimation,
-                                                                 onOpenMusicPlayer,
-                                                                 onToggleBreathing,
-                                                                 showBreathingAnimation
-                                                             }) => {
+    theme,
+    showQuickActions,
+    quickActionsAnimation,
+    onOpenMusicPlayer,
+    onToggleBreathing,
+    showBreathingAnimation,
+}) => {
     const quickActionsAnimatedStyle = useAnimatedStyle(() => {
         return {
             opacity: interpolate(quickActionsAnimation.value, [0, 1], [0, 1]),
-            transform: [{
-                translateY: interpolate(quickActionsAnimation.value, [0, 1], [20, 0])
-            }]
+            transform: [
+                {
+                    translateY: interpolate(quickActionsAnimation.value, [0, 1], [20, 0]),
+                },
+            ],
         };
     });
 
@@ -160,14 +163,11 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
             style={[
                 styles.quickActionsPanel,
                 { backgroundColor: theme.surface },
-                quickActionsAnimatedStyle
+                quickActionsAnimatedStyle,
             ]}
             pointerEvents={showQuickActions ? 'auto' : 'none'}
         >
-            <TouchableOpacity
-                style={styles.quickActionItem}
-                onPress={onOpenMusicPlayer}
-            >
+            <TouchableOpacity style={styles.quickActionItem} onPress={onOpenMusicPlayer}>
                 <View style={[styles.quickActionIcon, { backgroundColor: '#4ECDC4' + '20' }]}>
                     <Ionicons name="musical-notes" size={20} color="#4ECDC4" />
                 </View>
@@ -177,10 +177,7 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
                 </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-                style={styles.quickActionItem}
-                onPress={onToggleBreathing}
-            >
+            <TouchableOpacity style={styles.quickActionItem} onPress={onToggleBreathing}>
                 <View style={[styles.quickActionIcon, { backgroundColor: '#48BB78' + '20' }]}>
                     <Ionicons name="leaf" size={20} color="#48BB78" />
                 </View>
@@ -194,15 +191,15 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
 };
 
 const TimerContainer: React.FC<TimerContainerProps> = ({
-                                                           theme,
-                                                           timer,
-                                                           flowMetrics,
-                                                           showBreathingAnimation,
-                                                           pulseAnimation,
-                                                           onToggleTimer,
-                                                           miniAudioPlayerRef,
-                                                           isAuthenticated
-                                                       }) => {
+    theme,
+    timer,
+    flowMetrics,
+    showBreathingAnimation,
+    pulseAnimation,
+    onToggleTimer,
+    miniAudioPlayerRef,
+    isAuthenticated,
+}) => {
     const {
         handlePlayPause,
         handleVolumeChange,
@@ -210,7 +207,7 @@ const TimerContainer: React.FC<TimerContainerProps> = ({
         settings,
         player,
         volumeStyle,
-        isPlaying
+        isPlaying,
     } = miniAudioPlayerRef?.current || {};
 
     return (
@@ -232,7 +229,7 @@ const TimerContainer: React.FC<TimerContainerProps> = ({
             <TimerDisplay
                 minutes={timer.minutes}
                 seconds={timer.seconds}
-                progress={1 - (timer.totalSeconds / timer.initialSeconds)}
+                progress={1 - timer.totalSeconds / timer.initialSeconds}
                 isRunning={timer.isRunning}
                 pulseAnimation={pulseAnimation}
             />
@@ -288,11 +285,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         initializeStore: initializePomodoro,
     } = usePomodoroStore();
 
-    const {
-        timeDuration,
-        breakDuration,
-        initializeStore: initializeSettings
-    } = useSettingsStore();
+    const { timeDuration, breakDuration, initializeStore: initializeSettings } = useSettingsStore();
 
     const alertPlayer = useAudioPlayer(audioSource);
     const { theme } = useTheme();
@@ -322,10 +315,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     useEffect(() => {
         const initializeStores = async () => {
             try {
-                await Promise.all([
-                    initializeSettings(),
-                    initializePomodoro(),
-                ]);
+                await Promise.all([initializeSettings(), initializePomodoro()]);
             } catch (error) {
                 console.error('Failed to initialize stores:', error);
             }
@@ -363,7 +353,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             setAchievements(newAchievements);
             setShowAchievements(true);
 
-            newAchievements.forEach(achievement => {
+            newAchievements.forEach((achievement) => {
                 notificationService.scheduleGoalAchievement(achievement);
             });
         }
@@ -451,7 +441,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     }, [timer.isRunning, timer.isPaused, timer.totalSeconds, timer.isBreak]);
 
     useEffect(() => {
-        const progress = 1 - (timer.totalSeconds / timer.initialSeconds);
+        const progress = 1 - timer.totalSeconds / timer.initialSeconds;
         progressAnimation.value = withTiming(progress, {
             duration: 300,
         });
@@ -496,7 +486,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 if (!wasRunning) {
                     const sessionId = await backgroundTimerService.startTimer(
                         Math.floor(timer.totalSeconds / 60),
-                        timer.isBreak
+                        timer.isBreak,
                     );
                     setBackgroundSessionId(sessionId);
                     setIsConnectedToBackground(true);
@@ -512,10 +502,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 severity: 'medium',
             });
 
-            Alert.alert(
-                'Timer Error',
-                'There was an issue with the timer. Please try again.'
-            );
+            Alert.alert('Timer Error', 'There was an issue with the timer. Please try again.');
         }
     };
 
@@ -562,9 +549,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const containerAnimatedStyle = useAnimatedStyle(() => {
         return {
             opacity: interpolate(containerAnimation.value, [0, 1], [0, 1]),
-            transform: [{
-                translateY: interpolate(containerAnimation.value, [0, 1], [50, 0])
-            }]
+            transform: [
+                {
+                    translateY: interpolate(containerAnimation.value, [0, 1], [50, 0]),
+                },
+            ],
         };
     });
 
@@ -572,20 +561,15 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-            <ScrollView className='flex-1 ' contentContainerStyle={{flex:1}}>
+            <ScrollView className="flex-1 " contentContainerStyle={{ flex: 1 }}>
                 <DynamicBackground
                     isRunning={timer.isRunning}
                     isBreak={timer.isBreak}
                     flowIntensity={flowMetrics.flowIntensity}
-                    progress={1 - (timer.totalSeconds / timer.initialSeconds)}
+                    progress={1 - timer.totalSeconds / timer.initialSeconds}
                 />
 
-                <Animated.View
-                    style={[
-                        styles.content,
-                        containerAnimatedStyle,
-                    ]}
-                >
+                <Animated.View style={[styles.content, containerAnimatedStyle]}>
                     <Header
                         theme={theme}
                         flowMetrics={flowMetrics}
@@ -641,7 +625,7 @@ const styles = StyleSheet.create({
     },
     content: {
         paddingVertical: 28,
-        flex:1,
+        flex: 1,
     },
     header: {
         flexDirection: 'row',
@@ -718,17 +702,17 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 12,
         elevation: 6,
-        zIndex:100,
+        zIndex: 100,
         position: 'absolute',
         top: 80,
-        width:Dimensions.get('screen').width * 0.8,
+        width: Dimensions.get('screen').width * 0.8,
     },
     quickActionItem: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 12,
         paddingHorizontal: 8,
-        width:'auto'
+        width: 'auto',
     },
     quickActionIcon: {
         width: 40,
@@ -751,7 +735,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 40,
-        marginTop:30
+        marginTop: 30,
     },
     flowLabel: {
         fontSize: 24,

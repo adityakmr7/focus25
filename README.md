@@ -5,6 +5,7 @@ A production-ready React Native app built with Expo that helps users achieve dee
 ## 🚀 Features
 
 ### Core Functionality
+
 - **Smart Pomodoro Timer** with adaptive session lengths
 - **Background Timer Support** - continues running when app is backgrounded
 - **Flow State Tracking** with real-time intensity monitoring
@@ -13,6 +14,7 @@ A production-ready React Native app built with Expo that helps users achieve dee
 - **Focus Music Player** with curated ambient sounds
 
 ### Advanced Features
+
 - **Onboarding Flow** for new users
 - **Notification System** with smart reminders and achievements
 - **Data Persistence** with SQLite database
@@ -22,6 +24,7 @@ A production-ready React Native app built with Expo that helps users achieve dee
 - **Export/Import** functionality for data backup
 
 ### Technical Highlights
+
 - **Background Processing** using Expo Background Fetch and Task Manager
 - **Real-time Animations** with React Native Reanimated
 - **Comprehensive State Management** using Zustand
@@ -31,7 +34,7 @@ A production-ready React Native app built with Expo that helps users achieve dee
 
 ## 📱 Screenshots
 
-*Screenshots would be added here showing the main timer interface, analytics dashboard, goal tracking, and settings screens.*
+_Screenshots would be added here showing the main timer interface, analytics dashboard, goal tracking, and settings screens._
 
 ## 🛠 Tech Stack
 
@@ -50,34 +53,39 @@ A production-ready React Native app built with Expo that helps users achieve dee
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - Expo CLI
 - iOS Simulator or Android Emulator (for testing)
 
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/yourusername/flow-focus.git
 cd flow-focus
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Start the development server:
+
 ```bash
 npm run dev
 ```
 
 4. Run on your preferred platform:
+
 ```bash
 # iOS
 npm run ios
 
-# Android  
+# Android
 npm run android
 
 # Web
@@ -87,7 +95,9 @@ npm run web
 ## 📊 App Architecture
 
 ### State Management
+
 The app uses Zustand for state management with the following stores:
+
 - `pomodoroStore` - Timer state and flow metrics
 - `settingsStore` - User preferences and configuration
 - `statisticsStore` - Usage analytics and historical data
@@ -95,7 +105,9 @@ The app uses Zustand for state management with the following stores:
 - `themeStore` - Theme customization and appearance
 
 ### Database Schema
+
 SQLite database with the following main tables:
+
 - `goals` - User goals and progress tracking
 - `statistics` - Daily/weekly/monthly usage statistics
 - `flow_metrics` - Flow state tracking and analytics
@@ -103,6 +115,7 @@ SQLite database with the following main tables:
 - `theme` - Theme customization data
 
 ### Background Processing
+
 - **Background Timer**: Continues timing sessions when app is backgrounded
 - **Notification Scheduling**: Smart notifications for session completion and reminders
 - **Data Sync**: Periodic synchronization of local data
@@ -110,24 +123,28 @@ SQLite database with the following main tables:
 ## 🎯 Key Features Deep Dive
 
 ### Smart Timer System
+
 - Adaptive session lengths based on flow state
 - Background processing for uninterrupted timing
 - Smart break recommendations
 - Session completion tracking
 
 ### Flow State Analytics
+
 - Real-time flow intensity monitoring
 - Distraction tracking and analysis
 - Productivity pattern recognition
 - Personalized insights and recommendations
 
 ### Goal Achievement System
+
 - SMART goal framework implementation
 - Progress visualization and tracking
 - Achievement celebrations and notifications
 - Goal completion analytics
 
 ### Advanced Analytics
+
 - Interactive charts and visualizations
 - Time-based trend analysis
 - Productivity heatmaps
@@ -136,14 +153,18 @@ SQLite database with the following main tables:
 ## 🔧 Configuration
 
 ### Environment Variables
+
 Create a `.env` file in the root directory:
+
 ```env
 EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ### Notification Setup
+
 The app automatically requests notification permissions and sets up:
+
 - Session completion alerts
 - Break reminders
 - Daily focus reminders
@@ -151,7 +172,9 @@ The app automatically requests notification permissions and sets up:
 - Weekly progress reports
 
 ### Background Processing Setup
+
 Background tasks are automatically configured for:
+
 - Timer continuation when app is backgrounded
 - Periodic data synchronization
 - Notification scheduling
@@ -181,12 +204,14 @@ npm run test:e2e
 ## 📦 Building for Production
 
 ### Development Build
+
 ```bash
 npx expo build:android
 npx expo build:ios
 ```
 
 ### EAS Build (Recommended)
+
 ```bash
 # Install EAS CLI
 npm install -g @expo/eas-cli
@@ -201,16 +226,19 @@ eas build --platform all
 ## 🚀 Deployment
 
 ### App Store Deployment
+
 1. Build production iOS app using EAS
 2. Upload to App Store Connect
 3. Submit for review
 
-### Google Play Deployment  
+### Google Play Deployment
+
 1. Build production Android app using EAS
 2. Upload to Google Play Console
 3. Submit for review
 
 ### Web Deployment
+
 ```bash
 # Build for web
 npx expo export:web
@@ -243,18 +271,21 @@ For support, email support@flowfocus.app or join our Discord community.
 ## 🗺 Roadmap
 
 ### Version 1.1
+
 - [ ] Apple Watch companion app
 - [ ] Siri Shortcuts integration
 - [ ] Advanced focus music library
 - [ ] Team collaboration features
 
 ### Version 1.2
+
 - [ ] AI-powered focus recommendations
 - [ ] Integration with calendar apps
 - [ ] Advanced reporting dashboard
 - [ ] Social features and challenges
 
 ### Version 2.0
+
 - [ ] Desktop companion app
 - [ ] Advanced biometric integration
 - [ ] Enterprise features

@@ -11,9 +11,7 @@ export const PeriodButton = ({ period, isSelected, onPress }: PeriodButtonProps)
         style={[styles.periodButton, isSelected && styles.selectedPeriodButton]}
         onPress={onPress}
     >
-        <Text style={[styles.periodText, isSelected && styles.selectedPeriodText]}>
-            {period}
-        </Text>
+        <Text style={[styles.periodText, isSelected && styles.selectedPeriodText]}>{period}</Text>
     </TouchableOpacity>
 );
 
@@ -35,4 +33,4 @@ const styles = StyleSheet.create({
     selectedPeriodText: {
         color: '#ffffff',
     },
-}); 
+});

@@ -1,7 +1,7 @@
 // hooks/useCachedAudio.ts
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import * as FileSystem from 'expo-file-system';
-import {useAudioPlayer, useAudioPlayerStatus} from 'expo-audio';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 
 function getLocalUri(remoteUri: string) {
     const filename = remoteUri.split('/').pop() || 'audio.mp3';
@@ -47,10 +47,12 @@ export function useCachedAudio(sourceUrl: string | null) {
                     localUri,
                     {},
                     (downloadProgress) => {
-                        const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
+                        const progress =
+                            downloadProgress.totalBytesWritten /
+                            downloadProgress.totalBytesExpectedToWrite;
                         console.log('Download progress:', progress); // Debug log
                         setDownloadProgress(Math.min(progress, 1)); // Ensure it doesn't exceed 1
-                    }
+                    },
                 );
 
                 const downloadResult = await downloadResumable.downloadAsync();
@@ -62,7 +64,6 @@ export function useCachedAudio(sourceUrl: string | null) {
                 } else {
                     throw new Error('Download failed - no URI returned');
                 }
-
             } catch (error) {
                 console.error('Failed to download audio:', error);
                 setDownloadError(error instanceof Error ? error.message : 'Download failed');

@@ -21,7 +21,7 @@ interface SettingsState extends Settings {
     isLoading: boolean;
     error: string | null;
     isInitialized: boolean;
-    
+
     initializeStore: () => Promise<void>;
     toggleSetting: (key: keyof Settings) => Promise<void>;
     setTimeDuration: (duration: TimeDuration) => Promise<void>;
@@ -50,7 +50,7 @@ const initialSettings: Settings = {
     focusReminders: true,
     weeklyReports: true,
     dataSync: true,
-    notificationStatus: null
+    notificationStatus: null,
 };
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -61,22 +61,22 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
     initializeStore: async () => {
         if (get().isInitialized) return;
-        
+
         try {
             set({ isLoading: true, error: null });
             const savedSettings = await databaseService.getSettings();
-            
-            set({ 
+
+            set({
                 ...savedSettings,
                 isInitialized: true,
-                isLoading: false 
+                isLoading: false,
             });
         } catch (error) {
             console.error('Failed to initialize settings store:', error);
-            set({ 
+            set({
                 error: error instanceof Error ? error.message : 'Failed to initialize settings',
                 isInitialized: true,
-                isLoading: false 
+                isLoading: false,
             });
         }
     },
@@ -193,9 +193,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
                 focusReminders: state.focusReminders,
                 weeklyReports: state.weeklyReports,
                 dataSync: state.dataSync,
-                notificationStatus: state.notificationStatus
+                notificationStatus: state.notificationStatus,
             };
-            
+
             await databaseService.saveSettings(settings);
         } catch (error) {
             console.error('Failed to sync settings with database:', error);

@@ -1,12 +1,12 @@
-import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
-import {createNativeStackNavigator} from "@react-navigation/native-stack";
-import StatisticsScreen from "../screens/StatisticsScreen";
-import {Ionicons} from "@expo/vector-icons";
-import FlowTimerScreen from "../screens/FlowTimerScreen";
-import SettingsScreen from "../screens/SettingsScreen";
-import FlowAnalyticsScreen from "../screens/FlowAnalyticsScreen";
-import ThemeCustomizationScreen from "../screens/ThemeCustomizationScreen";
-import {useTheme} from "../providers/ThemeProvider";
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import StatisticsScreen from '../screens/StatisticsScreen';
+import { Ionicons } from '@expo/vector-icons';
+import FlowTimerScreen from '../screens/FlowTimerScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import FlowAnalyticsScreen from '../screens/FlowAnalyticsScreen';
+import ThemeCustomizationScreen from '../screens/ThemeCustomizationScreen';
+import { useTheme } from '../providers/ThemeProvider';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -16,17 +16,17 @@ const AppTabNavigation = () => {
 
     return (
         <Tab.Navigator
-            screenOptions={({route}) => ({
+            screenOptions={({ route }) => ({
                 headerShown: false,
                 tabBarIcon: ({ focused, color, size }) => {
                     let iconName: keyof typeof Ionicons.glyphMap = 'bar-chart-outline';
 
-                    if(route.name === 'Statistics')  {
-                       iconName = 'bar-chart-outline'
-                    } else if(route.name === 'FlowTimer') {
-                        iconName = 'timer-outline'
-                    } else if(route.name === "Settings") {
-                        iconName = 'person-outline'
+                    if (route.name === 'Statistics') {
+                        iconName = 'bar-chart-outline';
+                    } else if (route.name === 'FlowTimer') {
+                        iconName = 'timer-outline';
+                    } else if (route.name === 'Settings') {
+                        iconName = 'person-outline';
                     }
 
                     return <Ionicons name={iconName} size={size} color={color} />;
@@ -42,8 +42,8 @@ const AppTabNavigation = () => {
                     height: 80,
                 },
                 tabBarLabelStyle: {
-                    display: 'none'
-                }
+                    display: 'none',
+                },
             })}
             initialRouteName="FlowTimer"
         >
@@ -73,7 +73,7 @@ const AppStackNavigation = () => {
                 name="Root"
                 component={AppTabNavigation}
                 options={{
-                    headerShown: false
+                    headerShown: false,
                 }}
             />
             <Stack.Screen
@@ -81,7 +81,7 @@ const AppStackNavigation = () => {
                 component={FlowAnalyticsScreen}
                 options={{
                     title: 'Focus Analytics',
-                    headerShown:false
+                    headerShown: false,
                 }}
             />
             <Stack.Screen
@@ -89,11 +89,11 @@ const AppStackNavigation = () => {
                 component={ThemeCustomizationScreen}
                 options={{
                     title: 'Theme Customization',
-                    headerShown: false
+                    headerShown: false,
                 }}
             />
         </Stack.Navigator>
     );
 };
 
-export {AppTabNavigation, AppStackNavigation};
+export { AppTabNavigation, AppStackNavigation };

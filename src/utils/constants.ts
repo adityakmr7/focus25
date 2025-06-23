@@ -1,4 +1,3 @@
-
 export interface MusicTrack {
     id: string;
     name: string;
@@ -52,4 +51,3 @@ export const musicTracks: MusicTrack[] = [
         isLocal: true,
     },
 ];
-

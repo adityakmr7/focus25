@@ -12,8 +12,6 @@ export async function getCachedUri(remoteUri: string): Promise<string> {
 }
 
 export async function cacheAllTracks(trackUrls: string[]) {
-    const results = await Promise.allSettled(
-        trackUrls.map(url => getCachedUri(url))
-    );
+    const results = await Promise.allSettled(trackUrls.map((url) => getCachedUri(url)));
     return results;
 }

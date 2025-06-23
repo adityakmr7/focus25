@@ -22,28 +22,40 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }
 
     const getFlowIntensityColor = (intensity: string) => {
         switch (intensity) {
-            case 'high': return theme.success;
-            case 'medium': return theme.warning;
-            case 'low': return theme.error;
-            default: return theme.textSecondary;
+            case 'high':
+                return theme.success;
+            case 'medium':
+                return theme.warning;
+            case 'low':
+                return theme.error;
+            default:
+                return theme.textSecondary;
         }
     };
 
     const getFlowIntensityEmoji = (intensity: string) => {
         switch (intensity) {
-            case 'high': return '🔥';
-            case 'medium': return '⚡';
-            case 'low': return '🌱';
-            default: return '⚪';
+            case 'high':
+                return '🔥';
+            case 'medium':
+                return '⚡';
+            case 'low':
+                return '🌱';
+            default:
+                return '⚪';
         }
     };
 
     const getFlowIntensityGradient = (intensity: string) => {
         switch (intensity) {
-            case 'high': return [theme.success, theme.success + '80'];
-            case 'medium': return [theme.warning, theme.warning + '80'];
-            case 'low': return [theme.error, theme.error + '80'];
-            default: return [theme.textSecondary, theme.textSecondary + '80'];
+            case 'high':
+                return [theme.success, theme.success + '80'];
+            case 'medium':
+                return [theme.warning, theme.warning + '80'];
+            case 'low':
+                return [theme.error, theme.error + '80'];
+            default:
+                return [theme.textSecondary, theme.textSecondary + '80'];
         }
     };
 
@@ -70,19 +82,24 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }
             >
                 <View style={[styles.compactCard, { backgroundColor: theme.surface }]}>
                     <View style={styles.flowIndicator}>
-                        <View style={[
-                            styles.flowIconContainer,
-                            { backgroundColor: getFlowIntensityColor(flowMetrics.flowIntensity) + '20' }
-                        ]}>
+                        <View
+                            style={[
+                                styles.flowIconContainer,
+                                {
+                                    backgroundColor:
+                                        getFlowIntensityColor(flowMetrics.flowIntensity) + '20',
+                                },
+                            ]}
+                        >
                             <Text style={styles.flowEmoji}>
                                 {getFlowIntensityEmoji(flowMetrics.flowIntensity)}
                             </Text>
                         </View>
                         <View style={styles.flowTextContainer}>
-                            <Text 
+                            <Text
                                 style={[
-                                    styles.flowIntensityText, 
-                                    { color: getFlowIntensityColor(flowMetrics.flowIntensity) }
+                                    styles.flowIntensityText,
+                                    { color: getFlowIntensityColor(flowMetrics.flowIntensity) },
                                 ]}
                             >
                                 {flowMetrics.flowIntensity.toUpperCase()} FLOW
@@ -115,10 +132,8 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }
                 },
             ]}
         >
-            <Text style={[styles.title, { color: theme.text }]}>
-                Flow State Metrics
-            </Text>
-            
+            <Text style={[styles.title, { color: theme.text }]}>Flow State Metrics</Text>
+
             <View style={styles.metricsGrid}>
                 <View style={[styles.metricCard, { backgroundColor: theme.surface }]}>
                     <Text style={[styles.metricValue, { color: theme.text }]}>
@@ -128,7 +143,7 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }
                         Current Streak
                     </Text>
                 </View>
-                
+
                 <View style={[styles.metricCard, { backgroundColor: theme.surface }]}>
                     <Text style={[styles.metricValue, { color: theme.text }]}>
                         {flowMetrics.longestStreak}
@@ -137,22 +152,29 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }
                         Best Streak
                     </Text>
                 </View>
-                
-                <View style={[
-                    styles.metricCard,
-                    { backgroundColor: getFlowIntensityColor(flowMetrics.flowIntensity) + '10' }
-                ]}>
-                    <Text style={[
-                        styles.metricValue, 
-                        { color: getFlowIntensityColor(flowMetrics.flowIntensity) }
-                    ]}>
+
+                <View
+                    style={[
+                        styles.metricCard,
+                        {
+                            backgroundColor:
+                                getFlowIntensityColor(flowMetrics.flowIntensity) + '10',
+                        },
+                    ]}
+                >
+                    <Text
+                        style={[
+                            styles.metricValue,
+                            { color: getFlowIntensityColor(flowMetrics.flowIntensity) },
+                        ]}
+                    >
                         {getFlowIntensityEmoji(flowMetrics.flowIntensity)}
                     </Text>
                     <Text style={[styles.metricLabel, { color: theme.textSecondary }]}>
                         Flow Intensity
                     </Text>
                 </View>
-                
+
                 <View style={[styles.metricCard, { backgroundColor: theme.surface }]}>
                     <Text style={[styles.metricValue, { color: theme.text }]}>
                         {Math.round(flowMetrics.averageSessionLength)}m
@@ -169,10 +191,11 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }
                         Total Focus Time:
                     </Text>
                     <Text style={[styles.statValue, { color: theme.text }]}>
-                        {Math.floor(flowMetrics.totalFocusTime / 60)}h {flowMetrics.totalFocusTime % 60}m
+                        {Math.floor(flowMetrics.totalFocusTime / 60)}h{' '}
+                        {flowMetrics.totalFocusTime % 60}m
                     </Text>
                 </View>
-                
+
                 <View style={[styles.statRow, { borderBottomColor: theme.border }]}>
                     <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
                         Best Flow Duration:
@@ -181,7 +204,7 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }
                         {Math.round(flowMetrics.bestFlowDuration)}m
                     </Text>
                 </View>
-                
+
                 <View style={[styles.statRow, { borderBottomColor: theme.border }]}>
                     <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
                         Consecutive Sessions:
@@ -190,15 +213,20 @@ export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }
                         {flowMetrics.consecutiveSessions}
                     </Text>
                 </View>
-                
+
                 <View style={[styles.statRow, { borderBottomColor: theme.border }]}>
                     <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
                         Distractions Today:
                     </Text>
-                    <Text style={[
-                        styles.statValue, 
-                        { color: flowMetrics.distractionCount > 5 ? theme.error : theme.success }
-                    ]}>
+                    <Text
+                        style={[
+                            styles.statValue,
+                            {
+                                color:
+                                    flowMetrics.distractionCount > 5 ? theme.error : theme.success,
+                            },
+                        ]}
+                    >
                         {flowMetrics.distractionCount}
                     </Text>
                 </View>
