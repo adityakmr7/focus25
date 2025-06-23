@@ -40,14 +40,4 @@ export const musicTracks: MusicTrack[] = [
         color: '#8B5CF6',
         isLocal: true,
     },
-    {
-        id: 'deep-focus',
-        name: 'Deep Focus',
-        duration: '25:00',
-        type: 'focus',
-        description: 'Specially designed for Pomodoro sessions',
-        source: 'https://zcscxzzuwwkjfdtjgozi.supabase.co/storage/v1/object/public/songs//rain-instrument.mp3',
-        color: '#EF4444',
-        isLocal: true,
-    },
 ];
