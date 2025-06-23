@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {Alert, Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View,} from 'react-native';
+import {Alert, FlatList, StyleSheet, Text, TouchableOpacity, View,} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import Animated, {
   interpolate,
@@ -15,11 +15,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {BottomSheetMethods} from "@gorhom/bottom-sheet/lib/typescript/types";
 import useCachedAudio from "../hooks/useCachedAudio";
 import {MusicTrack, musicTracks} from "../utils/constants";
+import MiniAudioPlayer from "./MiniAudioPlayer";
 
-const { width } = Dimensions.get('window');
 const MUSIC_SETTINGS_KEY = 'music_settings';
-
-
 
 interface MusicSettings {
   volume: number;
@@ -466,68 +464,18 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
           />
 
           {/* Now Playing Section */}
-          {selectedTrack && selectedTrackData && (
-              <View style={[styles.nowPlaying, { borderTopColor: theme.background }]}>
-                <View style={styles.nowPlayingHeader}>
-                  <Text style={[styles.nowPlayingTitle, { color: theme.text }]}>
-                    Now Playing
-                  </Text>
-                  <Text style={[styles.nowPlayingTrack, { color: theme.textSecondary }]}>
-                    {selectedTrackData.name}
-                  </Text>
-                  {/* 🔥 NEW: Show loading/downloading status */}
-                  {(isDownloading || isLoadingTrack) && (
-                      <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
-                        {isDownloading ? 'Downloading...' : 'Loading...'}
-                      </Text>
-                  )}
-                </View>
-
-                {/* Progress Bar */}
-                <View style={[styles.progressContainer, { backgroundColor: theme.background }]}>
-                  <Animated.View style={[styles.progressBar, { backgroundColor: selectedTrackData.color }, volumeStyle]} />
-                </View>
-
-                {/* Controls */}
-                <View style={styles.controls}>
-                  <TouchableOpacity
-                      style={[styles.controlButton, { backgroundColor: theme.background }]}
-                      onPress={() => handleVolumeChange(-0.1)}
-                  >
-                    <Ionicons name="volume-low" size={20} color={theme.textSecondary} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                      style={[styles.playButton, { backgroundColor: selectedTrackData.color }]}
-                      onPress={handlePlayPause} // 🔥 CHANGED: Use new function
-                      disabled={isDownloading || !status.isLoaded} // 🔥 NEW: Disable when not ready
-                  >
-                    <Ionicons
-                        name={
-                          isDownloading || isLoadingTrack ? "hourglass" : // 🔥 NEW: Show loading
-                              isPlaying ? "pause" : "play"
-                        }
-                        size={28}
-                        color="#FFFFFF"
-                    />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                      style={[styles.controlButton, { backgroundColor: theme.background }]}
-                      onPress={() => handleVolumeChange(0.1)}
-                  >
-                    <Ionicons name="volume-high" size={20} color={theme.textSecondary} />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Volume Indicator */}
-                <View style={styles.volumeContainer}>
-                  <Text style={[styles.volumeText, { color: theme.textSecondary }]}>
-                    Volume: {Math.round(settings.volume * 100)}%
-                  </Text>
-                </View>
-              </View>
-          )}
+          {selectedTrackData &&
+            <MiniAudioPlayer
+                isPlaying={isPlaying}
+                isDownloading={isDownloading}
+                isLoadingTrack={isLoadingTrack}
+                handlePlayPause={handlePlayPause}
+                handleVolumeChange={handleVolumeChange}
+                selectedTrackData={selectedTrackData}
+                settings={settings}
+                player={player}
+                volumeStyle={volumeStyle}
+            />}
         </BottomSheetView>
       </BottomSheet>
   );
