@@ -31,6 +31,7 @@ import {notificationService} from '../services/notificationService';
 import {errorHandler} from '../services/errorHandler';
 import {BottomSheetMethods} from "@gorhom/bottom-sheet/lib/typescript/types";
 import {audioSource} from "../utils/constants";
+import MiniAudioPlayer from "../components/MiniAudioPlayer";
 
 
 interface FlowTimerScreenProps {
@@ -44,6 +45,8 @@ interface FlowTimerScreenProps {
 
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const { user, isAuthenticated } = useAuthContext();
+    const miniAudioPlayerRef = useRef<any>(null);
+
     const {
         timer,
         toggleTimer,
@@ -64,7 +67,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         initializeStore: initializeSettings
     } = useSettingsStore();
 
-    const player = useAudioPlayer(audioSource);
+    const alertPlayer = useAudioPlayer(audioSource);
     const { theme } = useTheme();
 
     const [showBreathingAnimation, setShowBreathingAnimation] = useState(false);
@@ -183,7 +186,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     // Play sound effect with error handling
     const playCompletionSound = async () => {
         try {
-            await player.play();
+            await alertPlayer.play();
             setTimeout(() => {
                 player.pause();
             }, 2000);
@@ -365,6 +368,16 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         };
     });
 
+    const {
+        handlePlayPause,
+        handleVolumeChange,
+        selectedTrackData,
+        settings,
+        player,
+        volumeStyle,
+        isPlaying
+    } = miniAudioPlayerRef.current || {};
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -503,14 +516,19 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         onPress={handleToggleTimer}
                     />
 
+                    {miniAudioPlayerRef?.current && miniAudioPlayerRef.current.selectedTrackData && player.isLoaded &&
+                        <MiniAudioPlayer isPlaying={isPlaying}  handlePlayPause={handlePlayPause} handleVolumeChange={handleVolumeChange} selectedTrackData={selectedTrackData} settings={settings} player={player} volumeStyle={volumeStyle}/>
+                    }
                 </View>
             </Animated.View>
 
             {/* Bottom Sheet Music Player */}
             <BottomSheetMusicPlayer
+                miniAudioPlayerRef={miniAudioPlayerRef}
                 bottomSheetRef={bottomSheetRef}
                 autoStartTrack={timer.isRunning ? 'deep-focus' : undefined}
             />
+
 
             {/* Gamification Overlay */}
             <GamificationOverlay

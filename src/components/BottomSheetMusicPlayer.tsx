@@ -1,5 +1,5 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {Alert, FlatList, StyleSheet, Text, TouchableOpacity, View,} from 'react-native';
+import React, {useCallback, useEffect, useImperativeHandle, useMemo, useState} from 'react';
+import {Alert, StyleSheet, Text, TouchableOpacity, View,} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import Animated, {
   interpolate,
@@ -9,13 +9,12 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import BottomSheet, {BottomSheetBackdrop, BottomSheetView} from '@gorhom/bottom-sheet';
+import BottomSheet, {BottomSheetBackdrop, BottomSheetFlatList, BottomSheetView} from '@gorhom/bottom-sheet';
 import {useTheme} from '../providers/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {BottomSheetMethods} from "@gorhom/bottom-sheet/lib/typescript/types";
 import useCachedAudio from "../hooks/useCachedAudio";
 import {MusicTrack, musicTracks} from "../utils/constants";
-import MiniAudioPlayer from "./MiniAudioPlayer";
 
 const MUSIC_SETTINGS_KEY = 'music_settings';
 
@@ -38,9 +37,11 @@ const defaultSettings: MusicSettings = {
 interface BottomSheetMusicPlayerProps {
   bottomSheetRef: React.RefObject<BottomSheetMethods>;
   autoStartTrack?: string;
+  miniAudioPlayerRef:any
 }
 
 export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
+  miniAudioPlayerRef,
                                                                                 bottomSheetRef,
                                                                                 autoStartTrack,
                                                                               }) => {
@@ -278,6 +279,7 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
     width: `${volumeAnimation.value * 100}%`,
   }));
 
+
   const renderTrackItem = ({ item }: { item: MusicTrack }) => {
     const isSelected = selectedTrack === item.id;
     const isFavorite = settings.favoriteTrackIds.includes(item.id);
@@ -347,6 +349,17 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
 
   const selectedTrackData = musicTracks.find(track => track.id === selectedTrack);
 
+  useImperativeHandle(miniAudioPlayerRef,() =>{
+    return {
+      handlePlayPause,
+      handleVolumeChange,
+      selectedTrackData,
+      settings,
+      player,
+      volumeStyle,
+      isPlaying
+    }
+  },[isPlaying,player,settings,selectedTrackData,player]);
   return (
       <BottomSheet
           ref={bottomSheetRef}
@@ -454,7 +467,7 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
           )}
 
           {/* Track List */}
-          <FlatList
+          <BottomSheetFlatList
               data={getFilteredTracks()}
               renderItem={renderTrackItem}
               keyExtractor={(item) => item.id}
@@ -463,19 +476,6 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
               contentContainerStyle={styles.trackListContent}
           />
 
-          {/* Now Playing Section */}
-          {selectedTrackData &&
-            <MiniAudioPlayer
-                isPlaying={isPlaying}
-                isDownloading={isDownloading}
-                isLoadingTrack={isLoadingTrack}
-                handlePlayPause={handlePlayPause}
-                handleVolumeChange={handleVolumeChange}
-                selectedTrackData={selectedTrackData}
-                settings={settings}
-                player={player}
-                volumeStyle={volumeStyle}
-            />}
         </BottomSheetView>
       </BottomSheet>
   );
