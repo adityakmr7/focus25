@@ -10,12 +10,13 @@ import {
     Text,
     TouchableOpacity,
     View,
+    ViewStyle,
 } from 'react-native';
 import { SessionDots } from '../components/SessionDots';
 import { PlayPauseButton } from '../components/PlayPauseButton';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { useSettingsStore } from '../store/settingsStore';
-import { useAudioPlayer } from 'expo-audio';
+import { AudioPlayer, useAudioPlayer } from 'expo-audio';
 import { Ionicons } from '@expo/vector-icons';
 import { DynamicBackground } from '../components/DynamicBackground';
 import { BreathingAnimation } from '../components/BreathingAnimation';
@@ -35,9 +36,12 @@ import { backgroundTimerService } from '../services/backgroundTimer';
 import { notificationService } from '../services/notificationService';
 import { errorHandler } from '../services/errorHandler';
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types';
-import { audioSource } from '../utils/constants';
+import { audioSource, musicTracks } from '../utils/constants';
 import MiniAudioPlayer from '../components/MiniAudioPlayer';
+import useCachedAudio from '../hooks/useCachedAudio';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const MUSIC_SETTINGS_KEY = 'music_settings';
 // Types
 interface FlowTimerScreenProps {
     navigation?: {
@@ -75,8 +79,14 @@ interface TimerContainerProps {
     showBreathingAnimation: boolean;
     pulseAnimation: any;
     onToggleTimer: () => void;
-    miniAudioPlayerRef: any;
     isAuthenticated: boolean;
+    handlePlayPause: () => void;
+    handleVolumeChange: (delta: number) => void;
+    selectedTrackData: any;
+    settings: MusicSettings;
+    player: AudioPlayer;
+    volumeStyle: ViewStyle;
+    isPlaying: boolean;
 }
 
 // Components
@@ -197,19 +207,15 @@ const TimerContainer: React.FC<TimerContainerProps> = ({
     showBreathingAnimation,
     pulseAnimation,
     onToggleTimer,
-    miniAudioPlayerRef,
     isAuthenticated,
+    handlePlayPause,
+    handleVolumeChange,
+    selectedTrackData,
+    settings,
+    player,
+    volumeStyle,
+    isPlaying,
 }) => {
-    const {
-        handlePlayPause,
-        handleVolumeChange,
-        selectedTrackData,
-        settings,
-        player,
-        volumeStyle,
-        isPlaying,
-    } = miniAudioPlayerRef?.current || {};
-
     return (
         <View style={styles.timerContainer}>
             <AuthStatus isAuthenticated={isAuthenticated} />
@@ -248,45 +254,49 @@ const TimerContainer: React.FC<TimerContainerProps> = ({
             />
 
             {/* Mini Audio Player */}
-            {miniAudioPlayerRef?.current &&
-                miniAudioPlayerRef.current.selectedTrackData &&
-                player?.isLoaded && (
-                    <MiniAudioPlayer
-                        isPlaying={isPlaying}
-                        handlePlayPause={handlePlayPause}
-                        handleVolumeChange={handleVolumeChange}
-                        selectedTrackData={selectedTrackData}
-                        settings={settings}
-                        player={player}
-                        volumeStyle={volumeStyle}
-                    />
-                )}
+            {player?.isLoaded && (
+                <MiniAudioPlayer
+                    isPlaying={isPlaying}
+                    handlePlayPause={handlePlayPause}
+                    handleVolumeChange={handleVolumeChange}
+                    selectedTrackData={selectedTrackData}
+                    settings={settings}
+                    player={player}
+                    volumeStyle={volumeStyle}
+                />
+            )}
         </View>
     );
 };
 
+interface MusicSettings {
+    volume: number;
+    autoPlay: boolean;
+    fadeInOut: boolean;
+    lastPlayedTrack: string | null;
+    favoriteTrackIds: string[];
+}
+
+const defaultSettings: MusicSettings = {
+    volume: 0.7,
+    autoPlay: false,
+    fadeInOut: true,
+    lastPlayedTrack: null,
+    favoriteTrackIds: [],
+};
 // Main Component
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     // Hooks and State
     const { user, isAuthenticated } = useAuthContext();
-    const miniAudioPlayerRef = useRef<any>(null);
-
-    const {
-        timer,
-        toggleTimer,
-        resetTimer,
-        stopTimer,
-        handleTimerComplete,
-        setTimer,
-        updateTimerFromSettings,
-        startBreak,
-        endBreak,
-        flowMetrics,
-        initializeStore: initializePomodoro,
-    } = usePomodoroStore();
-
-    const { timeDuration, breakDuration, initializeStore: initializeSettings } = useSettingsStore();
-
+    const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const { player, isReady, status, uri, isDownloading, downloadError, downloadProgress } =
+        useCachedAudio(
+            selectedTrack ? musicTracks.find((t) => t.id === selectedTrack)?.source || null : null,
+        );
+    const [settings, setSettings] = useState<MusicSettings>(defaultSettings);
+    const [showSettings, setShowSettings] = useState(false);
+    const [isLoadingTrack, setIsLoadingTrack] = useState(false);
     const alertPlayer = useAudioPlayer(audioSource);
     const { theme } = useTheme();
 
@@ -306,7 +316,102 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const containerAnimation = useSharedValue(0);
     const achievementAnimation = useSharedValue(0);
     const quickActionsAnimation = useSharedValue(0);
+    const volumeAnimation = useSharedValue(settings.volume);
+    const {
+        timer,
+        toggleTimer,
+        resetTimer,
+        stopTimer,
+        handleTimerComplete,
+        setTimer,
+        updateTimerFromSettings,
+        startBreak,
+        endBreak,
+        flowMetrics,
+        initializeStore: initializePomodoro,
+    } = usePomodoroStore();
 
+    const handlePlayPause = async () => {
+        try {
+            if (!player || !isReady) {
+                Alert.alert('Error', 'Audio player not ready');
+                return;
+            }
+
+            if (!status?.isLoaded) {
+                Alert.alert('Loading...', 'Please wait for the track to load');
+                return;
+            }
+
+            if (isPlaying) {
+                await player.pause();
+                setIsPlaying(false);
+            } else {
+                await player.play();
+                setIsPlaying(true);
+            }
+        } catch (error) {
+            console.error('Failed to toggle playback:', error);
+            Alert.alert('Playback Error', 'Failed to control playback.');
+        }
+    };
+
+    const saveSettings = async (newSettings: Partial<MusicSettings>) => {
+        try {
+            const updatedSettings = { ...settings, ...newSettings };
+            setSettings(updatedSettings);
+            await AsyncStorage.setItem(MUSIC_SETTINGS_KEY, JSON.stringify(updatedSettings));
+        } catch (error) {
+            console.error('Failed to save music settings:', error);
+        }
+    };
+    const handleTrackSelection = async (trackId: string) => {
+        try {
+            // If selecting a different track
+            if (selectedTrack !== trackId) {
+                // Stop current playback first
+                if (isPlaying && player && status?.isLoaded) {
+                    await player.pause();
+                    setIsPlaying(false);
+                }
+
+                // Set loading state and new track
+                setIsLoadingTrack(true);
+                setSelectedTrack(trackId);
+                await saveSettings({ lastPlayedTrack: trackId });
+                return;
+            }
+
+            // Toggle play/pause for same track
+            await handlePlayPause();
+        } catch (error) {
+            console.error('Failed to handle track selection:', error);
+            Alert.alert('Playback Error', 'Failed to play the selected track.');
+            setIsLoadingTrack(false);
+        }
+    };
+
+    const { timeDuration, breakDuration, initializeStore: initializeSettings } = useSettingsStore();
+
+    // Add this useEffect to handle auto-play when track is ready
+    useEffect(() => {
+        if (
+            player &&
+            isReady &&
+            status?.isLoaded &&
+            selectedTrack &&
+            settings.autoPlay &&
+            !isPlaying &&
+            isLoadingTrack
+        ) {
+            setIsLoadingTrack(false);
+            // Set initial volume
+            player.volume = settings.volume;
+            handlePlayPause();
+        } else if (isReady && isLoadingTrack) {
+            setIsLoadingTrack(false);
+        }
+    }, [player, isReady, status?.isLoaded, selectedTrack, settings.autoPlay, isLoadingTrack]);
     // Effects (keeping all existing useEffect hooks)
     useEffect(() => {
         hybridDatabaseService.setAuthState(isAuthenticated, user?.id);
@@ -523,6 +628,21 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         }
     };
 
+    // In FlowTimerScreen component, replace the handleVolumeChange function:
+    const handleVolumeChange = async (delta: number) => {
+        const newVolume = Math.max(0, Math.min(1, settings.volume + delta));
+        await saveSettings({ volume: newVolume });
+
+        // Apply volume to player if available and ready
+        if (player && isReady && status?.isLoaded) {
+            try {
+                player.volume = newVolume;
+            } catch (error) {
+                console.error('Failed to set volume:', error);
+            }
+        }
+    };
+
     const handleShowAchievements = () => {
         setShowAchievements(true);
     };
@@ -556,7 +676,10 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             ],
         };
     });
-
+    const volumeStyle = useAnimatedStyle(() => ({
+        width: `${volumeAnimation.value * 100}%`,
+    }));
+    const selectedTrackData = musicTracks.find((track) => track.id === selectedTrack);
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -589,21 +712,36 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     />
 
                     <TimerContainer
+                        volumeStyle={volumeStyle}
+                        player={player}
+                        settings={settings}
                         theme={theme}
                         timer={timer}
                         flowMetrics={flowMetrics}
                         showBreathingAnimation={showBreathingAnimation}
                         pulseAnimation={pulseAnimation}
                         onToggleTimer={handleToggleTimer}
-                        miniAudioPlayerRef={miniAudioPlayerRef}
                         isAuthenticated={isAuthenticated}
+                        isPlaying={isPlaying}
+                        handlePlayPause={handlePlayPause}
+                        handleVolumeChange={handleVolumeChange}
+                        selectedTrackData={selectedTrackData}
                     />
                 </Animated.View>
 
                 <BottomSheetMusicPlayer
-                    miniAudioPlayerRef={miniAudioPlayerRef}
+                    isPlaying={isPlaying}
+                    settings={settings}
+                    setShowSettings={setShowSettings}
+                    showSettings={showSettings}
+                    setSettings={setSettings}
+                    player={player}
+                    downloadProgress={downloadProgress}
+                    handleTrackSelection={handleTrackSelection}
                     bottomSheetRef={bottomSheetRef}
                     autoStartTrack={timer.isRunning ? 'deep-focus' : undefined}
+                    selectedTrack={selectedTrack}
+                    downloadError={downloadError}
                 />
 
                 <GamificationOverlay

@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
     interpolate,
@@ -17,12 +17,12 @@ import BottomSheet, {
 import { useTheme } from '../providers/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types';
-import useCachedAudio from '../hooks/useCachedAudio';
 import { MusicTrack, musicTracks } from '../utils/constants';
+import { AudioPlayer } from 'expo-audio';
 
 const MUSIC_SETTINGS_KEY = 'music_settings';
 
-interface MusicSettings {
+export interface MusicSettings {
     volume: number;
     autoPlay: boolean;
     fadeInOut: boolean;
@@ -30,41 +30,35 @@ interface MusicSettings {
     favoriteTrackIds: string[];
 }
 
-const defaultSettings: MusicSettings = {
-    volume: 0.7,
-    autoPlay: false,
-    fadeInOut: true,
-    lastPlayedTrack: null,
-    favoriteTrackIds: [],
-};
-
 interface BottomSheetMusicPlayerProps {
-    bottomSheetRef: React.RefObject<BottomSheetMethods>;
+    bottomSheetRef: React.RefObject<BottomSheetMethods | null>;
     autoStartTrack?: string;
-    miniAudioPlayerRef: any;
+    handleTrackSelection: (trackId: string) => void;
+    selectedTrack?: string | null;
+    player: AudioPlayer;
+    downloadProgress: number;
+    downloadError: string | null;
+    settings: MusicSettings;
+    showSettings: boolean;
+    setShowSettings: (show: boolean) => void;
+    setSettings: (settings: MusicSettings) => void;
+    isPlaying: boolean;
 }
 
 export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
-    miniAudioPlayerRef,
     bottomSheetRef,
-    autoStartTrack,
+    handleTrackSelection,
+    selectedTrack,
+    player,
+    settings,
+    showSettings,
+    setShowSettings,
+    setSettings,
+    isPlaying,
+    downloadProgress,
 }) => {
     const { theme } = useTheme();
-    const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [settings, setSettings] = useState<MusicSettings>(defaultSettings);
-    const [currentTime, setCurrentTime] = useState<any>(0);
-    const [duration, setDuration] = useState(0);
-    const [showSettings, setShowSettings] = useState(false);
     const [filteredType, setFilteredType] = useState<string>('all');
-    // 🔥 NEW: Add loading state for better UX
-    const [isLoadingTrack, setIsLoadingTrack] = useState(false);
-
-    // 🔥 CHANGED: Get additional states from the hook
-    const { player, status, uri, isDownloading, downloadError, downloadProgress } = useCachedAudio(
-        selectedTrack ? musicTracks.find((t) => t.id === selectedTrack)?.source || null : null,
-    );
-
     const waveAnimation = useSharedValue(0);
     const volumeAnimation = useSharedValue(settings.volume);
 
@@ -85,18 +79,6 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
     );
 
     useEffect(() => {
-        loadSettings();
-        if (autoStartTrack) {
-            const track = musicTracks.find((t) => t.id === autoStartTrack);
-            if (track) {
-                setSelectedTrack(autoStartTrack);
-                // 🔥 CHANGED: Don't auto-play immediately, wait for loading
-                // Auto-play will be handled in the status effect
-            }
-        }
-    }, []);
-
-    useEffect(() => {
         if (isPlaying) {
             waveAnimation.value = withRepeat(
                 withSequence(withTiming(1, { duration: 800 }), withTiming(0.3, { duration: 800 })),
@@ -112,20 +94,20 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
         volumeAnimation.value = withTiming(settings.volume, { duration: 300 });
     }, [settings.volume]);
 
-    const loadSettings = async () => {
-        try {
-            const settingsString = await AsyncStorage.getItem(MUSIC_SETTINGS_KEY);
-            if (settingsString) {
-                const savedSettings = JSON.parse(settingsString);
-                setSettings({ ...defaultSettings, ...savedSettings });
-                if (savedSettings.lastPlayedTrack) {
-                    setSelectedTrack(savedSettings.lastPlayedTrack);
-                }
-            }
-        } catch (error) {
-            console.error('Failed to load music settings:', error);
-        }
-    };
+    // const loadSettings = async () => {
+    //     try {
+    //         const settingsString = await AsyncStorage.getItem(MUSIC_SETTINGS_KEY);
+    //         if (settingsString) {
+    //             const savedSettings = JSON.parse(settingsString);
+    //             setSettings({ ...defaultSettings, ...savedSettings });
+    //             if (savedSettings.lastPlayedTrack) {
+    //                 setSelectedTrack(savedSettings.lastPlayedTrack);
+    //             }
+    //         }
+    //     } catch (error) {
+    //         console.error('Failed to load music settings:', error);
+    //     }
+    // };
 
     const saveSettings = async (newSettings: Partial<MusicSettings>) => {
         try {
@@ -137,104 +119,51 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
         }
     };
 
-    // 🔥 CHANGED: Improved status handling with proper loading states
-    useEffect(() => {
-        if (!status) return;
-
-        setDuration(player.duration || 0);
-        setCurrentTime(player.currentTime || 0);
-        // Handle track finishing
-        if (player.currentStatus.didJustFinish) {
-            setIsPlaying(false);
-            if (player && status.isLoaded) {
-                player.seekTo(0);
-            }
-        }
-
-        // 🔥 NEW: Handle auto-play when track is loaded
-        if (player.isLoaded && selectedTrack && settings.autoPlay && !isPlaying && isLoadingTrack) {
-            setIsLoadingTrack(false);
-            handlePlayPause();
-        } else if (player.isLoaded && isLoadingTrack) {
-            setIsLoadingTrack(false);
-        }
-
-        // 🔥 NEW: Set initial volume when track loads
-        if (player.isLoaded && player && settings.volume !== 1) {
-            player.volume = settings.volume;
-        }
-    }, [selectedTrack, settings.autoPlay, isLoadingTrack]);
-
+    // // 🔥 CHANGED: Improved status handling with proper loading states
+    // useEffect(() => {
+    //     if (!status) return;
+    //
+    //     setDuration(player.duration || 0);
+    //     setCurrentTime(player.currentTime || 0);
+    //     // Handle track finishing
+    //     if (player.currentStatus.didJustFinish) {
+    //         setIsPlaying(false);
+    //         if (player && status.isLoaded) {
+    //             player.seekTo(0);
+    //         }
+    //     }
+    //
+    //     // 🔥 NEW: Handle auto-play when track is loaded
+    //     if (player.isLoaded && selectedTrack && settings.autoPlay && !isPlaying && isLoadingTrack) {
+    //         setIsLoadingTrack(false);
+    //         handlePlayPause();
+    //     } else if (player.isLoaded && isLoadingTrack) {
+    //         setIsLoadingTrack(false);
+    //     }
+    //
+    //     // 🔥 NEW: Set initial volume when track loads
+    //     if (player.isLoaded && player && settings.volume !== 1) {
+    //         player.volume = settings.volume;
+    //     }
+    // }, [selectedTrack, settings.autoPlay, isLoadingTrack]);
+    //
     // 🔥 NEW: Handle download errors
-    useEffect(() => {
-        if (downloadError) {
-            Alert.alert(
-                'Download Error',
-                'Failed to download the audio file. Please check your internet connection.',
-            );
-            setIsLoadingTrack(false);
-        }
-    }, [downloadError]);
+    // useEffect(() => {
+    //     if (downloadError) {
+    //         Alert.alert(
+    //             'Download Error',
+    //             'Failed to download the audio file. Please check your internet connection.',
+    //         );
+    //         setIsLoadingTrack(false);
+    //     }
+    // }, [downloadError]);
 
     // 🔥 COMPLETELY REWRITTEN: Fixed the main play function
     const handlePlay = async (trackId: string) => {
-        try {
-            // If selecting a different track
-            if (selectedTrack !== trackId) {
-                // Stop current playback first
-                if (isPlaying && player && status.isLoaded) {
-                    player.pause();
-                    setIsPlaying(false);
-                }
-
-                // Set loading state and new track
-                setIsLoadingTrack(true);
-                setSelectedTrack(trackId);
-                await saveSettings({ lastPlayedTrack: trackId });
-
-                // The useEffect will handle auto-play when loaded
-                return;
-            }
-
-            // Toggle play/pause for same track
-            await handlePlayPause();
-        } catch (error) {
-            console.error('Failed to handle track selection:', error);
-            Alert.alert('Playback Error', 'Failed to play the selected track.');
-            setIsLoadingTrack(false);
-        }
+        handleTrackSelection(trackId);
     };
 
     // 🔥 NEW: Separate function for play/pause logic
-    const handlePlayPause = async () => {
-        try {
-            if (!player) {
-                Alert.alert('Error', 'Audio player not available');
-                return;
-            }
-
-            if (player.currentStatus.playbackState !== 'readyToPlay') {
-                Alert.alert('Loading...', 'Please wait for the track to download');
-                return;
-            }
-
-            if (!player.isLoaded) {
-                Alert.alert('Loading...', 'Please wait for the track to load');
-                return;
-            }
-
-            if (isPlaying) {
-                player.pause();
-                setIsPlaying(false);
-            } else {
-                player.play();
-                setIsPlaying(true);
-            }
-        } catch (error) {
-            console.error('Failed to toggle playback:', error);
-            Alert.alert('Playback Error', 'Failed to control playback.');
-        }
-    };
 
     // 🔥 CHANGED: Fixed volume control method
     const handleVolumeChange = async (delta: number) => {
@@ -251,7 +180,6 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
         const favorites = settings.favoriteTrackIds.includes(trackId)
             ? settings.favoriteTrackIds.filter((id) => id !== trackId)
             : [...settings.favoriteTrackIds, trackId];
-
         saveSettings({ favoriteTrackIds: favorites });
     };
 
@@ -283,15 +211,13 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
         transform: [{ scale: interpolate(waveAnimation.value, [0, 1], [0.8, 1.2]) }],
     }));
 
-    const volumeStyle = useAnimatedStyle(() => ({
-        width: `${volumeAnimation.value * 100}%`,
-    }));
+    const isDownloading = player?.currentStatus?.isLoaded;
 
     const renderTrackItem = ({ item }: { item: MusicTrack }) => {
         const isSelected = selectedTrack === item.id;
         const isFavorite = settings.favoriteTrackIds.includes(item.id);
         // 🔥 NEW: Show loading state for selected track
-        const isCurrentlyLoading = isSelected && (isDownloading || isLoadingTrack);
+        const isCurrentlyLoading = isSelected && isDownloading;
 
         return (
             <TouchableOpacity
@@ -309,7 +235,7 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
                 disabled={isCurrentlyLoading}
             >
                 <View style={[styles.trackIcon, { backgroundColor: item.color + '20' }]}>
-                    {/* 🔥 NEW: Show loading indicator */}
+                    🔥 NEW: Show loading indicator
                     {isCurrentlyLoading ? (
                         <View style={styles.loadingContainer}>
                             <Ionicons name="cloud-download" size={20} color={item.color} />
@@ -358,19 +284,6 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
         );
     };
 
-    const selectedTrackData = musicTracks.find((track) => track.id === selectedTrack);
-
-    useImperativeHandle(miniAudioPlayerRef, () => {
-        return {
-            handlePlayPause,
-            handleVolumeChange,
-            selectedTrackData,
-            settings,
-            player,
-            volumeStyle,
-            isPlaying,
-        };
-    }, [isPlaying, player, settings, selectedTrackData, player]);
     return (
         <BottomSheet
             ref={bottomSheetRef}
@@ -668,72 +581,6 @@ const styles = StyleSheet.create({
         borderRadius: 2,
         opacity: 0.8,
     },
-    nowPlaying: {
-        paddingTop: 20,
-        borderTopWidth: 1,
-    },
-    nowPlayingHeader: {
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    nowPlayingTitle: {
-        fontSize: 14,
-        fontWeight: '600',
-        marginBottom: 4,
-    },
-    nowPlayingTrack: {
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    // 🔥 NEW: Loading text style
-    loadingText: {
-        fontSize: 12,
-        fontStyle: 'italic',
-        marginTop: 4,
-    },
-    progressContainer: {
-        height: 4,
-        borderRadius: 2,
-        marginBottom: 20,
-        overflow: 'hidden',
-    },
-    progressBar: {
-        height: '100%',
-        borderRadius: 2,
-    },
-    controls: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 24,
-        marginBottom: 12,
-    },
-    controlButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    playButton: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 8,
-    },
-    volumeContainer: {
-        alignItems: 'center',
-    },
-    volumeText: {
-        fontSize: 12,
-        fontWeight: '500',
-    },
     loadingContainer: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -742,5 +589,10 @@ const styles = StyleSheet.create({
         fontSize: 8,
         fontWeight: 'bold',
         marginTop: 2,
+    },
+    loadingText: {
+        fontSize: 12,
+        fontStyle: 'italic',
+        marginTop: 4,
     },
 });

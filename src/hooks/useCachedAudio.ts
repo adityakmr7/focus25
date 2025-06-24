@@ -1,7 +1,7 @@
 // hooks/useCachedAudio.ts
 import { useEffect, useState } from 'react';
 import * as FileSystem from 'expo-file-system';
-import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { AudioStatus, useAudioPlayer } from 'expo-audio';
 
 function getLocalUri(remoteUri: string) {
     const filename = remoteUri.split('/').pop() || 'audio.mp3';
@@ -13,12 +13,14 @@ export function useCachedAudio(sourceUrl: string | null) {
     const [downloadError, setDownloadError] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState(0);
+    const [isReady, setIsReady] = useState(false);
 
     useEffect(() => {
         if (!sourceUrl) {
             setUri(null);
             setDownloadError(null);
             setIsDownloading(false);
+            setIsReady(false);
             return;
         }
 
@@ -27,6 +29,7 @@ export function useCachedAudio(sourceUrl: string | null) {
         const checkAndDownload = async () => {
             try {
                 setDownloadError(null);
+                setIsReady(false);
 
                 // Check if file already exists
                 const info = await FileSystem.getInfoAsync(localUri);
@@ -34,6 +37,7 @@ export function useCachedAudio(sourceUrl: string | null) {
                 if (info.exists) {
                     console.log('Audio already cached:', localUri);
                     setUri(localUri);
+                    setIsReady(true);
                     return;
                 }
 
@@ -50,8 +54,7 @@ export function useCachedAudio(sourceUrl: string | null) {
                         const progress =
                             downloadProgress.totalBytesWritten /
                             downloadProgress.totalBytesExpectedToWrite;
-                        console.log('Download progress:', progress); // Debug log
-                        setDownloadProgress(Math.min(progress, 1)); // Ensure it doesn't exceed 1
+                        setDownloadProgress(Math.min(progress, 1));
                     },
                 );
 
@@ -60,7 +63,8 @@ export function useCachedAudio(sourceUrl: string | null) {
                 if (downloadResult?.uri) {
                     console.log('Audio downloaded successfully:', downloadResult.uri);
                     setUri(downloadResult.uri);
-                    setDownloadProgress(1); // Ensure it shows 100%
+                    setDownloadProgress(1);
+                    setIsReady(true);
                 } else {
                     throw new Error('Download failed - no URI returned');
                 }
@@ -68,9 +72,9 @@ export function useCachedAudio(sourceUrl: string | null) {
                 console.error('Failed to download audio:', error);
                 setDownloadError(error instanceof Error ? error.message : 'Download failed');
                 setUri(null);
+                setIsReady(false);
             } finally {
                 setIsDownloading(false);
-                setDownloadProgress(0);
             }
         };
 
@@ -78,7 +82,6 @@ export function useCachedAudio(sourceUrl: string | null) {
     }, [sourceUrl]);
 
     const player = useAudioPlayer(uri);
-    const status = useAudioPlayerStatus(player);
 
     // Clear cache function
     const clearCache = async () => {
@@ -89,6 +92,7 @@ export function useCachedAudio(sourceUrl: string | null) {
                 if (info.exists) {
                     await FileSystem.deleteAsync(localUri);
                     setUri(null);
+                    setIsReady(false);
                     console.log('Cache cleared for:', sourceUrl);
                 }
             } catch (error) {
@@ -97,6 +101,15 @@ export function useCachedAudio(sourceUrl: string | null) {
         }
     };
 
+    console.log('useCachedAudio:', {
+        uri,
+        isReady,
+        isDownloading,
+        downloadProgress,
+        downloadError,
+        player,
+    });
+    const status: AudioStatus = player.currentStatus;
     return {
         player,
         status,
@@ -104,6 +117,7 @@ export function useCachedAudio(sourceUrl: string | null) {
         isDownloading,
         downloadProgress,
         downloadError,
+        isReady,
         clearCache,
     };
 }
