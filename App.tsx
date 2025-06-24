@@ -20,8 +20,8 @@ import { errorHandler } from './src/services/errorHandler';
 import { shouldShowOnboarding } from './src/components/OnboardingFlow';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { musicTracks } from './src/components/BottomSheetMusicPlayer';
 import { AudioCacheManager } from './src/utils/audioCache';
+import { MusicTrack, musicTracks } from './src/utils/constants';
 
 // Enable screens before any navigation components are rendered
 enableScreens();
@@ -158,7 +158,7 @@ const AppContent = () => {
         const preDownloadTracks = async () => {
             const popularTrackUrls = musicTracks
                 .slice(0, 3) // Download first 3 tracks
-                .map((track) => track.source);
+                .map((track: MusicTrack) => track.source);
 
             await AudioCacheManager.preDownloadAudio(popularTrackUrls);
         };
