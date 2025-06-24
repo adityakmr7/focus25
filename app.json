@@ -1,75 +1,71 @@
 {
-  "expo": {
-    "name": "Flow Focus",
-    "slug": "flow-focus",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#48BB78"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "infoPlist": {
-        "UIBackgroundModes": [
-          "audio",
-          "background-fetch",
-          "background-processing"
+    "expo": {
+        "name": "Focus 25",
+        "slug": "focus-25",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon_ios.png",
+        "userInterfaceStyle": "automatic",
+        "newArchEnabled": true,
+        "splash": {
+            "image": "./assets/splash-icon.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#48BB78"
+        },
+        "assetBundlePatterns": ["**/*"],
+        "ios": {
+            "icon": "./assets/icon_ios.png",
+            "supportsTablet": true,
+            "infoPlist": {
+                "UIBackgroundModes": ["audio", "background-fetch", "background-processing"],
+                "NSMicrophoneUsageDescription": "This app uses the microphone for focus session audio feedback.",
+                "NSUserNotificationsUsageDescription": "This app sends notifications to remind you about focus sessions and breaks."
+            },
+            "bundleIdentifier": "com.focus25.app"
+        },
+        "android": {
+            "icon": "./assets/icon_android.png",
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#48BB78"
+            },
+            "edgeToEdgeEnabled": true,
+            "permissions": [
+                "android.permission.RECEIVE_BOOT_COMPLETED",
+                "android.permission.WAKE_LOCK",
+                "android.permission.VIBRATE",
+                "android.permission.USE_FULL_SCREEN_INTENT"
+            ],
+            "package": "com.focus25.app"
+        },
+        "web": {
+            "favicon": "./assets/favicon.png",
+            "bundler": "metro"
+        },
+        "plugins": [
+            "expo-audio",
+            "expo-notifications",
+            "expo-background-fetch",
+            "expo-task-manager",
+            [
+                "expo-build-properties",
+                {
+                    "ios": {
+                        "newArchEnabled": true
+                    },
+                    "android": {
+                        "newArchEnabled": true
+                    }
+                }
+            ]
         ],
-        "NSMicrophoneUsageDescription": "This app uses the microphone for focus session audio feedback.",
-        "NSUserNotificationsUsageDescription": "This app sends notifications to remind you about focus sessions and breaks."
-      },
-      "bundleIdentifier": "com.flowfocus.app"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#48BB78"
-      },
-      "edgeToEdgeEnabled": true,
-      "permissions": [
-        "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.WAKE_LOCK",
-        "android.permission.VIBRATE",
-        "android.permission.USE_FULL_SCREEN_INTENT"
-      ],
-      "package": "com.flowfocus.app"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
-    },
-    "plugins": [
-      "expo-audio",
-      "expo-notifications",
-      "expo-background-fetch",
-      "expo-task-manager",
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "newArchEnabled": true
-          },
-          "android": {
-            "newArchEnabled": true
-          }
+        "experiments": {
+            "typedRoutes": true
+        },
+        "extra": {
+            "eas": {
+                "projectId": "com.focus25.app"
+            }
         }
-      ]
-    ],
-    "experiments": {
-      "typedRoutes": true
-    },
-    "extra": {
-      "eas": {
-        "projectId": "your-project-id-here"
-      }
     }
-  }
 }

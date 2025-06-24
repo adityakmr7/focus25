@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    ScrollView, 
-    SafeAreaView, 
-    Animated, 
+import {
+    View,
+    Text,
+    StyleSheet,
+    ScrollView,
+    SafeAreaView,
+    Animated,
     Dimensions,
     Platform,
     TouchableOpacity,
@@ -41,42 +41,42 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
 
     const getFlowAdvice = () => {
         const { flowIntensity, distractionCount, consecutiveSessions } = flowMetrics;
-        
+
         if (flowIntensity === 'high') {
             return {
                 title: "🔥 You're in the Zone!",
                 advice: "You're experiencing deep flow. Consider extending your sessions slightly to maximize this state.",
                 tips: [
-                    "Keep your current environment setup",
-                    "Avoid interruptions during high flow periods",
-                    "Consider batch similar tasks together",
-                    "Try the Pomodoro technique with longer intervals"
+                    'Keep your current environment setup',
+                    'Avoid interruptions during high flow periods',
+                    'Consider batch similar tasks together',
+                    'Try the Pomodoro technique with longer intervals',
                 ],
                 color: '#10B981',
                 gradient: ['#10B981', '#34D399'],
             };
         } else if (flowIntensity === 'medium') {
             return {
-                title: "⚡ Building Momentum",
+                title: '⚡ Building Momentum',
                 advice: "You're developing good focus habits. A few tweaks can help you reach deeper flow states.",
                 tips: [
-                    "Minimize distractions before starting",
-                    "Try slightly longer sessions",
-                    "Use background music or white noise",
-                    "Take regular breaks to maintain energy"
+                    'Minimize distractions before starting',
+                    'Try slightly longer sessions',
+                    'Use background music or white noise',
+                    'Take regular breaks to maintain energy',
                 ],
                 color: '#F59E0B',
                 gradient: ['#F59E0B', '#FBBF24'],
             };
         } else {
             return {
-                title: "🌱 Growing Your Focus",
-                advice: "Everyone starts somewhere. Small, consistent sessions will build your focus muscle.",
+                title: '🌱 Growing Your Focus',
+                advice: 'Everyone starts somewhere. Small, consistent sessions will build your focus muscle.',
                 tips: [
-                    "Start with shorter 15-minute sessions",
-                    "Remove phone from workspace",
-                    "Use the Pomodoro technique consistently",
-                    "Create a dedicated focus environment"
+                    'Start with shorter 15-minute sessions',
+                    'Remove phone from workspace',
+                    'Use the Pomodoro technique consistently',
+                    'Create a dedicated focus environment',
                 ],
                 color: '#EF4444',
                 gradient: ['#EF4444', '#F87171'],
@@ -140,9 +140,13 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
                     <Ionicons name={icon as any} size={24} color={color} />
                 </View>
                 <View style={styles.insightContent}>
-                    <Text style={[styles.insightTitle, { color: theme.textSecondary }]}>{title}</Text>
+                    <Text style={[styles.insightTitle, { color: theme.textSecondary }]}>
+                        {title}
+                    </Text>
                     <Text style={[styles.insightValue, { color }]}>{value}</Text>
-                    <Text style={[styles.insightSubtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
+                    <Text style={[styles.insightSubtitle, { color: theme.textSecondary }]}>
+                        {subtitle}
+                    </Text>
                 </View>
             </Animated.View>
         );
@@ -194,10 +198,9 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
             <Animated.ScrollView
                 style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
-                onScroll={Animated.event(
-                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                    { useNativeDriver: false }
-                )}
+                onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+                    useNativeDriver: false,
+                })}
                 scrollEventThrottle={16}
             >
                 {/* Header */}
@@ -210,15 +213,13 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
                         },
                     ]}
                 >
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => navigation?.goBack()}
                         style={[styles.backButton, { backgroundColor: theme.surface }]}
                     >
                         <Ionicons name="arrow-back" size={24} color={theme.text} />
                     </TouchableOpacity>
-                    <Text style={[styles.headerTitle, { color: theme.text }]}>
-                        Flow Analytics
-                    </Text>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>Flow Analytics</Text>
                     <View style={styles.placeholder} />
                 </Animated.View>
 
@@ -226,16 +227,11 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
                 <FlowMetrics showDetailed={true} />
 
                 {/* Advanced Analytics */}
-                <AdvancedAnalytics 
-                    timeRange={timeRange}
-                    onTimeRangeChange={setTimeRange}
-                />
+                <AdvancedAnalytics timeRange={timeRange} onTimeRangeChange={setTimeRange} />
 
                 {/* Insights Grid */}
                 <View style={styles.insightsSection}>
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                        Key Insights
-                    </Text>
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Key Insights</Text>
                     <View style={styles.insightsGrid}>
                         <InsightCard
                             icon="flame"
@@ -273,7 +269,12 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
                 </View>
 
                 {/* Advice Section */}
-                <View style={[styles.adviceSection, { backgroundColor: theme.surface, borderLeftColor: advice.color }]}>
+                <View
+                    style={[
+                        styles.adviceSection,
+                        { backgroundColor: theme.surface, borderLeftColor: advice.color },
+                    ]}
+                >
                     <View style={styles.adviceHeader}>
                         <Text style={[styles.adviceTitle, { color: advice.color }]}>
                             {advice.title}
@@ -282,7 +283,7 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
                     <Text style={[styles.adviceText, { color: theme.textSecondary }]}>
                         {advice.advice}
                     </Text>
-                    
+
                     <Text style={[styles.tipsTitle, { color: theme.text }]}>
                         💡 Personalized Tips
                     </Text>
@@ -303,19 +304,22 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
                             <Text style={[styles.progressLabel, { color: theme.textSecondary }]}>
                                 Total Focus Time
                             </Text>
-                            <View style={[styles.progressBar, { backgroundColor: theme.background }]}>
-                                <View 
+                            <View
+                                style={[styles.progressBar, { backgroundColor: theme.background }]}
+                            >
+                                <View
                                     style={[
                                         styles.progressFill,
-                                        { 
+                                        {
                                             width: `${Math.min((flowMetrics.totalFocusTime / 1500) * 100, 100)}%`,
                                             backgroundColor: advice.color,
-                                        }
-                                    ]} 
+                                        },
+                                    ]}
                                 />
                             </View>
                             <Text style={[styles.progressValue, { color: theme.text }]}>
-                                {Math.floor(flowMetrics.totalFocusTime / 60)}h {flowMetrics.totalFocusTime % 60}m
+                                {Math.floor(flowMetrics.totalFocusTime / 60)}h{' '}
+                                {flowMetrics.totalFocusTime % 60}m
                             </Text>
                         </View>
 
@@ -323,15 +327,17 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
                             <Text style={[styles.progressLabel, { color: theme.textSecondary }]}>
                                 Session Consistency
                             </Text>
-                            <View style={[styles.progressBar, { backgroundColor: theme.background }]}>
-                                <View 
+                            <View
+                                style={[styles.progressBar, { backgroundColor: theme.background }]}
+                            >
+                                <View
                                     style={[
                                         styles.progressFill,
-                                        { 
+                                        {
                                             width: `${Math.min((flowMetrics.consecutiveSessions / 10) * 100, 100)}%`,
                                             backgroundColor: '#3B82F6',
-                                        }
-                                    ]} 
+                                        },
+                                    ]}
                                 />
                             </View>
                             <Text style={[styles.progressValue, { color: theme.text }]}>

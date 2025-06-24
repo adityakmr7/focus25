@@ -17,19 +17,11 @@ interface PlayPauseButtonProps {
 export const PlayPauseButton: React.FC<PlayPauseButtonProps> = ({
     isRunning,
     isPaused,
-    onPress
+    onPress,
 }) => (
-    <TouchableOpacity
-        style={styles.playButton}
-        onPress={onPress}
-        activeOpacity={0.8}
-    >
+    <TouchableOpacity style={styles.playButton} onPress={onPress} activeOpacity={0.8}>
         <View style={styles.playButtonInner}>
-            <Ionicons
-                name={isRunning && !isPaused ? "pause" : "play"}
-                size={32}
-                color="#4CAF50"
-            />
+            <Ionicons name={isRunning && !isPaused ? 'pause' : 'play'} size={32} color="#4CAF50" />
         </View>
     </TouchableOpacity>
 );
@@ -48,4 +40,4 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-}); 
+});

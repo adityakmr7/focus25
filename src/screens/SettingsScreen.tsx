@@ -1,21 +1,11 @@
-import React, {useCallback, useEffect, useState, useMemo} from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    SafeAreaView,
-    ScrollView,
-    Alert,
-    Platform,
-    Share,
-} from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Platform, SafeAreaView, Share, StyleSheet, Text, View } from 'react-native';
 import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withTiming,
-    withDelay,
     interpolate,
-    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withTiming,
 } from 'react-native-reanimated';
 import { SettingItem } from '../components/SettingItem';
 import { SectionHeader } from '../components/SectionHeader';
@@ -26,7 +16,6 @@ import { useThemeStore } from '../store/themeStore';
 import { useGoalsStore } from '../store/goalsStore';
 import { useStatisticsStore } from '../store/statisticsStore';
 import { usePomodoroStore } from '../store/pomodoroStore';
-import { databaseService } from '../services/database';
 import { Ionicons } from '@expo/vector-icons';
 
 interface SettingsScreenProps {
@@ -70,7 +59,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         openStorage,
         openFeedback,
         breakDuration,
-        setBreakDuration
+        setBreakDuration,
     } = useSettingsStore();
 
     const { goals } = useGoalsStore();
@@ -86,7 +75,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             theme: 0,
             flowMetrics: 0,
         },
-        formattedSize: '0 KB'
+        formattedSize: '0 KB',
     });
 
     const [isExporting, setIsExporting] = useState(false);
@@ -110,7 +99,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
     // Separate effect for storage recalculation
     useEffect(() => {
-        if (hasAnimated) { // Only recalculate if initial animation has completed
+        if (hasAnimated) {
+            // Only recalculate if initial animation has completed
             calculateStorageUsage();
         }
     }, [goals.length, flows, breaks, interruptions, flowMetrics]);
@@ -129,12 +119,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 autoBreak,
                 focusReminders,
                 weeklyReports,
-                dataSync
+                dataSync,
             }).length;
             const themeSize = 500;
             const flowMetricsSize = JSON.stringify(flowMetrics).length;
 
-            const totalSize = goalsSize + statisticsSize + settingsSize + themeSize + flowMetricsSize;
+            const totalSize =
+                goalsSize + statisticsSize + settingsSize + themeSize + flowMetricsSize;
 
             const formatBytes = (bytes: number): string => {
                 if (bytes === 0) return '0 B';
@@ -153,14 +144,28 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     theme: themeSize,
                     flowMetrics: flowMetricsSize,
                 },
-                formattedSize: formatBytes(totalSize)
+                formattedSize: formatBytes(totalSize),
             });
         } catch (error) {
             console.error('Failed to calculate storage usage:', error);
         } finally {
             setIsCalculatingStorage(false);
         }
-    }, [goals, flows, breaks, interruptions, flowMetrics, timeDuration, breakDuration, soundEffects, notifications, autoBreak, focusReminders, weeklyReports, dataSync]);
+    }, [
+        goals,
+        flows,
+        breaks,
+        interruptions,
+        flowMetrics,
+        timeDuration,
+        breakDuration,
+        soundEffects,
+        notifications,
+        autoBreak,
+        focusReminders,
+        weeklyReports,
+        dataSync,
+    ]);
 
     // Memoize handlers
     const showAlert = useCallback((title: string, message: string): void => {
@@ -209,14 +214,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     onPress: async () => {
                         try {
                             await deleteData();
-                            showAlert('Data Deleted', 'All your data has been permanently deleted.');
+                            showAlert(
+                                'Data Deleted',
+                                'All your data has been permanently deleted.',
+                            );
                             setTimeout(calculateStorageUsage, 500);
                         } catch (error) {
                             showAlert('Delete Failed', 'Failed to delete data. Please try again.');
                         }
-                    }
-                }
-            ]
+                    },
+                },
+            ],
         );
     }, [goals.length, deleteData, showAlert, calculateStorageUsage]);
 
@@ -236,7 +244,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             return total > 0 ? `${Math.round((size / total) * 100)}%` : '0%';
         };
 
-        const message = `Storage Breakdown:\n\n` +
+        const message =
+            `Storage Breakdown:\n\n` +
             `📊 Goals: ${formatBytes(breakdown.goals)} (${getPercentage(breakdown.goals)})\n` +
             `📈 Statistics: ${formatBytes(breakdown.statistics)} (${getPercentage(breakdown.statistics)})\n` +
             `🔥 Flow Metrics: ${formatBytes(breakdown.flowMetrics)} (${getPercentage(breakdown.flowMetrics)})\n` +
@@ -290,9 +299,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             opacity: interpolate(headerProgress.value, [0, 1], [0, 1]),
             transform: [
                 {
-                    translateY: interpolate(headerProgress.value, [0, 1], [-30, 0])
-                }
-            ]
+                    translateY: interpolate(headerProgress.value, [0, 1], [-30, 0]),
+                },
+            ],
         };
     });
 
@@ -301,59 +310,50 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             opacity: interpolate(sectionsProgress.value, [0, 1], [0, 1]),
             transform: [
                 {
-                    translateY: interpolate(sectionsProgress.value, [0, 1], [20, 0])
-                }
-            ]
+                    translateY: interpolate(sectionsProgress.value, [0, 1], [20, 0]),
+                },
+            ],
         };
     });
 
     // Memoize AnimatedSection component
-    const AnimatedSection = useMemo(() => React.memo(({ children, delay = 0 }: {
-        children: React.ReactNode;
-        delay?: number;
-    }) => {
-        const sectionProgress = useSharedValue(0);
-        const [sectionAnimated, setSectionAnimated] = useState(false);
+    const AnimatedSection = useMemo(
+        () =>
+            React.memo(({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
+                const sectionProgress = useSharedValue(0);
+                const [sectionAnimated, setSectionAnimated] = useState(false);
 
-        useEffect(() => {
-            if (hasAnimated && !sectionAnimated) {
-                sectionProgress.value = withDelay(delay, withTiming(1, { duration: 600 }));
-                setSectionAnimated(true);
-            }
-        }, [hasAnimated, sectionAnimated, delay]);
-
-        const sectionAnimatedStyle = useAnimatedStyle(() => {
-            return {
-                opacity: interpolate(sectionProgress.value, [0, 1], [0, 1]),
-                transform: [
-                    {
-                        translateY: interpolate(sectionProgress.value, [0, 1], [20, 0])
+                useEffect(() => {
+                    if (hasAnimated && !sectionAnimated) {
+                        sectionProgress.value = withDelay(delay, withTiming(1, { duration: 600 }));
+                        setSectionAnimated(true);
                     }
-                ]
-            };
-        });
+                }, [hasAnimated, sectionAnimated, delay]);
 
-        return (
-            <Animated.View style={sectionAnimatedStyle}>
-                {children}
-            </Animated.View>
-        );
-    }), [hasAnimated]);
+                const sectionAnimatedStyle = useAnimatedStyle(() => {
+                    return {
+                        opacity: interpolate(sectionProgress.value, [0, 1], [0, 1]),
+                        transform: [
+                            {
+                                translateY: interpolate(sectionProgress.value, [0, 1], [20, 0]),
+                            },
+                        ],
+                    };
+                });
+
+                return <Animated.View style={sectionAnimatedStyle}>{children}</Animated.View>;
+            }),
+        [hasAnimated],
+    );
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Enhanced Header */}
             <Animated.View
-                style={[
-                    styles.header,
-                    { borderBottomColor: theme.surface },
-                    headerAnimatedStyle,
-                ]}
+                style={[styles.header, { borderBottomColor: theme.surface }, headerAnimatedStyle]}
             >
                 <View style={styles.headerContent}>
-                    <Text style={[styles.title, { color: theme.text }]}>
-                        Settings
-                    </Text>
+                    <Text style={[styles.title, { color: theme.text }]}>Settings</Text>
                     <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
                         Customize your focus experience
                     </Text>
@@ -370,20 +370,27 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <View style={styles.timeDurationContainer}>
                             <View style={styles.durationContent}>
-                                <Ionicons name="timer" size={20} color={theme.accent} style={styles.durationIcon} />
+                                <Ionicons
+                                    name="timer"
+                                    size={20}
+                                    color={theme.accent}
+                                    style={styles.durationIcon}
+                                />
                                 <Text style={[styles.timeDurationLabel, { color: theme.text }]}>
                                     Focus Duration
                                 </Text>
                             </View>
-                            <TimeDurationSelector
-                                value={timeDuration}
-                                onChange={setTimeDuration}
-                            />
+                            <TimeDurationSelector value={timeDuration} onChange={setTimeDuration} />
                         </View>
 
                         <View style={styles.timeDurationContainer}>
                             <View style={styles.durationContent}>
-                                <Ionicons name="cafe" size={20} color={theme.accent} style={styles.durationIcon} />
+                                <Ionicons
+                                    name="cafe"
+                                    size={20}
+                                    color={theme.accent}
+                                    style={styles.durationIcon}
+                                />
                                 <Text style={[styles.timeDurationLabel, { color: theme.text }]}>
                                     Break Duration
                                 </Text>
@@ -481,7 +488,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             onSwitchToggle={() => toggleSetting('dataSync')}
                         />
                         <SettingItem
-                            title={isExporting ? "Exporting..." : "Export Data"}
+                            title={isExporting ? 'Exporting...' : 'Export Data'}
                             subtitle={`Download ${goals.length} goals, statistics & settings`}
                             icon="download-outline"
                             showArrow={!isExporting}
@@ -489,9 +496,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         />
                         <SettingItem
                             title="Storage Usage"
-                            subtitle={isCalculatingStorage ? "Calculating..." : `${storageInfo.formattedSize} used`}
+                            subtitle={
+                                isCalculatingStorage
+                                    ? 'Calculating...'
+                                    : `${storageInfo.formattedSize} used`
+                            }
                             icon="folder-outline"
-                            value={isCalculatingStorage ? "..." : storageInfo.formattedSize}
+                            value={isCalculatingStorage ? '...' : storageInfo.formattedSize}
                             showArrow={true}
                             onPress={handleStorageDetails}
                         />
@@ -545,7 +556,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
                 <AnimatedSection delay={800}>
                     <SectionHeader title="DANGER ZONE" />
-                    <View style={[styles.section, styles.dangerSection, { backgroundColor: theme.surface }]}>
+                    <View
+                        style={[
+                            styles.section,
+                            styles.dangerSection,
+                            { backgroundColor: theme.surface },
+                        ]}
+                    >
                         <SettingItem
                             title="Delete All Data"
                             subtitle={`Permanently remove ${goals.length} goals and all statistics`}
@@ -557,8 +574,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 </AnimatedSection>
 
                 <View style={styles.footer}>
-                    <Text style={[styles.versionText, { color: theme.textSecondary }]}>Focus25 v1.2.3</Text>
-                    <Text style={[styles.copyrightText, { color: theme.textSecondary }]}>© 2025 Focus25 App</Text>
+                    <Text style={[styles.versionText, { color: theme.textSecondary }]}>
+                        Focus25 v1.2.3
+                    </Text>
+                    <Text style={[styles.copyrightText, { color: theme.textSecondary }]}>
+                        © 2025 Focus25 App
+                    </Text>
                 </View>
             </Animated.ScrollView>
         </SafeAreaView>
@@ -577,17 +598,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingVertical: 20,
         borderBottomWidth: 1,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-            },
-            android: {
-                elevation: 2,
-            },
-        }),
     },
     backButton: {
         width: 40,

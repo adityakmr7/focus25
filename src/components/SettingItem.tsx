@@ -36,10 +36,10 @@ export const SettingItem: React.FC<SettingItemProps> = ({
     onSwitchToggle,
     onPress,
     showArrow = false,
-    value
+    value,
 }) => {
     const { theme } = useTheme();
-    
+
     return (
         <TouchableOpacity
             style={[styles.settingItem, { borderBottomColor: theme.background }]}
@@ -53,11 +53,19 @@ export const SettingItem: React.FC<SettingItemProps> = ({
                 </View>
                 <View style={styles.settingText}>
                     <Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text>
-                    {subtitle && <Text style={[styles.settingSubtitle, { color: theme.textSecondary }]}>{subtitle}</Text>}
+                    {subtitle && (
+                        <Text style={[styles.settingSubtitle, { color: theme.textSecondary }]}>
+                            {subtitle}
+                        </Text>
+                    )}
                 </View>
             </View>
             <View style={styles.settingRight}>
-                {value && <Text style={[styles.settingValue, { color: theme.textSecondary }]}>{value}</Text>}
+                {value && (
+                    <Text style={[styles.settingValue, { color: theme.textSecondary }]}>
+                        {value}
+                    </Text>
+                )}
                 {hasSwitch && switchValue !== undefined && onSwitchToggle && (
                     <Switch
                         value={switchValue}

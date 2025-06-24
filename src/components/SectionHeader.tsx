@@ -12,12 +12,8 @@ interface SectionHeaderProps {
  */
 export const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => {
     const { theme } = useTheme();
-    
-    return (
-        <Text style={[styles.sectionHeader, { color: theme.textSecondary }]}>
-            {title}
-        </Text>
-    );
+
+    return <Text style={[styles.sectionHeader, { color: theme.textSecondary }]}>{title}</Text>;
 };
 
 const styles = StyleSheet.create({
