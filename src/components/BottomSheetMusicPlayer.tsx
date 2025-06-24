@@ -235,7 +235,7 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
                 disabled={isCurrentlyLoading}
             >
                 <View style={[styles.trackIcon, { backgroundColor: item.color + '20' }]}>
-                    🔥 NEW: Show loading indicator
+                    {/* 🔥 NEW: Show loading indicator */}
                     {isCurrentlyLoading ? (
                         <View style={styles.loadingContainer}>
                             <Ionicons name="cloud-download" size={20} color={item.color} />
