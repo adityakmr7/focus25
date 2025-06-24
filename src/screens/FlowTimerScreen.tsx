@@ -290,9 +290,10 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const { user, isAuthenticated } = useAuthContext();
     const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
-    const { player, status, uri, isDownloading, downloadError, downloadProgress } = useCachedAudio(
-        selectedTrack ? musicTracks.find((t) => t.id === selectedTrack)?.source || null : null,
-    );
+    const { player, isReady, status, uri, isDownloading, downloadError, downloadProgress } =
+        useCachedAudio(
+            selectedTrack ? musicTracks.find((t) => t.id === selectedTrack)?.source || null : null,
+        );
     const [settings, setSettings] = useState<MusicSettings>(defaultSettings);
     const [showSettings, setShowSettings] = useState(false);
     const [isLoadingTrack, setIsLoadingTrack] = useState(false);
@@ -316,7 +317,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const achievementAnimation = useSharedValue(0);
     const quickActionsAnimation = useSharedValue(0);
     const volumeAnimation = useSharedValue(settings.volume);
-    console.log('selectedTrack: ', { selectedTrack, uri, isDownloading, player });
     const {
         timer,
         toggleTimer,
@@ -333,26 +333,21 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
     const handlePlayPause = async () => {
         try {
-            if (!player) {
-                Alert.alert('Error', 'Audio player not available');
+            if (!player || !isReady) {
+                Alert.alert('Error', 'Audio player not ready');
                 return;
             }
 
-            if (player.currentStatus.playbackState !== 'readyToPlay') {
-                Alert.alert('Loading...', 'Please wait for the track to download');
-                return;
-            }
-
-            if (!player.isLoaded) {
+            if (!status?.isLoaded) {
                 Alert.alert('Loading...', 'Please wait for the track to load');
                 return;
             }
 
             if (isPlaying) {
-                player.pause();
+                await player.pause();
                 setIsPlaying(false);
             } else {
-                player.play();
+                await player.play();
                 setIsPlaying(true);
             }
         } catch (error) {
@@ -370,28 +365,25 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             console.error('Failed to save music settings:', error);
         }
     };
-    const handleTrackSelection = (trackId: string) => {
+    const handleTrackSelection = async (trackId: string) => {
         try {
             // If selecting a different track
             if (selectedTrack !== trackId) {
                 // Stop current playback first
-                if (isPlaying && player && player.isLoaded) {
-                    player.pause();
+                if (isPlaying && player && status?.isLoaded) {
+                    await player.pause();
                     setIsPlaying(false);
                 }
 
                 // Set loading state and new track
                 setIsLoadingTrack(true);
-
                 setSelectedTrack(trackId);
-                saveSettings({ lastPlayedTrack: trackId });
-
-                // The useEffect will handle auto-play when loaded
+                await saveSettings({ lastPlayedTrack: trackId });
                 return;
             }
 
             // Toggle play/pause for same track
-            handlePlayPause();
+            await handlePlayPause();
         } catch (error) {
             console.error('Failed to handle track selection:', error);
             Alert.alert('Playback Error', 'Failed to play the selected track.');
@@ -401,6 +393,25 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
     const { timeDuration, breakDuration, initializeStore: initializeSettings } = useSettingsStore();
 
+    // Add this useEffect to handle auto-play when track is ready
+    useEffect(() => {
+        if (
+            player &&
+            isReady &&
+            status?.isLoaded &&
+            selectedTrack &&
+            settings.autoPlay &&
+            !isPlaying &&
+            isLoadingTrack
+        ) {
+            setIsLoadingTrack(false);
+            // Set initial volume
+            player.volume = settings.volume;
+            handlePlayPause();
+        } else if (isReady && isLoadingTrack) {
+            setIsLoadingTrack(false);
+        }
+    }, [player, isReady, status?.isLoaded, selectedTrack, settings.autoPlay, isLoadingTrack]);
     // Effects (keeping all existing useEffect hooks)
     useEffect(() => {
         hybridDatabaseService.setAuthState(isAuthenticated, user?.id);
@@ -617,13 +628,18 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         }
     };
 
+    // In FlowTimerScreen component, replace the handleVolumeChange function:
     const handleVolumeChange = async (delta: number) => {
         const newVolume = Math.max(0, Math.min(1, settings.volume + delta));
         await saveSettings({ volume: newVolume });
 
-        // Apply volume to player if available and loaded
-        if (player && player.isLoaded) {
-            player.volume = newVolume; // 🔥 CHANGED: Use direct property assignment
+        // Apply volume to player if available and ready
+        if (player && isReady && status?.isLoaded) {
+            try {
+                player.volume = newVolume;
+            } catch (error) {
+                console.error('Failed to set volume:', error);
+            }
         }
     };
 

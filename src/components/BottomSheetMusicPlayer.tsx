@@ -55,6 +55,7 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
     setShowSettings,
     setSettings,
     isPlaying,
+    downloadProgress,
 }) => {
     const { theme } = useTheme();
     const [filteredType, setFilteredType] = useState<string>('all');
@@ -234,19 +235,23 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
                 disabled={isCurrentlyLoading}
             >
                 <View style={[styles.trackIcon, { backgroundColor: item.color + '20' }]}>
-                    {/* 🔥 NEW: Show loading indicator */}
-                    {/*{isCurrentlyLoading ? (*/}
-                    {/*    <View style={styles.loadingContainer}>*/}
-                    {/*        <Ionicons name="cloud-download" size={20} color={item.color} />*/}
-                    {/*        {isDownloading && downloadProgress > 0 && (*/}
-                    {/*            <Text style={[styles.progressText, { color: item.color }]}>*/}
-                    {/*                {Math.round(downloadProgress * 100)}%*/}
-                    {/*            </Text>*/}
-                    {/*        )}*/}
-                    {/*    </View>*/}
-                    {/*) : (*/}
-                    <Ionicons name={getTrackIcon(item.type) as any} size={20} color={item.color} />
-                    {/*)}*/}
+                    🔥 NEW: Show loading indicator
+                    {isCurrentlyLoading ? (
+                        <View style={styles.loadingContainer}>
+                            <Ionicons name="cloud-download" size={20} color={item.color} />
+                            {isDownloading && downloadProgress > 0 && (
+                                <Text style={[styles.progressText, { color: item.color }]}>
+                                    {Math.round(downloadProgress * 100)}%
+                                </Text>
+                            )}
+                        </View>
+                    ) : (
+                        <Ionicons
+                            name={getTrackIcon(item.type) as any}
+                            size={20}
+                            color={item.color}
+                        />
+                    )}
                 </View>
 
                 <View style={styles.trackInfo}>
