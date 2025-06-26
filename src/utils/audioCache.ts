@@ -25,6 +25,66 @@ export class AudioCacheManager {
         await Promise.allSettled(downloadPromises);
     }
 
+    static async downloadAudioIfNeeded(remoteUri: string): Promise<string> {
+        const localUri = this.getLocalUri(remoteUri);
+        const info = await FileSystem.getInfoAsync(localUri);
+        if (info.exists) {
+            return localUri;
+        }
+        try {
+            await FileSystem.downloadAsync(remoteUri, localUri);
+            return localUri;
+        } catch (error) {
+            console.error('Failed to download audio:', remoteUri, error);
+            throw error;
+        }
+    }
+
+    static async downloadAudioWithProgress(remoteUri: string, onProgress: (progress: number) => void): Promise<string> {
+        const localUri = this.getLocalUri(remoteUri);
+        const info = await FileSystem.getInfoAsync(localUri);
+        if (info.exists) {
+            onProgress(1);
+            return localUri;
+        }
+        try {
+            const downloadResumable = FileSystem.createDownloadResumable(
+                remoteUri,
+                localUri,
+                {},
+                (downloadProgressEvent) => {
+                    const progress =
+                        downloadProgressEvent.totalBytesWritten /
+                        downloadProgressEvent.totalBytesExpectedToWrite;
+                    onProgress(Math.min(progress, 1));
+                },
+            );
+            const result = await downloadResumable.downloadAsync();
+            if (result?.uri) {
+                onProgress(1);
+                return result.uri;
+            } else {
+                throw new Error('Download failed - no URI returned');
+            }
+        } catch (error) {
+            console.error('Failed to download audio with progress:', remoteUri, error);
+            throw error;
+        }
+    }
+
+    static async clearCacheForUri(remoteUri: string): Promise<void> {
+        const localUri = this.getLocalUri(remoteUri);
+        const info = await FileSystem.getInfoAsync(localUri);
+        if (info.exists) {
+            try {
+                await FileSystem.deleteAsync(localUri);
+                console.log('Cache cleared for:', remoteUri);
+            } catch (error) {
+                console.error('Failed to clear cache for:', remoteUri, error);
+            }
+        }
+    }
+
     static async getCacheSize(): Promise<Boolean> {
         try {
             const info = await FileSystem.getInfoAsync(FileSystem.documentDirectory!);
@@ -53,3 +113,6 @@ export class AudioCacheManager {
         }
     }
 }
+
+// Export getLocalUri as a standalone function for convenience
+export const getLocalUri = AudioCacheManager.getLocalUri;

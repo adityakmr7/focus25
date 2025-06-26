@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { databaseService } from '../services/database';
+import { databaseService } from '../data/database';
 
 export type TimeDuration = 1 | 5 | 10 | 15 | 20 | 25;
 export type BreakDuration = 1 | 5 | 10 | 15 | 20 | 25;

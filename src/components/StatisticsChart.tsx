@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    Dimensions,
     Animated,
+    Dimensions,
     Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../providers/ThemeProvider';
 import { useStatisticsStore } from '../store/statisticsStore';
 import { usePomodoroStore } from '../store/pomodoroStore';
-import { databaseService } from '../services/database';
+import { databaseService } from '../data/database';
 
 const { width: screenWidth } = Dimensions.get('window');
 

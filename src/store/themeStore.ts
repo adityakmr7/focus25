@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { databaseService } from '../services/database';
+import { databaseService } from '../data/database';
 
 export type ThemeMode = 'light' | 'dark' | 'auto';
 export type AccentColor = 'green' | 'blue' | 'purple' | 'orange' | 'pink' | 'teal';

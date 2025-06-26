@@ -444,6 +444,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             onSwitchToggle={() => toggleSetting('focusReminders')}
                         />
                         <SettingItem
+                            disabled={true}
                             title="Weekly Reports"
                             subtitle="Receive weekly productivity summaries"
                             icon="bar-chart-outline"
@@ -480,6 +481,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     <SectionHeader title="DATA & SYNC" />
                     <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <SettingItem
+                            disabled={true}
                             title="Cloud Sync"
                             subtitle="Sync your data across devices"
                             icon="cloud-outline"

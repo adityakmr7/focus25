@@ -1,5 +1,10 @@
 import { hybridDatabaseService } from './hybridDatabase';
 
+/**
+ * initially it is getting
+ * this will determine weather data will go to local or supabase
+ */
+
 // Export the hybrid database service as the main database service
 export const databaseService = hybridDatabaseService;
 

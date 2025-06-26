@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { useSettingsStore } from './settingsStore';
 import { useStatisticsStore } from './statisticsStore';
-import { databaseService } from '../services/database';
+import { databaseService } from '../data/database';
 import * as Notifications from 'expo-notifications';
 import { getCurrentDateString, isNewDay } from '../utils/dateUtils';
 

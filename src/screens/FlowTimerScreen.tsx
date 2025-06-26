@@ -18,7 +18,6 @@ import { usePomodoroStore } from '../store/pomodoroStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { AudioPlayer, useAudioPlayer } from 'expo-audio';
 import { Ionicons } from '@expo/vector-icons';
-import { DynamicBackground } from '../components/DynamicBackground';
 import { BreathingAnimation } from '../components/BreathingAnimation';
 import { GamificationOverlay } from '../components/GamificationOverlay';
 import { BottomSheetMusicPlayer } from '../components/BottomSheetMusicPlayer';
@@ -31,7 +30,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTheme } from '../providers/ThemeProvider';
 import { useAuthContext } from '../components/AuthProvider';
-import { hybridDatabaseService } from '../services/hybridDatabase';
+import { hybridDatabaseService } from '../data/hybridDatabase';
 import { backgroundTimerService } from '../services/backgroundTimer';
 import { notificationService } from '../services/notificationService';
 import { errorHandler } from '../services/errorHandler';
@@ -685,12 +684,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
             <ScrollView className="flex-1 " contentContainerStyle={{ flex: 1 }}>
-                <DynamicBackground
-                    isRunning={timer.isRunning}
-                    isBreak={timer.isBreak}
-                    flowIntensity={flowMetrics.flowIntensity}
-                    progress={1 - timer.totalSeconds / timer.initialSeconds}
-                />
+                {/*<DynamicBackground*/}
+                {/*    isRunning={timer.isRunning}*/}
+                {/*    isBreak={timer.isBreak}*/}
+                {/*    flowIntensity={flowMetrics.flowIntensity}*/}
+                {/*    progress={1 - timer.totalSeconds / timer.initialSeconds}*/}
+                {/*/>*/}
 
                 <Animated.View style={[styles.content, containerAnimatedStyle]}>
                     <Header
