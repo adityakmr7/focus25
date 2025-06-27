@@ -49,7 +49,7 @@ const initialSettings: Settings = {
     autoBreak: false,
     focusReminders: true,
     weeklyReports: true,
-    dataSync: true,
+    dataSync: false,
     notificationStatus: null,
 };
 
