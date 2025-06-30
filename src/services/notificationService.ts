@@ -29,15 +29,6 @@ const defaultSettings: NotificationSettings = {
     reminderTime: '09:00',
 };
 
-// Configure notification handler
-Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-    }),
-});
-
 export class NotificationService {
     private static instance: NotificationService;
     private settings: NotificationSettings = defaultSettings;
@@ -222,7 +213,9 @@ export class NotificationService {
                     type: 'daily_reminder',
                 },
             },
+
             trigger: {
+                channelId: 'scheduleNotificationAsync',
                 hour: hours,
                 minute: minutes,
                 repeats: true,
@@ -246,6 +239,7 @@ export class NotificationService {
                 },
             },
             trigger: {
+                channelId: 'scheduleNotificationAsync',
                 weekday: 1, // Monday
                 hour: 9,
                 minute: 0,

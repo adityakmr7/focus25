@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { databaseService } from '../services/database';
+import { databaseService } from '../data/database';
 
 export type GoalType = 'daily' | 'weekly' | 'monthly';
 export type GoalCategory = 'sessions' | 'focus_time' | 'streak' | 'consistency';

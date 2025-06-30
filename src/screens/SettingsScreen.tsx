@@ -444,6 +444,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             onSwitchToggle={() => toggleSetting('focusReminders')}
                         />
                         <SettingItem
+                            disabled={true}
                             title="Weekly Reports"
                             subtitle="Receive weekly productivity summaries"
                             icon="bar-chart-outline"
@@ -465,14 +466,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             switchValue={soundEffects}
                             onSwitchToggle={() => toggleSetting('soundEffects')}
                         />
-                        <SettingItem
-                            title="Auto Break"
-                            subtitle="Automatically start break sessions"
-                            icon="pause-circle-outline"
-                            hasSwitch={true}
-                            switchValue={autoBreak}
-                            onSwitchToggle={() => toggleSetting('autoBreak')}
-                        />
+                        {/*<SettingItem*/}
+                        {/*    title="Auto Break"*/}
+                        {/*    subtitle="Automatically start break sessions"*/}
+                        {/*    icon="pause-circle-outline"*/}
+                        {/*    hasSwitch={true}*/}
+                        {/*    switchValue={autoBreak}*/}
+                        {/*    onSwitchToggle={() => toggleSetting('autoBreak')}*/}
+                        {/*/>*/}
                     </View>
                 </AnimatedSection>
 
@@ -480,6 +481,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     <SectionHeader title="DATA & SYNC" />
                     <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <SettingItem
+                            disabled={true}
                             title="Cloud Sync"
                             subtitle="Sync your data across devices"
                             icon="cloud-outline"

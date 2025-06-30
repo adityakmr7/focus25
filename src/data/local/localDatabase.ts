@@ -1,39 +1,69 @@
 import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
+import {
+    AccentColor,
+    ExportData,
+    FlowIntensity,
+    FlowMetrics,
+    FlowMetricsRow,
+    Goal,
+    GoalCategory,
+    GoalRow,
+    GoalType,
+    NotificationStatus,
+    Session,
+    SessionRow,
+    SessionType,
+    Settings,
+    SettingsRow,
+    Statistics,
+    StatisticsRow,
+    Theme,
+    ThemeMode,
+    ThemeRow,
+    TimerStyle,
+} from '../../types/database';
 
 // Database interface
-export interface DatabaseService {
+export interface LocalDataBase {
     initializeDatabase(): Promise<void>;
 
     // Goals operations
-    saveGoal(goal: any): Promise<void>;
-    getGoals(): Promise<any[]>;
-    updateGoal(id: string, updates: any): Promise<void>;
+    saveGoal(goal: Goal): Promise<void>;
+    getGoals(): Promise<Goal[]>;
+    updateGoal(id: string, updates: Partial<Goal>): Promise<void>;
     deleteGoal(id: string): Promise<void>;
 
     // Statistics operations
-    saveStatistics(stats: any): Promise<void>;
-    getStatistics(date?: string): Promise<any>;
-    getStatisticsRange(startDate: string, endDate: string): Promise<any[]>;
+    saveStatistics(stats: Statistics): Promise<void>;
+    getStatistics(date?: string): Promise<Statistics>;
+    getStatisticsRange(startDate: string, endDate: string): Promise<Statistics[]>;
 
     // Flow metrics operations
-    saveFlowMetrics(metrics: any): Promise<void>;
-    getFlowMetrics(): Promise<any>;
+    saveFlowMetrics(metrics: FlowMetrics): Promise<void>;
+    getFlowMetrics(): Promise<FlowMetrics>;
 
     // Settings operations
-    saveSettings(settings: any): Promise<void>;
-    getSettings(): Promise<any>;
+    saveSettings(settings: Settings): Promise<void>;
+    getSettings(): Promise<Settings>;
 
     // Theme operations
-    saveTheme(theme: any): Promise<void>;
-    getTheme(): Promise<any>;
+    saveTheme(theme: Theme): Promise<void>;
+    getTheme(): Promise<Theme>;
+
+    // Session operations
+    saveSession(session: Session): Promise<void>;
+    getSessions(startDate?: string, endDate?: string): Promise<Session[]>;
+    getSessionById(id: string): Promise<Session | null>;
+    updateSession(id: string, updates: Partial<Session>): Promise<void>;
+    deleteSession(id: string): Promise<void>;
 
     // Export operations
     exportAllData(): Promise<string>;
     clearAllData(): Promise<void>;
 }
 
-class SQLiteService implements DatabaseService {
+class SQLiteService implements LocalDataBase {
     private db: SQLite.SQLiteDatabase | null = null;
 
     async initializeDatabase(): Promise<void> {
@@ -141,22 +171,58 @@ class SQLiteService implements DatabaseService {
       -- Create indexes for better performance
       CREATE INDEX IF NOT EXISTS idx_statistics_date ON statistics(date);
       CREATE INDEX IF NOT EXISTS idx_sessions_start_time ON sessions(start_time);
+      CREATE INDEX IF NOT EXISTS idx_sessions_type ON sessions(type);
       CREATE INDEX IF NOT EXISTS idx_goals_category ON goals(category);
       CREATE INDEX IF NOT EXISTS idx_goals_type ON goals(type);
+      CREATE INDEX IF NOT EXISTS idx_goals_completed ON goals(is_completed);
     `;
 
         await this.db.execAsync(createTablesSQL);
     }
 
+    // Helper method to map GoalRow to Goal
+    private mapGoalRowToGoal(row: GoalRow): Goal {
+        return {
+            id: row.id,
+            title: row.title,
+            description: row.description || undefined,
+            category: row.category as GoalCategory,
+            type: row.type as GoalType,
+            target: row.target,
+            current: row.current,
+            unit: row.unit,
+            isCompleted: Boolean(row.is_completed),
+            createdAt: row.created_at,
+            completedAt: row.completed_at || undefined,
+            deadline: row.deadline || undefined,
+            reward: row.reward || undefined,
+        };
+    }
+
+    // Helper method to map SessionRow to Session
+    private mapSessionRowToSession(row: SessionRow): Session {
+        return {
+            id: row.id,
+            type: row.type as SessionType,
+            duration: row.duration,
+            completed: Boolean(row.completed),
+            startTime: row.start_time,
+            endTime: row.end_time || undefined,
+            distractions: row.distractions,
+            notes: row.notes || undefined,
+            createdAt: row.created_at,
+        };
+    }
+
     // Goals operations
-    async saveGoal(goal: any): Promise<void> {
+    async saveGoal(goal: Goal): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
         const sql = `
-      INSERT OR REPLACE INTO goals 
+            INSERT OR REPLACE INTO goals 
       (id, title, description, category, type, target, current, unit, is_completed, created_at, completed_at, deadline, reward)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+        `;
 
         await this.db.runAsync(sql, [
             goal.id,
@@ -165,7 +231,7 @@ class SQLiteService implements DatabaseService {
             goal.category,
             goal.type,
             goal.target,
-            goal.current || 0,
+            goal.current,
             goal.unit,
             goal.isCompleted ? 1 : 0,
             goal.createdAt,
@@ -175,29 +241,16 @@ class SQLiteService implements DatabaseService {
         ]);
     }
 
-    async getGoals(): Promise<any[]> {
+    async getGoals(): Promise<Goal[]> {
         if (!this.db) throw new Error('Database not initialized');
 
-        const result = await this.db.getAllAsync('SELECT * FROM goals ORDER BY created_at DESC');
-
-        return result.map((row: any) => ({
-            id: row.id,
-            title: row.title,
-            description: row.description,
-            category: row.category,
-            type: row.type,
-            target: row.target,
-            current: row.current,
-            unit: row.unit,
-            isCompleted: Boolean(row.is_completed),
-            createdAt: row.created_at,
-            completedAt: row.completed_at,
-            deadline: row.deadline,
-            reward: row.reward,
-        }));
+        const result = (await this.db.getAllAsync(
+            'SELECT * FROM goals ORDER BY created_at DESC',
+        )) as GoalRow[];
+        return result.map((row) => this.mapGoalRowToGoal(row));
     }
 
-    async updateGoal(id: string, updates: any): Promise<void> {
+    async updateGoal(id: string, updates: Partial<Goal>): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
         const setClause = Object.keys(updates)
@@ -228,41 +281,43 @@ class SQLiteService implements DatabaseService {
     }
 
     // Statistics operations
-    async saveStatistics(stats: any): Promise<void> {
+    async saveStatistics(stats: Statistics): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
         const now = new Date().toISOString();
         const sql = `
-      INSERT OR REPLACE INTO statistics 
+            INSERT OR REPLACE INTO statistics 
       (id, date, total_flows, started_flows, completed_flows, total_focus_time, total_breaks, total_break_time, interruptions, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+        `;
 
         await this.db.runAsync(sql, [
-            stats.date || new Date().toISOString().split('T')[0],
-            stats.date || new Date().toISOString().split('T')[0],
-            stats.totalCount || 0,
-            stats.flows?.started || 0,
-            stats.flows?.completed || 0,
-            stats.flows?.minutes || 0,
-            stats.breaks?.completed || 0,
-            stats.breaks?.minutes || 0,
-            stats.interruptions || 0,
+            stats.date,
+            stats.date,
+            stats.totalCount,
+            stats.flows.started,
+            stats.flows.completed,
+            stats.flows.minutes,
+            stats.breaks.started,
+            stats.breaks.completed,
+            stats.breaks.minutes,
+            stats.interruptions,
             now,
             now,
         ]);
     }
 
-    async getStatistics(date?: string): Promise<any> {
+    async getStatistics(date?: string): Promise<Statistics> {
         if (!this.db) throw new Error('Database not initialized');
 
         const targetDate = date || new Date().toISOString().split('T')[0];
-        const result = await this.db.getFirstAsync('SELECT * FROM statistics WHERE date = ?', [
+        const result = (await this.db.getFirstAsync('SELECT * FROM statistics WHERE date = ?', [
             targetDate,
-        ]);
+        ])) as StatisticsRow | null;
 
         if (!result) {
             return {
+                date: targetDate,
                 totalCount: 0,
                 flows: { started: 0, completed: 0, minutes: 0 },
                 breaks: { started: 0, completed: 0, minutes: 0 },
@@ -271,6 +326,7 @@ class SQLiteService implements DatabaseService {
         }
 
         return {
+            date: result.date,
             totalCount: result.total_flows,
             flows: {
                 started: result.started_flows,
@@ -286,15 +342,15 @@ class SQLiteService implements DatabaseService {
         };
     }
 
-    async getStatisticsRange(startDate: string, endDate: string): Promise<any[]> {
+    async getStatisticsRange(startDate: string, endDate: string): Promise<Statistics[]> {
         if (!this.db) throw new Error('Database not initialized');
 
-        const result = await this.db.getAllAsync(
+        const result = (await this.db.getAllAsync(
             'SELECT * FROM statistics WHERE date BETWEEN ? AND ? ORDER BY date',
             [startDate, endDate],
-        );
+        )) as StatisticsRow[];
 
-        return result.map((row: any) => ({
+        return result.map((row) => ({
             date: row.date,
             totalCount: row.total_flows,
             flows: {
@@ -312,50 +368,52 @@ class SQLiteService implements DatabaseService {
     }
 
     // Flow metrics operations
-    async saveFlowMetrics(metrics: any): Promise<void> {
+    async saveFlowMetrics(metrics: FlowMetrics): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
         const now = new Date().toISOString();
         const sql = `
-      INSERT OR REPLACE INTO flow_metrics 
+            INSERT OR REPLACE INTO flow_metrics 
       (id, consecutive_sessions, current_streak, longest_streak, flow_intensity, distraction_count, 
-       session_start_time, total_focus_time, average_session_length, best_flow_duration, 
-       last_session_date, updated_at)
+      session_start_time, total_focus_time, average_session_length, best_flow_duration, 
+      last_session_date, updated_at)
       VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+        `;
 
         await this.db.runAsync(sql, [
-            metrics.consecutiveSessions || 0,
-            metrics.currentStreak || 0,
-            metrics.longestStreak || 0,
-            metrics.flowIntensity || 'medium',
-            metrics.distractionCount || 0,
+            metrics.consecutiveSessions,
+            metrics.currentStreak,
+            metrics.longestStreak,
+            metrics.flowIntensity,
+            metrics.distractionCount,
             metrics.sessionStartTime || null,
-            metrics.totalFocusTime || 0,
-            metrics.averageSessionLength || 25.0,
-            metrics.bestFlowDuration || 0,
+            metrics.totalFocusTime,
+            metrics.averageSessionLength,
+            metrics.bestFlowDuration,
             metrics.lastSessionDate || null,
             now,
         ]);
     }
 
-    async getFlowMetrics(): Promise<any> {
+    async getFlowMetrics(): Promise<FlowMetrics> {
         if (!this.db) throw new Error('Database not initialized');
 
-        const result = await this.db.getFirstAsync('SELECT * FROM flow_metrics WHERE id = 1');
+        const result = (await this.db.getFirstAsync(
+            'SELECT * FROM flow_metrics WHERE id = 1',
+        )) as FlowMetricsRow | null;
 
         if (!result) {
             return {
                 consecutiveSessions: 0,
                 currentStreak: 0,
                 longestStreak: 0,
-                flowIntensity: 'medium',
+                flowIntensity: FlowIntensity.MEDIUM,
                 distractionCount: 0,
-                sessionStartTime: null,
+                sessionStartTime: undefined,
                 totalFocusTime: 0,
                 averageSessionLength: 25.0,
                 bestFlowDuration: 0,
-                lastSessionDate: null,
+                lastSessionDate: undefined,
             };
         }
 
@@ -363,31 +421,31 @@ class SQLiteService implements DatabaseService {
             consecutiveSessions: result.consecutive_sessions,
             currentStreak: result.current_streak,
             longestStreak: result.longest_streak,
-            flowIntensity: result.flow_intensity,
+            flowIntensity: result.flow_intensity as FlowIntensity,
             distractionCount: result.distraction_count,
-            sessionStartTime: result.session_start_time,
+            sessionStartTime: result.session_start_time || undefined,
             totalFocusTime: result.total_focus_time,
             averageSessionLength: result.average_session_length,
             bestFlowDuration: result.best_flow_duration,
-            lastSessionDate: result.last_session_date,
+            lastSessionDate: result.last_session_date || undefined,
         };
     }
 
     // Settings operations
-    async saveSettings(settings: any): Promise<void> {
+    async saveSettings(settings: Settings): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
         const now = new Date().toISOString();
         const sql = `
-      INSERT OR REPLACE INTO settings 
+            INSERT OR REPLACE INTO settings 
       (id, time_duration, break_duration, sound_effects, notifications, dark_mode, auto_break, 
        focus_reminders, weekly_reports, data_sync, notification_status, updated_at)
       VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+        `;
 
         await this.db.runAsync(sql, [
-            settings.timeDuration || 25,
-            settings.breakDuration || 5,
+            settings.timeDuration,
+            settings.breakDuration,
             settings.soundEffects ? 1 : 0,
             settings.notifications ? 1 : 0,
             settings.darkMode ? 1 : 0,
@@ -400,10 +458,12 @@ class SQLiteService implements DatabaseService {
         ]);
     }
 
-    async getSettings(): Promise<any> {
+    async getSettings(): Promise<Settings> {
         if (!this.db) throw new Error('Database not initialized');
 
-        const result = await this.db.getFirstAsync('SELECT * FROM settings WHERE id = 1');
+        const result = (await this.db.getFirstAsync(
+            'SELECT * FROM settings WHERE id = 1',
+        )) as SettingsRow | null;
 
         if (!result) {
             return {
@@ -416,7 +476,7 @@ class SQLiteService implements DatabaseService {
                 focusReminders: true,
                 weeklyReports: true,
                 dataSync: true,
-                notificationStatus: null,
+                notificationStatus: undefined,
             };
         }
 
@@ -430,73 +490,174 @@ class SQLiteService implements DatabaseService {
             focusReminders: Boolean(result.focus_reminders),
             weeklyReports: Boolean(result.weekly_reports),
             dataSync: Boolean(result.data_sync),
-            notificationStatus: result.notification_status,
+            notificationStatus: (result.notification_status as NotificationStatus) || undefined,
         };
     }
 
     // Theme operations
-    async saveTheme(theme: any): Promise<void> {
+    async saveTheme(theme: Theme): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
         const now = new Date().toISOString();
         const sql = `
-      INSERT OR REPLACE INTO theme 
+            INSERT OR REPLACE INTO theme 
       (id, mode, accent_color, timer_style, custom_themes, active_custom_theme, updated_at)
       VALUES (1, ?, ?, ?, ?, ?, ?)
-    `;
+        `;
 
         await this.db.runAsync(sql, [
-            theme.mode || 'auto',
-            theme.accentColor || 'green',
-            theme.timerStyle || 'digital',
-            JSON.stringify(theme.customThemes || {}),
+            theme.mode,
+            theme.accentColor,
+            theme.timerStyle,
+            JSON.stringify(theme.customThemes),
             theme.activeCustomTheme || null,
             now,
         ]);
     }
 
-    async getTheme(): Promise<any> {
+    async getTheme(): Promise<Theme> {
         if (!this.db) throw new Error('Database not initialized');
 
-        const result = await this.db.getFirstAsync('SELECT * FROM theme WHERE id = 1');
+        const result = (await this.db.getFirstAsync(
+            'SELECT * FROM theme WHERE id = 1',
+        )) as ThemeRow | null;
 
         if (!result) {
             return {
-                mode: 'auto',
-                accentColor: 'green',
-                timerStyle: 'digital',
+                mode: ThemeMode.AUTO,
+                accentColor: AccentColor.GREEN,
+                timerStyle: TimerStyle.DIGITAL,
                 customThemes: {},
-                activeCustomTheme: null,
+                activeCustomTheme: undefined,
             };
         }
 
         return {
-            mode: result.mode,
-            accentColor: result.accent_color,
-            timerStyle: result.timer_style,
+            mode: result.mode as ThemeMode,
+            accentColor: result.accent_color as AccentColor,
+            timerStyle: result.timer_style as TimerStyle,
             customThemes: JSON.parse(result.custom_themes || '{}'),
-            activeCustomTheme: result.active_custom_theme,
+            activeCustomTheme: result.active_custom_theme || undefined,
         };
+    }
+
+    // Session operations
+    async saveSession(session: Session): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const sql = `
+            INSERT OR REPLACE INTO sessions 
+      (id, type, duration, completed, start_time, end_time, distractions, notes, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        await this.db.runAsync(sql, [
+            session.id,
+            session.type,
+            session.duration,
+            session.completed ? 1 : 0,
+            session.startTime,
+            session.endTime || null,
+            session.distractions,
+            session.notes || null,
+            session.createdAt,
+        ]);
+    }
+
+    async getSessions(startDate?: string, endDate?: string): Promise<Session[]> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        let sql = 'SELECT * FROM sessions';
+        let params: string[] = [];
+
+        if (startDate && endDate) {
+            sql += ' WHERE start_time BETWEEN ? AND ? ORDER BY start_time DESC';
+            params = [startDate, endDate];
+        } else {
+            sql += ' ORDER BY start_time DESC';
+        }
+
+        const result = (await this.db.getAllAsync(sql, params)) as SessionRow[];
+        return result.map((row) => this.mapSessionRowToSession(row));
+    }
+
+    async getSessionById(id: string): Promise<Session | null> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const result = (await this.db.getFirstAsync('SELECT * FROM sessions WHERE id = ?', [
+            id,
+        ])) as SessionRow | null;
+        return result ? this.mapSessionRowToSession(result) : null;
+    }
+
+    async updateSession(id: string, updates: Partial<Session>): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const setClause = Object.keys(updates)
+            .map((key) => {
+                const dbKey =
+                    key === 'startTime'
+                        ? 'start_time'
+                        : key === 'endTime'
+                          ? 'end_time'
+                          : key === 'createdAt'
+                            ? 'created_at'
+                            : key;
+                return `${dbKey} = ?`;
+            })
+            .join(', ');
+
+        const values = Object.values(updates).map((value) =>
+            typeof value === 'boolean' ? (value ? 1 : 0) : value,
+        );
+
+        const sql = `UPDATE sessions SET ${setClause} WHERE id = ?`;
+        await this.db.runAsync(sql, [...values, id]);
+    }
+
+    async deleteSession(id: string): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        await this.db.runAsync('DELETE FROM sessions WHERE id = ?', [id]);
     }
 
     // Export operations
     async exportAllData(): Promise<string> {
         if (!this.db) throw new Error('Database not initialized');
 
-        const [goals, statistics, flowMetrics, settings, theme] = await Promise.all([
+        const [goals, statistics, flowMetrics, settings, theme, sessions] = await Promise.all([
             this.getGoals(),
-            this.db.getAllAsync('SELECT * FROM statistics ORDER BY date'),
+            this.db.getAllAsync('SELECT * FROM statistics ORDER BY date') as Promise<
+                StatisticsRow[]
+            >,
             this.getFlowMetrics(),
             this.getSettings(),
             this.getTheme(),
+            this.getSessions(),
         ]);
 
-        const exportData = {
+        const mappedStatistics = statistics.map((row) => ({
+            date: row.date,
+            totalCount: row.total_flows,
+            flows: {
+                started: row.started_flows,
+                completed: row.completed_flows,
+                minutes: row.total_focus_time,
+            },
+            breaks: {
+                started: row.total_breaks,
+                completed: row.total_breaks,
+                minutes: row.total_break_time,
+            },
+            interruptions: row.interruptions,
+        }));
+
+        const exportData: ExportData = {
             goals,
-            statistics,
+            statistics: mappedStatistics,
             flowMetrics,
             settings,
             theme,
+            sessions,
             exportedAt: new Date().toISOString(),
             version: '1.0',
         };
@@ -516,7 +677,7 @@ class SQLiteService implements DatabaseService {
 }
 
 // Web fallback using localStorage
-class WebStorageService implements DatabaseService {
+class WebStorageService implements LocalDataBase {
     private storageKey = 'flowfocus_data';
 
     async initializeDatabase(): Promise<void> {
@@ -524,27 +685,39 @@ class WebStorageService implements DatabaseService {
     }
 
     private getData(): any {
-        if (typeof window === 'undefined') return {};
-        const data = localStorage.getItem(this.storageKey);
-        return data
-            ? JSON.parse(data)
-            : {
-                  goals: [],
-                  statistics: {},
-                  flowMetrics: {},
-                  settings: {},
-                  theme: {},
-              };
+        if (typeof window === 'undefined') return this.getDefaultData();
+        try {
+            const data = localStorage.getItem(this.storageKey);
+            return data ? JSON.parse(data) : this.getDefaultData();
+        } catch (error) {
+            console.error('Error reading from localStorage:', error);
+            return this.getDefaultData();
+        }
+    }
+
+    private getDefaultData() {
+        return {
+            goals: [],
+            statistics: {},
+            flowMetrics: {},
+            settings: {},
+            theme: {},
+            sessions: [],
+        };
     }
 
     private saveData(data: any): void {
         if (typeof window === 'undefined') return;
-        localStorage.setItem(this.storageKey, JSON.stringify(data));
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify(data));
+        } catch (error) {
+            console.error('Error saving to localStorage:', error);
+        }
     }
 
-    async saveGoal(goal: any): Promise<void> {
+    async saveGoal(goal: Goal): Promise<void> {
         const data = this.getData();
-        const existingIndex = data.goals.findIndex((g: any) => g.id === goal.id);
+        const existingIndex = data.goals.findIndex((g: Goal) => g.id === goal.id);
 
         if (existingIndex >= 0) {
             data.goals[existingIndex] = goal;
@@ -555,14 +728,14 @@ class WebStorageService implements DatabaseService {
         this.saveData(data);
     }
 
-    async getGoals(): Promise<any[]> {
+    async getGoals(): Promise<Goal[]> {
         const data = this.getData();
         return data.goals || [];
     }
 
-    async updateGoal(id: string, updates: any): Promise<void> {
+    async updateGoal(id: string, updates: Partial<Goal>): Promise<void> {
         const data = this.getData();
-        const goalIndex = data.goals.findIndex((g: any) => g.id === id);
+        const goalIndex = data.goals.findIndex((g: Goal) => g.id === id);
 
         if (goalIndex >= 0) {
             data.goals[goalIndex] = { ...data.goals[goalIndex], ...updates };
@@ -572,22 +745,22 @@ class WebStorageService implements DatabaseService {
 
     async deleteGoal(id: string): Promise<void> {
         const data = this.getData();
-        data.goals = data.goals.filter((g: any) => g.id !== id);
+        data.goals = data.goals.filter((g: Goal) => g.id !== id);
         this.saveData(data);
     }
 
-    async saveStatistics(stats: any): Promise<void> {
+    async saveStatistics(stats: Statistics): Promise<void> {
         const data = this.getData();
-        const date = stats.date || new Date().toISOString().split('T')[0];
-        data.statistics[date] = stats;
+        data.statistics[stats.date] = stats;
         this.saveData(data);
     }
 
-    async getStatistics(date?: string): Promise<any> {
+    async getStatistics(date?: string): Promise<Statistics> {
         const data = this.getData();
         const targetDate = date || new Date().toISOString().split('T')[0];
         return (
             data.statistics[targetDate] || {
+                date: targetDate,
                 totalCount: 0,
                 flows: { started: 0, completed: 0, minutes: 0 },
                 breaks: { started: 0, completed: 0, minutes: 0 },
@@ -596,50 +769,51 @@ class WebStorageService implements DatabaseService {
         );
     }
 
-    async getStatisticsRange(startDate: string, endDate: string): Promise<any[]> {
+    async getStatisticsRange(startDate: string, endDate: string): Promise<Statistics[]> {
         const data = this.getData();
-        const result = [];
+        const result: Statistics[] = [];
 
         for (const [date, stats] of Object.entries(data.statistics)) {
             if (date >= startDate && date <= endDate) {
-                result.push({ date, ...stats });
+                // @ts-ignore
+                result.push({ date, ...stats } as Statistics);
             }
         }
 
         return result.sort((a, b) => a.date.localeCompare(b.date));
     }
 
-    async saveFlowMetrics(metrics: any): Promise<void> {
+    async saveFlowMetrics(metrics: FlowMetrics): Promise<void> {
         const data = this.getData();
         data.flowMetrics = metrics;
         this.saveData(data);
     }
 
-    async getFlowMetrics(): Promise<any> {
+    async getFlowMetrics(): Promise<FlowMetrics> {
         const data = this.getData();
         return (
             data.flowMetrics || {
                 consecutiveSessions: 0,
                 currentStreak: 0,
                 longestStreak: 0,
-                flowIntensity: 'medium',
+                flowIntensity: FlowIntensity.MEDIUM,
                 distractionCount: 0,
-                sessionStartTime: null,
+                sessionStartTime: undefined,
                 totalFocusTime: 0,
                 averageSessionLength: 25.0,
                 bestFlowDuration: 0,
-                lastSessionDate: null,
+                lastSessionDate: undefined,
             }
         );
     }
 
-    async saveSettings(settings: any): Promise<void> {
+    async saveSettings(settings: Settings): Promise<void> {
         const data = this.getData();
         data.settings = settings;
         this.saveData(data);
     }
 
-    async getSettings(): Promise<any> {
+    async getSettings(): Promise<Settings> {
         const data = this.getData();
         return (
             data.settings || {
@@ -652,41 +826,93 @@ class WebStorageService implements DatabaseService {
                 focusReminders: true,
                 weeklyReports: true,
                 dataSync: true,
-                notificationStatus: null,
+                notificationStatus: undefined,
             }
         );
     }
 
-    async saveTheme(theme: any): Promise<void> {
+    async saveTheme(theme: Theme): Promise<void> {
         const data = this.getData();
         data.theme = theme;
         this.saveData(data);
     }
 
-    async getTheme(): Promise<any> {
+    async getTheme(): Promise<Theme> {
         const data = this.getData();
         return (
             data.theme || {
-                mode: 'auto',
-                accentColor: 'green',
-                timerStyle: 'digital',
+                mode: ThemeMode.AUTO,
+                accentColor: AccentColor.GREEN,
+                timerStyle: TimerStyle.DIGITAL,
                 customThemes: {},
-                activeCustomTheme: null,
+                activeCustomTheme: undefined,
             }
         );
     }
 
+    async saveSession(session: Session): Promise<void> {
+        const data = this.getData();
+        if (!data.sessions) data.sessions = [];
+
+        const existingIndex = data.sessions.findIndex((s: Session) => s.id === session.id);
+        if (existingIndex >= 0) {
+            data.sessions[existingIndex] = session;
+        } else {
+            data.sessions.push(session);
+        }
+
+        this.saveData(data);
+    }
+
+    async getSessions(startDate?: string, endDate?: string): Promise<Session[]> {
+        const data = this.getData();
+        let sessions = data.sessions || [];
+
+        if (startDate && endDate) {
+            sessions = sessions.filter((session: Session) => {
+                return session.startTime >= startDate && session.startTime <= endDate;
+            });
+        }
+
+        return sessions.sort(
+            (a: Session, b: Session) =>
+                new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
+        );
+    }
+
+    async getSessionById(id: string): Promise<Session | null> {
+        const data = this.getData();
+        const sessions = data.sessions || [];
+        return sessions.find((session: Session) => session.id === id) || null;
+    }
+
+    async updateSession(id: string, updates: Partial<Session>): Promise<void> {
+        const data = this.getData();
+        if (!data.sessions) data.sessions = [];
+
+        const sessionIndex = data.sessions.findIndex((s: Session) => s.id === id);
+        if (sessionIndex >= 0) {
+            data.sessions[sessionIndex] = { ...data.sessions[sessionIndex], ...updates };
+            this.saveData(data);
+        }
+    }
+
+    async deleteSession(id: string): Promise<void> {
+        const data = this.getData();
+        if (data.sessions) {
+            data.sessions = data.sessions.filter((s: Session) => s.id !== id);
+            this.saveData(data);
+        }
+    }
+
     async exportAllData(): Promise<string> {
         const data = this.getData();
-        return JSON.stringify(
-            {
-                ...data,
-                exportedAt: new Date().toISOString(),
-                version: '1.0',
-            },
-            null,
-            2,
-        );
+        const exportData: ExportData = {
+            ...data,
+            exportedAt: new Date().toISOString(),
+            version: '1.0',
+        };
+        return JSON.stringify(exportData, null, 2);
     }
 
     async clearAllData(): Promise<void> {
@@ -697,5 +923,5 @@ class WebStorageService implements DatabaseService {
 }
 
 // Create the appropriate service based on platform
-export const localDatabaseService: DatabaseService =
+export const localDatabaseService: LocalDataBase =
     Platform.OS === 'web' ? new WebStorageService() : new SQLiteService();

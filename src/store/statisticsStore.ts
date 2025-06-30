@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { databaseService } from '../services/database';
+import { databaseService } from '../data/database';
 
 interface ChartData {
     labels: string[];
@@ -103,7 +103,6 @@ export const useStatisticsStore = create<StatisticsState>((set, get) => ({
 
             const today = new Date().toISOString().split('T')[0];
             const stats = await databaseService.getStatistics(today);
-
             set((state) => ({
                 ...state,
                 totalCount: stats.totalCount,

@@ -1,11 +1,12 @@
 import React from 'react';
-import { TouchableOpacity, View, StyleSheet } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface PlayPauseButtonProps {
     isRunning: boolean;
     isPaused: boolean;
     onPress: () => void;
+    disabled?: boolean;
 }
 
 /**
@@ -18,8 +19,14 @@ export const PlayPauseButton: React.FC<PlayPauseButtonProps> = ({
     isRunning,
     isPaused,
     onPress,
+    disabled = false,
 }) => (
-    <TouchableOpacity style={styles.playButton} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity
+        disabled={disabled}
+        style={styles.playButton}
+        onPress={onPress}
+        activeOpacity={0.8}
+    >
         <View style={styles.playButtonInner}>
             <Ionicons name={isRunning && !isPaused ? 'pause' : 'play'} size={32} color="#4CAF50" />
         </View>

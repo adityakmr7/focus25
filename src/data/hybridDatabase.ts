@@ -1,6 +1,5 @@
-import { Platform } from 'react-native';
-import { localDatabaseService } from './localDatabase';
-import { supabaseDatabaseService } from './supabaseDatabase';
+import { localDatabaseService } from './local/localDatabase';
+import { supabaseDatabaseService } from './remote/supabaseDatabase';
 
 // Hybrid database service that uses Supabase when authenticated, local storage otherwise
 class HybridDatabaseService {
@@ -13,11 +12,13 @@ class HybridDatabaseService {
     }
 
     private useSupabase(): boolean {
-        return this.isAuthenticated && !!this.userId;
+        return false;
+        // return this.isAuthenticated && !!this.userId;
     }
 
     private getService() {
-        return this.useSupabase() ? supabaseDatabaseService : localDatabaseService;
+        // return this.useSupabase() ? supabaseDatabaseService : localDatabaseService;
+        return localDatabaseService;
     }
 
     async initializeDatabase(): Promise<void> {
@@ -31,13 +32,13 @@ class HybridDatabaseService {
         await service.saveGoal(goal);
 
         // If using local storage but authenticated, also sync to Supabase
-        if (!this.useSupabase() && this.isAuthenticated) {
-            try {
-                await supabaseDatabaseService.saveGoal(goal);
-            } catch (error) {
-                console.warn('Failed to sync goal to Supabase:', error);
-            }
-        }
+        // if (!this.useSupabase() && this.isAuthenticated) {
+        //     try {
+        //         await supabaseDatabaseService.saveGoal(goal);
+        //     } catch (error) {
+        //         console.warn('Failed to sync goal to Supabase:', error);
+        //     }
+        // }
     }
 
     async getGoals(): Promise<any[]> {
@@ -49,28 +50,28 @@ class HybridDatabaseService {
         const service = this.getService();
         await service.updateGoal(id, updates);
 
-        // If using local storage but authenticated, also sync to Supabase
-        if (!this.useSupabase() && this.isAuthenticated) {
-            try {
-                await supabaseDatabaseService.updateGoal(id, updates);
-            } catch (error) {
-                console.warn('Failed to sync goal update to Supabase:', error);
-            }
-        }
+        // // If using local storage but authenticated, also sync to Supabase
+        // if (!this.useSupabase() && this.isAuthenticated) {
+        //     try {
+        //         await supabaseDatabaseService.updateGoal(id, updates);
+        //     } catch (error) {
+        //         console.warn('Failed to sync goal update to Supabase:', error);
+        //     }
+        // }
     }
 
     async deleteGoal(id: string): Promise<void> {
         const service = this.getService();
         await service.deleteGoal(id);
 
-        // If using local storage but authenticated, also sync to Supabase
-        if (!this.useSupabase() && this.isAuthenticated) {
-            try {
-                await supabaseDatabaseService.deleteGoal(id);
-            } catch (error) {
-                console.warn('Failed to sync goal deletion to Supabase:', error);
-            }
-        }
+        // // If using local storage but authenticated, also sync to Supabase
+        // if (!this.useSupabase() && this.isAuthenticated) {
+        //     try {
+        //         await supabaseDatabaseService.deleteGoal(id);
+        //     } catch (error) {
+        //         console.warn('Failed to sync goal deletion to Supabase:', error);
+        //     }
+        // }
     }
 
     // Statistics operations
@@ -78,14 +79,14 @@ class HybridDatabaseService {
         const service = this.getService();
         await service.saveStatistics(stats);
 
-        // If using local storage but authenticated, also sync to Supabase
-        if (!this.useSupabase() && this.isAuthenticated) {
-            try {
-                await supabaseDatabaseService.saveStatistics(stats);
-            } catch (error) {
-                console.warn('Failed to sync statistics to Supabase:', error);
-            }
-        }
+        // // If using local storage but authenticated, also sync to Supabase
+        // if (!this.useSupabase() && this.isAuthenticated) {
+        //     try {
+        //         await supabaseDatabaseService.saveStatistics(stats);
+        //     } catch (error) {
+        //         console.warn('Failed to sync statistics to Supabase:', error);
+        //     }
+        // }
     }
 
     async getStatistics(date?: string): Promise<any> {
@@ -103,14 +104,14 @@ class HybridDatabaseService {
         const service = this.getService();
         await service.saveFlowMetrics(metrics);
 
-        // If using local storage but authenticated, also sync to Supabase
-        if (!this.useSupabase() && this.isAuthenticated) {
-            try {
-                await supabaseDatabaseService.saveFlowMetrics(metrics);
-            } catch (error) {
-                console.warn('Failed to sync flow metrics to Supabase:', error);
-            }
-        }
+        // // If using local storage but authenticated, also sync to Supabase
+        // if (!this.useSupabase() && this.isAuthenticated) {
+        //     try {
+        //         await supabaseDatabaseService.saveFlowMetrics(metrics);
+        //     } catch (error) {
+        //         console.warn('Failed to sync flow metrics to Supabase:', error);
+        //     }
+        // }
     }
 
     async getFlowMetrics(): Promise<any> {
@@ -123,14 +124,14 @@ class HybridDatabaseService {
         const service = this.getService();
         await service.saveSettings(settings);
 
-        // If using local storage but authenticated, also sync to Supabase
-        if (!this.useSupabase() && this.isAuthenticated) {
-            try {
-                await supabaseDatabaseService.saveSettings(settings);
-            } catch (error) {
-                console.warn('Failed to sync settings to Supabase:', error);
-            }
-        }
+        // // If using local storage but authenticated, also sync to Supabase
+        // if (!this.useSupabase() && this.isAuthenticated) {
+        //     try {
+        //         await supabaseDatabaseService.saveSettings(settings);
+        //     } catch (error) {
+        //         console.warn('Failed to sync settings to Supabase:', error);
+        //     }
+        // }
     }
 
     async getSettings(): Promise<any> {

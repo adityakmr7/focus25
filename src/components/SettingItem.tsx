@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../providers/ThemeProvider';
 
@@ -13,6 +13,7 @@ interface SettingItemProps {
     onPress?: () => void;
     showArrow?: boolean;
     value?: string;
+    disabled?: boolean;
 }
 
 /**
@@ -37,6 +38,7 @@ export const SettingItem: React.FC<SettingItemProps> = ({
     onPress,
     showArrow = false,
     value,
+    disabled = false,
 }) => {
     const { theme } = useTheme();
 
@@ -68,7 +70,8 @@ export const SettingItem: React.FC<SettingItemProps> = ({
                 )}
                 {hasSwitch && switchValue !== undefined && onSwitchToggle && (
                     <Switch
-                        value={switchValue}
+                        disabled={disabled}
+                        value={disabled ? false : switchValue}
                         onValueChange={onSwitchToggle}
                         trackColor={{ false: theme.background, true: theme.accent }}
                         thumbColor={switchValue ? '#ffffff' : theme.textSecondary}

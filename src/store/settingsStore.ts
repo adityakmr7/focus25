@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { databaseService } from '../services/database';
-
+import { databaseService } from '../data/database';
+import { usePomodoroStore } from './pomodoroStore';
 export type TimeDuration = 1 | 5 | 10 | 15 | 20 | 25;
 export type BreakDuration = 1 | 5 | 10 | 15 | 20 | 25;
 
@@ -49,7 +49,7 @@ const initialSettings: Settings = {
     autoBreak: false,
     focusReminders: true,
     weeklyReports: true,
-    dataSync: true,
+    dataSync: false,
     notificationStatus: null,
 };
 
@@ -83,7 +83,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
     setBreakDuration: async (duration) => {
         try {
-            set({ breakDuration: duration });
+            const pomodoroStore = usePomodoroStore.getState();
+            if (!pomodoroStore.timer.isRunning) {
+                pomodoroStore.setBreakDuration(duration);
+                set({ breakDuration: duration });
+            }
+
             await get().syncWithDatabase();
         } catch (error) {
             console.error('Failed to set break duration:', error);
@@ -105,7 +110,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
     setTimeDuration: async (duration: TimeDuration) => {
         try {
-            set({ timeDuration: duration });
+            const pomodoroStore = usePomodoroStore.getState();
+            if (!pomodoroStore.timer.isRunning) {
+                pomodoroStore.setWorkDuration(duration);
+                set({ timeDuration: duration });
+            }
             await get().syncWithDatabase();
         } catch (error) {
             console.error('Failed to set time duration:', error);

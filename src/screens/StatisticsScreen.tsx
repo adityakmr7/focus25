@@ -20,7 +20,7 @@ import { FlowMetrics } from '../components/FlowMetrics';
 import { GoalsModal } from '../components/GoalsModal';
 import { useTheme } from '../providers/ThemeProvider';
 import { useAuthContext } from '../components/AuthProvider';
-import { hybridDatabaseService } from '../services/hybridDatabase';
+import { hybridDatabaseService } from '../data/hybridDatabase';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 

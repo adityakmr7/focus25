@@ -1,10 +1,9 @@
 import { create } from 'zustand';
 import { useSettingsStore } from './settingsStore';
 import { useStatisticsStore } from './statisticsStore';
-import { databaseService } from '../services/database';
+import { databaseService } from '../data/database';
 import * as Notifications from 'expo-notifications';
 import { getCurrentDateString, isNewDay } from '../utils/dateUtils';
-
 // Add new interfaces for flow tracking
 interface FlowMetrics {
     consecutiveSessions: number;
@@ -127,7 +126,7 @@ const getInitialFlowMetrics = (): FlowMetrics => ({
     distractionCount: 0,
     sessionStartTime: null,
     totalFocusTime: 0,
-    averageSessionLength: 25,
+    averageSessionLength: 1,
     bestFlowDuration: 0,
     lastSessionDate: null,
 });
@@ -135,7 +134,7 @@ const getInitialFlowMetrics = (): FlowMetrics => ({
 export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     workDuration: 1,
     breakDuration: 1,
-    timer: getInitialTimerState(25),
+    timer: getInitialTimerState(1),
     flowMetrics: getInitialFlowMetrics(),
     isInitialized: false,
 
@@ -197,9 +196,19 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
         get().checkAndResetDailyMetrics();
         const state = get();
         const statistics = useStatisticsStore.getState();
-
-        if (!state.timer.isRunning) {
-            // Starting a new session
+        console.log('Toggling timer:', state.timer);
+        if (state.timer.isRunning && !state.timer.isPaused) {
+            console.log('Pausing timer', state.timer);
+            set((state) => ({
+                timer: {
+                    ...state.timer,
+                    isRunning: false,
+                    isPaused: true,
+                },
+            }));
+        } else if (!state.timer.isRunning) {
+            console.log('Starting timer', state.timer);
+            // start a new session
             statistics.incrementFlowStarted();
             set((state) => ({
                 timer: {
@@ -212,27 +221,43 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                     sessionStartTime: Date.now(),
                 },
             }));
-        } else if (state.timer.isPaused) {
-            // Resuming from pause - this is a distraction
-            get().trackDistraction();
-            set((state) => ({
-                timer: {
-                    ...state.timer,
-                    isRunning: true,
-                    isPaused: false,
-                },
-            }));
-        } else {
-            // Pausing - this is a distraction
-            get().trackDistraction();
-            set((state) => ({
-                timer: {
-                    ...state.timer,
-                    isRunning: false,
-                    isPaused: true,
-                },
-            }));
         }
+
+        // if (!state.timer.isRunning) {
+        //     // Starting a new session
+        //     statistics.incrementFlowStarted();
+        //     set((state) => ({
+        //         timer: {
+        //             ...state.timer,
+        //             isRunning: true,
+        //             isPaused: false,
+        //         },
+        //         flowMetrics: {
+        //             ...state.flowMetrics,
+        //             sessionStartTime: Date.now(),
+        //         },
+        //     }));
+        // } else if (state.timer.isPaused) {
+        //     // Resuming from pause - this is a distraction
+        //     get().trackDistraction();
+        //     set((state) => ({
+        //         timer: {
+        //             ...state.timer,
+        //             isRunning: true,
+        //             isPaused: false,
+        //         },
+        //     }));
+        // } else {
+        //     // Pausing - this is a distraction
+        //     get().trackDistraction();
+        //     set((state) => ({
+        //         timer: {
+        //             ...state.timer,
+        //             isRunning: false,
+        //             isPaused: true,
+        //         },
+        //     }));
+        // }
     },
 
     resetTimer: () =>
@@ -313,80 +338,102 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
         const settings = useSettingsStore.getState();
         const statistics = useStatisticsStore.getState();
 
-        if (!state.timer.isBreak) {
-            // Flow session completed
-            const minutes = Math.floor(state.timer.initialSeconds / 60);
-            statistics.incrementFlowCompleted(minutes);
-            // Update flow metrics
-            get().updateFlowMetrics();
-            const updatedState = get();
-            const { flowIntensity, consecutiveSessions } = updatedState.flowMetrics;
+        // if (!state.timer.isBreak) {
+        //     // Flow session completed
+        //     const minutes = Math.floor(state.timer.initialSeconds / 60);
+        //     statistics.incrementFlowCompleted(minutes);
+        //     // Update flow metrics
+        //     get().updateFlowMetrics();
+        //     const updatedState = get();
+        //     const { flowIntensity, consecutiveSessions } = updatedState.flowMetrics;
 
-            // Trigger notification if enabled
-            if (settings.notifications) {
-                let notificationContent = {
-                    title: 'Flow Session Complete! 🎉',
-                    body: 'Time for a break!',
-                    sound: true,
-                };
+        //     // Trigger notification if enabled
+        //     if (settings.notifications) {
+        //         let notificationContent = {
+        //             title: 'Flow Session Complete! 🎉',
+        //             body: 'Time for a break!',
+        //             sound: true,
+        //         };
 
-                // Customize notification based on flow intensity
-                if (flowIntensity === 'high' && consecutiveSessions >= 3) {
-                    notificationContent = {
-                        title: 'Amazing Deep Flow! 🔥',
-                        body: `${consecutiveSessions} consecutive sessions! You're unstoppable!`,
-                        sound: true,
-                    };
-                } else if (flowIntensity === 'high') {
-                    notificationContent = {
-                        title: 'Deep Flow Achieved! 🔥',
-                        body: "You're in the zone! Take a well-deserved break.",
-                        sound: true,
-                    };
-                } else if (consecutiveSessions >= 5) {
-                    notificationContent = {
-                        title: 'Consistency Champion! 🏆',
-                        body: `${consecutiveSessions} sessions completed! Keep it up!`,
-                        sound: true,
-                    };
-                }
+        //         // Customize notification based on flow intensity
+        //         if (flowIntensity === 'high' && consecutiveSessions >= 3) {
+        //             notificationContent = {
+        //                 title: 'Amazing Deep Flow! 🔥',
+        //                 body: `${consecutiveSessions} consecutive sessions! You're unstoppable!`,
+        //                 sound: true,
+        //             };
+        //         } else if (flowIntensity === 'high') {
+        //             notificationContent = {
+        //                 title: 'Deep Flow Achieved! 🔥',
+        //                 body: "You're in the zone! Take a well-deserved break.",
+        //                 sound: true,
+        //             };
+        //         } else if (consecutiveSessions >= 5) {
+        //             notificationContent = {
+        //                 title: 'Consistency Champion! 🏆',
+        //                 body: `${consecutiveSessions} sessions completed! Keep it up!`,
+        //                 sound: true,
+        //             };
+        //         }
 
-                Notifications.scheduleNotificationAsync({
-                    content: notificationContent,
-                    trigger: null,
-                });
-            }
+        //         Notifications.scheduleNotificationAsync({
+        //             content: notificationContent,
+        //             trigger: null,
+        //         });
+        //     }
 
-            // Always start break (user can choose to start it)
-            get().startBreak();
-        } else {
-            // Break completed
-            if (settings.notifications) {
-                Notifications.scheduleNotificationAsync({
-                    content: {
-                        title: 'Break Complete!',
-                        body: 'Ready for your next flow session?',
-                        sound: true,
-                    },
-                    trigger: null,
-                });
-            }
-            get().endBreak();
-        }
+        //     // Always start break (user can choose to start it)
+        //     get().startBreak();
+        // } else {
+        //     // Break completed
+        //     if (settings.notifications) {
+        //         Notifications.scheduleNotificationAsync({
+        //             content: {
+        //                 title: 'Break Complete!',
+        //                 body: 'Ready for your next flow session?',
+        //                 sound: true,
+        //             },
+        //             trigger: null,
+        //         });
+        //     }
+        //     get().endBreak();
+        // }
 
         // Handle session completion
         if (state.timer.currentSession < state.timer.totalSessions) {
-            set((state) => ({
-                timer: {
-                    ...state.timer,
-                    currentSession: state.timer.currentSession + 1,
-                    isRunning: false,
-                    isPaused: false,
-                    totalSeconds: state.timer.initialSeconds,
-                    minutes: Math.floor(state.timer.initialSeconds / 60),
-                    seconds: state.timer.initialSeconds % 60,
-                },
-            }));
+            if (state.timer.isBreak) {
+                set((state) => ({
+                    timer: {
+                        ...state.timer,
+                        currentSession: state.timer.currentSession,
+                        isRunning: false,
+                        isPaused: false,
+                        isBreak: false,
+                        totalSeconds: state.timer.initialSeconds,
+                        minutes: Math.floor(state.timer.initialSeconds / 60),
+                        seconds: state.timer.initialSeconds % 60,
+                    },
+                }));
+            } else {
+                console.log('session break---------', state.timer);
+                set((state) => ({
+                    timer: {
+                        ...state.timer,
+                        currentSession: state.timer.currentSession + 1,
+                        isRunning: false,
+                        isPaused: false,
+                        isBreak: true,
+                        // totalSeconds: state.timer.initialSeconds,
+                        // minutes: Math.floor(state.timer.initialSeconds / 60),
+                        // seconds: state.timer.initialSeconds % 60,
+
+                        totalSeconds: settings.breakDuration * 60,
+                        initialSeconds: settings.breakDuration * 60,
+                        minutes: settings.breakDuration,
+                        seconds: 0,
+                    },
+                }));
+            }
         } else {
             set((state) => ({
                 timer: {
@@ -394,6 +441,7 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                     currentSession: 1,
                     isRunning: false,
                     isPaused: false,
+                    isBreak: false,
                     totalSeconds: state.timer.initialSeconds,
                     minutes: Math.floor(state.timer.initialSeconds / 60),
                     seconds: state.timer.initialSeconds % 60,

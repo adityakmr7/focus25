@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase, signInAnonymously } from '../lib/supabase';
+import { signInAnonymously, supabase } from '../lib/supabase';
+import { useSettingsStore } from '../store/settingsStore';
 
 export interface AuthState {
     user: User | null;
@@ -16,6 +17,7 @@ export const useAuth = () => {
         loading: true,
         error: null,
     });
+    const { darkMode, dataSync } = useSettingsStore();
 
     useEffect(() => {
         // Get initial session
@@ -102,9 +104,10 @@ export const useAuth = () => {
         }
     };
 
+    console.log('isAuthenticated', dataSync);
     return {
         ...authState,
         retry,
-        isAuthenticated: !!authState.session,
+        isAuthenticated: !!authState.session && dataSync,
     };
 };
