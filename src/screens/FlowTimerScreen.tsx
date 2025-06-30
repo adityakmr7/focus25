@@ -276,20 +276,20 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
     // Timer handlers
     const playCompletionSound = useCallback(async () => {
-        // try {
-        //     await alertPlayer.play();
-        //     setTimeout(() => {
-        //         alertPlayer.pause();
-        //     }, 2000);
-        //     await notificationService.scheduleSessionComplete(timer.isBreak);
-        //     handleTimerComplete();
-        // } catch (error) {
-        //     errorHandler.logError(error as Error, {
-        //         context: 'Audio Playback',
-        //         severity: 'low',
-        //     });
-        //     handleTimerComplete();
-        // }
+        try {
+            await alertPlayer.play();
+            setTimeout(() => {
+                alertPlayer.pause();
+            }, 2000);
+            await notificationService.scheduleSessionComplete(timer.isBreak);
+            handleTimerComplete();
+        } catch (error) {
+            errorHandler.logError(error as Error, {
+                context: 'Audio Playback',
+                severity: 'low',
+            });
+            handleTimerComplete();
+        }
     }, [alertPlayer, timer.isBreak, handleTimerComplete]);
 
     const handleToggleTimer = async () => {
@@ -552,12 +552,9 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         setBackgroundSessionId(null);
                         setIsConnectedToBackground(false);
                     }
-                    handleTimerComplete();
-                    // if (timer.isBreak) {
-                    //     endBreak();
-                    // } else {
-                    //     await playCompletionSound();
-                    // }
+                    
+                    // Play completion sound and handle completion
+                    await playCompletionSound();
                     return;
                 }
 
