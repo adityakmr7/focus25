@@ -120,12 +120,9 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         timer,
         toggleTimer,
         resetTimer,
-        stopTimer,
         handleTimerComplete,
         setTimer,
         updateTimerFromSettings,
-        startBreak,
-        endBreak,
         flowMetrics,
         initializeStore: initializePomodoro,
     } = usePomodoroStore();
@@ -279,24 +276,23 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
     // Timer handlers
     const playCompletionSound = useCallback(async () => {
-        try {
-            await alertPlayer.play();
-            setTimeout(() => {
-                alertPlayer.pause();
-            }, 2000);
-
-            await notificationService.scheduleSessionComplete(timer.isBreak);
-            handleTimerComplete();
-        } catch (error) {
-            errorHandler.logError(error as Error, {
-                context: 'Audio Playback',
-                severity: 'low',
-            });
-            handleTimerComplete();
-        }
+        // try {
+        //     await alertPlayer.play();
+        //     setTimeout(() => {
+        //         alertPlayer.pause();
+        //     }, 2000);
+        //     await notificationService.scheduleSessionComplete(timer.isBreak);
+        //     handleTimerComplete();
+        // } catch (error) {
+        //     errorHandler.logError(error as Error, {
+        //         context: 'Audio Playback',
+        //         severity: 'low',
+        //     });
+        //     handleTimerComplete();
+        // }
     }, [alertPlayer, timer.isBreak, handleTimerComplete]);
 
-    const handleToggleTimer = useCallback(async () => {
+    const handleToggleTimer = async () => {
         try {
             const wasRunning = timer.isRunning;
             toggleTimer();
@@ -336,19 +332,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             });
             Alert.alert('Timer Error', 'There was an issue with the timer. Please try again.');
         }
-    }, [
-        timer.isRunning,
-        timer.isPaused,
-        timer.totalSeconds,
-        timer.isBreak,
-        toggleTimer,
-        settings.autoPlay,
-        player,
-        status?.isLoaded,
-        isPlaying,
-        handlePlayPause,
-        pulseAnimation,
-    ]);
+    };
 
     const handleReset = useCallback(async () => {
         try {
@@ -525,6 +509,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         const minutes = Math.floor(remainingTime / 60);
                         const seconds = remainingTime % 60;
 
+                        console.log('setTimergetting Called');
                         setTimer({
                             minutes,
                             seconds,
@@ -548,11 +533,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     }, [timerState.isInitialized, setTimer]);
 
     // Settings update
-    useEffect(() => {
-        if (!timer.isRunning && timerState.isInitialized) {
-            updateTimerFromSettings();
-        }
-    }, [timeDuration, timer.isRunning, updateTimerFromSettings, timerState.isInitialized]);
+    // useEffect(() => {
+    //     if (!timer.isRunning && timerState.isInitialized) {
+    //         updateTimerFromSettings();
+    //     }
+    // }, [timeDuration, timer.isRunning, updateTimerFromSettings, timerState.isInitialized]);
 
     // Timer countdown logic
     useEffect(() => {
@@ -567,12 +552,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         setBackgroundSessionId(null);
                         setIsConnectedToBackground(false);
                     }
-
-                    if (timer.isBreak) {
-                        endBreak();
-                    } else {
-                        await playCompletionSound();
-                    }
+                    handleTimerComplete();
+                    // if (timer.isBreak) {
+                    //     endBreak();
+                    // } else {
+                    //     await playCompletionSound();
+                    // }
                     return;
                 }
 
@@ -610,7 +595,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         timerState.isInitialized,
         setTimer,
         saveTimerState,
-        endBreak,
         playCompletionSound,
     ]);
 
@@ -724,6 +708,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const volumeStyle = useAnimatedStyle(() => ({
         width: `${volumeAnimation.value * 100}%`,
     }));
+
+    console.log('FlowTimerScreen rendered', timer);
 
     // Loading state
     if (timerState.isLoading || !timerState.isInitialized) {
