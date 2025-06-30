@@ -509,7 +509,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         const minutes = Math.floor(remainingTime / 60);
                         const seconds = remainingTime % 60;
 
-                        console.log('setTimergetting Called');
                         setTimer({
                             minutes,
                             seconds,
@@ -532,13 +531,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         }
     }, [timerState.isInitialized, setTimer]);
 
-    // Settings update
-    // useEffect(() => {
-    //     if (!timer.isRunning && timerState.isInitialized) {
-    //         updateTimerFromSettings();
-    //     }
-    // }, [timeDuration, timer.isRunning, updateTimerFromSettings, timerState.isInitialized]);
-
     // Timer countdown logic
     useEffect(() => {
         if (!timerState.isInitialized) return;
@@ -552,7 +544,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         setBackgroundSessionId(null);
                         setIsConnectedToBackground(false);
                     }
-                    
+
                     // Play completion sound and handle completion
                     await playCompletionSound();
                     return;
@@ -705,8 +697,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const volumeStyle = useAnimatedStyle(() => ({
         width: `${volumeAnimation.value * 100}%`,
     }));
-
-    console.log('FlowTimerScreen rendered', timer);
 
     // Loading state
     if (timerState.isLoading || !timerState.isInitialized) {

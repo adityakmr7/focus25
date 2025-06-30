@@ -4,7 +4,6 @@ import { useStatisticsStore } from './statisticsStore';
 import { databaseService } from '../data/database';
 import * as Notifications from 'expo-notifications';
 import { getCurrentDateString, isNewDay } from '../utils/dateUtils';
-
 // Add new interfaces for flow tracking
 interface FlowMetrics {
     consecutiveSessions: number;
@@ -416,6 +415,7 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                     },
                 }));
             } else {
+                console.log('session break---------', state.timer);
                 set((state) => ({
                     timer: {
                         ...state.timer,
@@ -423,9 +423,14 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                         isRunning: false,
                         isPaused: false,
                         isBreak: true,
-                        totalSeconds: state.timer.initialSeconds,
-                        minutes: Math.floor(state.timer.initialSeconds / 60),
-                        seconds: state.timer.initialSeconds % 60,
+                        // totalSeconds: state.timer.initialSeconds,
+                        // minutes: Math.floor(state.timer.initialSeconds / 60),
+                        // seconds: state.timer.initialSeconds % 60,
+
+                        totalSeconds: settings.breakDuration * 60,
+                        initialSeconds: settings.breakDuration * 60,
+                        minutes: settings.breakDuration,
+                        seconds: 0,
                     },
                 }));
             }

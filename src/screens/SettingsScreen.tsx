@@ -466,14 +466,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             switchValue={soundEffects}
                             onSwitchToggle={() => toggleSetting('soundEffects')}
                         />
-                        <SettingItem
-                            title="Auto Break"
-                            subtitle="Automatically start break sessions"
-                            icon="pause-circle-outline"
-                            hasSwitch={true}
-                            switchValue={autoBreak}
-                            onSwitchToggle={() => toggleSetting('autoBreak')}
-                        />
+                        {/*<SettingItem*/}
+                        {/*    title="Auto Break"*/}
+                        {/*    subtitle="Automatically start break sessions"*/}
+                        {/*    icon="pause-circle-outline"*/}
+                        {/*    hasSwitch={true}*/}
+                        {/*    switchValue={autoBreak}*/}
+                        {/*    onSwitchToggle={() => toggleSetting('autoBreak')}*/}
+                        {/*/>*/}
                     </View>
                 </AnimatedSection>
 
