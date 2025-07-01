@@ -110,7 +110,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         return musicTracks.find((t) => t.id === selectedTrack)?.source || null;
     }, [selectedTrack]);
 
-    const { player, isReady, status, uri, isDownloading, downloadError, downloadProgress } =
+    const { player, isReady, status, uri, isDownloading, downloadError, downloadProgress, usingFallback } =
         useCachedAudio(currentTrackUrl);
 
     const alertPlayer = useAudioPlayer(audioSource);
@@ -204,12 +204,19 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     // Audio handlers
     const handlePlayPause = useCallback(async () => {
         try {
-            if (!player || !isReady) {
-                Alert.alert('Audio Error', 'Audio player not ready. Please try again.');
+            if (!player) {
+                Alert.alert('Audio Error', 'Audio player not available. Please try again.');
                 return;
             }
 
-            if (!status?.isLoaded) {
+            // Check if we're still downloading (but allow fallback streaming)
+            if (isDownloading && downloadProgress < 1 && !usingFallback) {
+                Alert.alert('Loading...', `Please wait... ${Math.round(downloadProgress * 100)}%`);
+                return;
+            }
+
+            // Allow playback if player is ready or if we have a URI (even if not fully loaded for streaming)
+            if (!isReady && !uri) {
                 Alert.alert('Loading...', 'Please wait for the track to load');
                 return;
             }
@@ -223,9 +230,9 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             }
         } catch (error) {
             console.error('Failed to toggle playback:', error);
-            Alert.alert('Playback Error', 'Failed to control playback.');
+            Alert.alert('Playback Error', 'Failed to control playback. The track may still be loading.');
         }
-    }, [player, isReady, status?.isLoaded, isPlaying]);
+    }, [player, isReady, uri, isDownloading, downloadProgress, usingFallback, isPlaying]);
 
     const handleTrackSelection = useCallback(
         async (trackId: string) => {
@@ -233,9 +240,13 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 // If selecting a different track
                 if (selectedTrack !== trackId) {
                     // Stop current playback first
-                    if (isPlaying && player && status?.isLoaded) {
-                        await player.pause();
-                        setIsPlaying(false);
+                    if (isPlaying && player) {
+                        try {
+                            await player.pause();
+                            setIsPlaying(false);
+                        } catch (error) {
+                            console.warn('Failed to pause current track:', error);
+                        }
                     }
 
                     // Set loading state and new track
@@ -425,6 +436,10 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
                 // Initialize stores
                 await Promise.all([initializeSettings(), initializePomodoro(), loadSettings()]);
+                
+                // Sync timer with loaded settings
+                updateTimerFromSettings();
+                console.log('🔄 Timer synchronized with settings');
 
                 setTimerState((prev) => ({ ...prev, isInitialized: true }));
                 console.log('✅ FlowTimer initialized');
@@ -723,7 +738,10 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
-                bounces={false}
+                bounces={true}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets={true}
+                contentInsetAdjustmentBehavior="automatic"
             >
                 <Animated.View style={[styles.content, containerAnimatedStyle]}>
                     <Header
@@ -817,6 +835,8 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         flexGrow: 1,
+        minHeight: '100%',
+        paddingBottom: 20, // Extra space at bottom for better scrolling
     },
     content: {
         flex: 1,

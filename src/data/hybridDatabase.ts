@@ -22,8 +22,14 @@ class HybridDatabaseService {
     }
 
     async initializeDatabase(): Promise<void> {
-        // Always initialize local database as fallback
-        await localDatabaseService.initializeDatabase();
+        try {
+            // Always initialize local database as fallback
+            await localDatabaseService.initializeDatabase();
+            console.log('Hybrid database service initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize hybrid database service:', error);
+            throw error;
+        }
     }
 
     // Goals operations
@@ -90,8 +96,21 @@ class HybridDatabaseService {
     }
 
     async getStatistics(date?: string): Promise<any> {
-        const service = this.getService();
-        return await service.getStatistics(date);
+        try {
+            const service = this.getService();
+            return await service.getStatistics(date);
+        } catch (error) {
+            console.error('Failed to load statistics from hybrid service:', error);
+            // Return default statistics as fallback
+            const targetDate = date || new Date().toISOString().split('T')[0];
+            return {
+                date: targetDate,
+                totalCount: 0,
+                flows: { started: 0, completed: 0, minutes: 0 },
+                breaks: { started: 0, completed: 0, minutes: 0 },
+                interruptions: 0,
+            };
+        }
     }
 
     async getStatisticsRange(startDate: string, endDate: string): Promise<any[]> {

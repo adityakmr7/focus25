@@ -28,6 +28,8 @@ export interface MusicSettings {
     fadeInOut: boolean;
     lastPlayedTrack: string | null;
     favoriteTrackIds: string[];
+    shuffleMode: boolean;
+    repeatMode: 'none' | 'one' | 'all';
 }
 
 interface BottomSheetMusicPlayerProps {
@@ -211,13 +213,13 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
         transform: [{ scale: interpolate(waveAnimation.value, [0, 1], [0.8, 1.2]) }],
     }));
 
-    const isDownloading = player?.currentStatus?.isLoaded;
+    // Use the props for loading state instead of player status
 
     const renderTrackItem = ({ item }: { item: MusicTrack }) => {
         const isSelected = selectedTrack === item.id;
         const isFavorite = settings.favoriteTrackIds.includes(item.id);
-        // 🔥 NEW: Show loading state for selected track
-        const isCurrentlyLoading = isSelected && isDownloading;
+        const isCurrentlyLoading = isSelected && downloadProgress > 0 && downloadProgress < 1;
+        const showProgress = isCurrentlyLoading;
 
         return (
             <TouchableOpacity
@@ -231,20 +233,24 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
                     },
                 ]}
                 onPress={() => handlePlay(item.id)}
-                // 🔥 NEW: Disable interaction while loading
                 disabled={isCurrentlyLoading}
             >
                 <View style={[styles.trackIcon, { backgroundColor: item.color + '20' }]}>
-                    {/* 🔥 NEW: Show loading indicator */}
                     {isCurrentlyLoading ? (
                         <View style={styles.loadingContainer}>
-                            <Ionicons name="cloud-download" size={20} color={item.color} />
-                            {isDownloading && downloadProgress > 0 && (
+                            <Ionicons 
+                                name={showProgress ? "cloud-download" : "hourglass"} 
+                                size={20} 
+                                color={item.color} 
+                            />
+                            {showProgress && (
                                 <Text style={[styles.progressText, { color: item.color }]}>
                                     {Math.round(downloadProgress * 100)}%
                                 </Text>
                             )}
                         </View>
+                    ) : isSelected && isPlaying ? (
+                        <Ionicons name="volume-high" size={20} color={item.color} />
                     ) : (
                         <Ionicons
                             name={getTrackIcon(item.type) as any}
@@ -471,6 +477,30 @@ const styles = StyleSheet.create({
         fontSize: 14,
         marginTop: 2,
     },
+    headerControls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    controlButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    playPauseButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
+    },
     settingsButton: {
         width: 36,
         height: 36,
@@ -526,6 +556,28 @@ const styles = StyleSheet.create({
     },
     toggleThumbActive: {
         alignSelf: 'flex-end',
+    },
+    volumeControls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    volumeButton: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    volumeIndicator: {
+        width: 60,
+        height: 4,
+        borderRadius: 2,
+        overflow: 'hidden',
+    },
+    volumeBar: {
+        height: '100%',
+        borderRadius: 2,
     },
     trackList: {
         flex: 1,
