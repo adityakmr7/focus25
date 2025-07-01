@@ -102,8 +102,8 @@ const TimerContainer: React.FC<TimerContainerProps> = React.memo(
                     />
                 </View>
 
-                {/* Mini Audio Player */}
-                {player?.currentStatus.playing && !focusModeActive && (
+                {/* Mini Audio Player - Only show when music is actually playing */}
+                {isPlaying && selectedTrackData && !focusModeActive && (
                     <View style={styles.miniPlayerWrapper}>
                         <MiniAudioPlayer
                             isPlaying={isPlaying}
