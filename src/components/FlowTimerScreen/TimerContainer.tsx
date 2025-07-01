@@ -127,8 +127,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 40,
-        // marginTop: 60,
         flex: 1,
+        minHeight: 600, // Ensure minimum height for proper scrolling
     },
     flowLabel: {
         fontSize: 28,

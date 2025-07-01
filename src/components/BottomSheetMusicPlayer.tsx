@@ -28,6 +28,8 @@ export interface MusicSettings {
     fadeInOut: boolean;
     lastPlayedTrack: string | null;
     favoriteTrackIds: string[];
+    shuffleMode: boolean;
+    repeatMode: 'none' | 'one' | 'all';
 }
 
 interface BottomSheetMusicPlayerProps {

@@ -738,7 +738,10 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
-                bounces={false}
+                bounces={true}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets={true}
+                contentInsetAdjustmentBehavior="automatic"
             >
                 <Animated.View style={[styles.content, containerAnimatedStyle]}>
                     <Header
@@ -832,6 +835,8 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         flexGrow: 1,
+        minHeight: '100%',
+        paddingBottom: 20, // Extra space at bottom for better scrolling
     },
     content: {
         flex: 1,
