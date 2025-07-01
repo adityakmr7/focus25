@@ -425,6 +425,10 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
                 // Initialize stores
                 await Promise.all([initializeSettings(), initializePomodoro(), loadSettings()]);
+                
+                // Sync timer with loaded settings
+                updateTimerFromSettings();
+                console.log('🔄 Timer synchronized with settings');
 
                 setTimerState((prev) => ({ ...prev, isInitialized: true }));
                 console.log('✅ FlowTimer initialized');
