@@ -65,14 +65,56 @@ export interface LocalDataBase {
 
 class SQLiteService implements LocalDataBase {
     private db: SQLite.SQLiteDatabase | null = null;
+    private isInitializing = false;
+    private initializationPromise: Promise<void> | null = null;
 
     async initializeDatabase(): Promise<void> {
+        // If already initializing, wait for that to complete
+        if (this.initializationPromise) {
+            return this.initializationPromise;
+        }
+
+        // If already initialized, return immediately
+        if (this.db && !this.isInitializing) {
+            return Promise.resolve();
+        }
+
+        // Create new initialization promise
+        this.initializationPromise = this.performInitialization();
+        return this.initializationPromise;
+    }
+
+    private async performInitialization(): Promise<void> {
+        if (this.isInitializing || this.db) {
+            return;
+        }
+
+        this.isInitializing = true;
         try {
+            console.log('Initializing SQLite database...');
             this.db = await SQLite.openDatabaseAsync('flowfocus.db');
+            
+            if (!this.db) {
+                throw new Error('Failed to open database - null reference');
+            }
+
             await this.createTables();
+            console.log('SQLite database initialized successfully');
         } catch (error) {
             console.error('Failed to initialize database:', error);
+            this.db = null;
             throw error;
+        } finally {
+            this.isInitializing = false;
+        }
+    }
+
+    private async ensureInitialized(): Promise<void> {
+        if (!this.db) {
+            await this.initializeDatabase();
+        }
+        if (!this.db) {
+            throw new Error('Database failed to initialize');
         }
     }
 
@@ -282,7 +324,7 @@ class SQLiteService implements LocalDataBase {
 
     // Statistics operations
     async saveStatistics(stats: Statistics): Promise<void> {
-        if (!this.db) throw new Error('Database not initialized');
+        await this.ensureInitialized();
 
         const now = new Date().toISOString();
         const sql = `
@@ -308,14 +350,43 @@ class SQLiteService implements LocalDataBase {
     }
 
     async getStatistics(date?: string): Promise<Statistics> {
-        if (!this.db) throw new Error('Database not initialized');
+        await this.ensureInitialized();
 
         const targetDate = date || new Date().toISOString().split('T')[0];
-        const result = (await this.db.getFirstAsync('SELECT * FROM statistics WHERE date = ?', [
-            targetDate,
-        ])) as StatisticsRow | null;
+        
+        try {
+            const result = (await this.db!.getFirstAsync('SELECT * FROM statistics WHERE date = ?', [
+                targetDate,
+            ])) as StatisticsRow | null;
 
-        if (!result) {
+            if (!result) {
+                return {
+                    date: targetDate,
+                    totalCount: 0,
+                    flows: { started: 0, completed: 0, minutes: 0 },
+                    breaks: { started: 0, completed: 0, minutes: 0 },
+                    interruptions: 0,
+                };
+            }
+
+            return {
+                date: result.date,
+                totalCount: result.total_flows,
+                flows: {
+                    started: result.started_flows,
+                    completed: result.completed_flows,
+                    minutes: result.total_focus_time,
+                },
+                breaks: {
+                    started: result.total_breaks,
+                    completed: result.total_breaks,
+                    minutes: result.total_break_time,
+                },
+                interruptions: result.interruptions,
+            };
+        } catch (error) {
+            console.error('Failed to get statistics:', error);
+            // Return default statistics on error
             return {
                 date: targetDate,
                 totalCount: 0,
@@ -324,26 +395,10 @@ class SQLiteService implements LocalDataBase {
                 interruptions: 0,
             };
         }
-
-        return {
-            date: result.date,
-            totalCount: result.total_flows,
-            flows: {
-                started: result.started_flows,
-                completed: result.completed_flows,
-                minutes: result.total_focus_time,
-            },
-            breaks: {
-                started: result.total_breaks,
-                completed: result.total_breaks,
-                minutes: result.total_break_time,
-            },
-            interruptions: result.interruptions,
-        };
     }
 
     async getStatisticsRange(startDate: string, endDate: string): Promise<Statistics[]> {
-        if (!this.db) throw new Error('Database not initialized');
+        await this.ensureInitialized();
 
         const result = (await this.db.getAllAsync(
             'SELECT * FROM statistics WHERE date BETWEEN ? AND ? ORDER BY date',
@@ -369,7 +424,7 @@ class SQLiteService implements LocalDataBase {
 
     // Flow metrics operations
     async saveFlowMetrics(metrics: FlowMetrics): Promise<void> {
-        if (!this.db) throw new Error('Database not initialized');
+        await this.ensureInitialized();
 
         const now = new Date().toISOString();
         const sql = `
@@ -396,13 +451,43 @@ class SQLiteService implements LocalDataBase {
     }
 
     async getFlowMetrics(): Promise<FlowMetrics> {
-        if (!this.db) throw new Error('Database not initialized');
+        await this.ensureInitialized();
 
-        const result = (await this.db.getFirstAsync(
-            'SELECT * FROM flow_metrics WHERE id = 1',
-        )) as FlowMetricsRow | null;
+        try {
+            const result = (await this.db!.getFirstAsync(
+                'SELECT * FROM flow_metrics WHERE id = 1',
+            )) as FlowMetricsRow | null;
 
-        if (!result) {
+            if (!result) {
+                return {
+                    consecutiveSessions: 0,
+                    currentStreak: 0,
+                    longestStreak: 0,
+                    flowIntensity: FlowIntensity.MEDIUM,
+                    distractionCount: 0,
+                    sessionStartTime: undefined,
+                    totalFocusTime: 0,
+                    averageSessionLength: 25.0,
+                    bestFlowDuration: 0,
+                    lastSessionDate: undefined,
+                };
+            }
+
+            return {
+                consecutiveSessions: result.consecutive_sessions,
+                currentStreak: result.current_streak,
+                longestStreak: result.longest_streak,
+                flowIntensity: result.flow_intensity as FlowIntensity,
+                distractionCount: result.distraction_count,
+                sessionStartTime: result.session_start_time || undefined,
+                totalFocusTime: result.total_focus_time,
+                averageSessionLength: result.average_session_length,
+                bestFlowDuration: result.best_flow_duration,
+                lastSessionDate: result.last_session_date || undefined,
+            };
+        } catch (error) {
+            console.error('Failed to get flow metrics:', error);
+            // Return default flow metrics on error
             return {
                 consecutiveSessions: 0,
                 currentStreak: 0,
@@ -416,19 +501,6 @@ class SQLiteService implements LocalDataBase {
                 lastSessionDate: undefined,
             };
         }
-
-        return {
-            consecutiveSessions: result.consecutive_sessions,
-            currentStreak: result.current_streak,
-            longestStreak: result.longest_streak,
-            flowIntensity: result.flow_intensity as FlowIntensity,
-            distractionCount: result.distraction_count,
-            sessionStartTime: result.session_start_time || undefined,
-            totalFocusTime: result.total_focus_time,
-            averageSessionLength: result.average_session_length,
-            bestFlowDuration: result.best_flow_duration,
-            lastSessionDate: result.last_session_date || undefined,
-        };
     }
 
     // Settings operations
