@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { databaseService } from '../data/database';
 import { usePomodoroStore } from './pomodoroStore';
+import { Linking } from 'react-native';
+import { APP_CONFIG } from '../config';
+
 export type TimeDuration = 1 | 5 | 10 | 15 | 20 | 25;
 export type BreakDuration = 1 | 5 | 10 | 15 | 20 | 25;
 
@@ -155,16 +158,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         console.log('Opening app store...');
     },
 
-    openSupport: () => {
-        console.log('Opening support...');
+    openSupport: async () => {
+        await Linking.openURL(APP_CONFIG.HELP_URL);
     },
 
-    openPrivacy: () => {
-        console.log('Opening privacy policy...');
+    openPrivacy: async () => {
+        await Linking.openURL(APP_CONFIG.PRIVACY_POLICY_URL);
     },
 
-    openTerms: () => {
-        console.log('Opening terms of service...');
+    openTerms: async () => {
+        await Linking.openURL(APP_CONFIG.TERM_CONDITIONS_URL);
     },
 
     openTheme: () => {

@@ -17,6 +17,7 @@ import { useGoalsStore } from '../store/goalsStore';
 import { useStatisticsStore } from '../store/statisticsStore';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { Ionicons } from '@expo/vector-icons';
+import { version } from '../../package.json';
 
 interface SettingsScreenProps {
     navigation?: {
@@ -577,7 +578,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
                 <View style={styles.footer}>
                     <Text style={[styles.versionText, { color: theme.textSecondary }]}>
-                        Focus25 v1.2.3
+                        Focus25 {version}
                     </Text>
                     <Text style={[styles.copyrightText, { color: theme.textSecondary }]}>
                         © 2025 Focus25 App
