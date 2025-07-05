@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect } from "react";
-import { View, useColorScheme } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useThemeStore } from "../store/themeStore";
+import React, { createContext, useContext, useEffect } from 'react';
+import { View, useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useThemeStore } from '../store/themeStore';
 
 interface ThemeProviderProps {
     children: React.ReactNode;
@@ -20,16 +20,14 @@ export const ThemeContext = createContext<ThemeContextType>({
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     const systemColorScheme = useColorScheme();
     const { mode, getCurrentTheme } = useThemeStore();
-    
+
     const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
     const theme = getCurrentTheme();
 
     return (
         <ThemeContext.Provider value={{ theme, isDark }}>
-            <StatusBar style={isDark ? "light" : "dark"} />
-            <View style={{ flex: 1, backgroundColor: theme.background }}>
-                {children}
-            </View>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+            <View style={{ flex: 1, backgroundColor: theme.background }}>{children}</View>
         </ThemeContext.Provider>
     );
 };

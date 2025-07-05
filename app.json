@@ -1,21 +1,22 @@
 {
   "expo": {
-    "name": "Flow Focus",
-    "slug": "flow-focus",
+    "name": "Focus25 - Flow Timer & Music",
+    "slug": "focus25-flow-timer-and-music",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon_ios.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#48BB78"
+      "backgroundColor": "#16292b"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
+      "icon": "./assets/icon_ios.png",
       "supportsTablet": true,
       "infoPlist": {
         "UIBackgroundModes": [
@@ -26,21 +27,24 @@
         "NSMicrophoneUsageDescription": "This app uses the microphone for focus session audio feedback.",
         "NSUserNotificationsUsageDescription": "This app sends notifications to remind you about focus sessions and breaks."
       },
-      "bundleIdentifier": "com.flowfocus.app"
+      "bundleIdentifier": "com.focus25.app"
     },
     "android": {
+      "icon": "./assets/icon_android.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#48BB78"
+        "backgroundColor": "#16292b"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.WAKE_LOCK",
         "android.permission.VIBRATE",
-        "android.permission.USE_FULL_SCREEN_INTENT"
+        "android.permission.USE_FULL_SCREEN_INTENT",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "package": "com.flowfocus.app"
+      "package": "com.focus25.app"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -54,11 +58,10 @@
       [
         "expo-build-properties",
         {
-          "ios": {
-            "newArchEnabled": true
-          },
           "android": {
-            "newArchEnabled": true
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0"
           }
         }
       ]
@@ -68,8 +71,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "your-project-id-here"
+        "projectId": "04e20c31-e1db-413e-8cff-041e3a116e8a"
       }
-    }
+    },
+    "owner": "adityakmr7"
   }
 }

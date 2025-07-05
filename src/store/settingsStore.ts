@@ -1,5 +1,8 @@
 import { create } from 'zustand';
-import { databaseService } from '../services/database';
+import { databaseService } from '../data/database';
+import { usePomodoroStore } from './pomodoroStore';
+import { Linking } from 'react-native';
+import { APP_CONFIG } from '../config';
 
 export type TimeDuration = 1 | 5 | 10 | 15 | 20 | 25;
 export type BreakDuration = 1 | 5 | 10 | 15 | 20 | 25;
@@ -21,7 +24,7 @@ interface SettingsState extends Settings {
     isLoading: boolean;
     error: string | null;
     isInitialized: boolean;
-    
+
     initializeStore: () => Promise<void>;
     toggleSetting: (key: keyof Settings) => Promise<void>;
     setTimeDuration: (duration: TimeDuration) => Promise<void>;
@@ -49,8 +52,8 @@ const initialSettings: Settings = {
     autoBreak: false,
     focusReminders: true,
     weeklyReports: true,
-    dataSync: true,
-    notificationStatus: null
+    dataSync: false,
+    notificationStatus: null,
 };
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -61,29 +64,34 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
     initializeStore: async () => {
         if (get().isInitialized) return;
-        
+
         try {
             set({ isLoading: true, error: null });
             const savedSettings = await databaseService.getSettings();
-            
-            set({ 
+
+            set({
                 ...savedSettings,
                 isInitialized: true,
-                isLoading: false 
+                isLoading: false,
             });
         } catch (error) {
             console.error('Failed to initialize settings store:', error);
-            set({ 
+            set({
                 error: error instanceof Error ? error.message : 'Failed to initialize settings',
                 isInitialized: true,
-                isLoading: false 
+                isLoading: false,
             });
         }
     },
 
     setBreakDuration: async (duration) => {
         try {
-            set({ breakDuration: duration });
+            const pomodoroStore = usePomodoroStore.getState();
+            if (!pomodoroStore.timer.isRunning) {
+                pomodoroStore.setBreakDuration(duration);
+                set({ breakDuration: duration });
+            }
+
             await get().syncWithDatabase();
         } catch (error) {
             console.error('Failed to set break duration:', error);
@@ -105,7 +113,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
     setTimeDuration: async (duration: TimeDuration) => {
         try {
-            set({ timeDuration: duration });
+            const pomodoroStore = usePomodoroStore.getState();
+            if (!pomodoroStore.timer.isRunning) {
+                pomodoroStore.setWorkDuration(duration);
+                set({ timeDuration: duration });
+            }
             await get().syncWithDatabase();
         } catch (error) {
             console.error('Failed to set time duration:', error);
@@ -146,16 +158,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         console.log('Opening app store...');
     },
 
-    openSupport: () => {
-        console.log('Opening support...');
+    openSupport: async () => {
+        await Linking.openURL(APP_CONFIG.HELP_URL);
     },
 
-    openPrivacy: () => {
-        console.log('Opening privacy policy...');
+    openPrivacy: async () => {
+        await Linking.openURL(APP_CONFIG.PRIVACY_POLICY_URL);
     },
 
-    openTerms: () => {
-        console.log('Opening terms of service...');
+    openTerms: async () => {
+        await Linking.openURL(APP_CONFIG.TERM_CONDITIONS_URL);
     },
 
     openTheme: () => {
@@ -193,9 +205,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
                 focusReminders: state.focusReminders,
                 weeklyReports: state.weeklyReports,
                 dataSync: state.dataSync,
-                notificationStatus: state.notificationStatus
+                notificationStatus: state.notificationStatus,
             };
-            
+
             await databaseService.saveSettings(settings);
         } catch (error) {
             console.error('Failed to sync settings with database:', error);

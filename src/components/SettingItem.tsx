@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../providers/ThemeProvider';
 
@@ -13,6 +13,7 @@ interface SettingItemProps {
     onPress?: () => void;
     showArrow?: boolean;
     value?: string;
+    disabled?: boolean;
 }
 
 /**
@@ -36,10 +37,11 @@ export const SettingItem: React.FC<SettingItemProps> = ({
     onSwitchToggle,
     onPress,
     showArrow = false,
-    value
+    value,
+    disabled = false,
 }) => {
     const { theme } = useTheme();
-    
+
     return (
         <TouchableOpacity
             style={[styles.settingItem, { borderBottomColor: theme.background }]}
@@ -53,14 +55,23 @@ export const SettingItem: React.FC<SettingItemProps> = ({
                 </View>
                 <View style={styles.settingText}>
                     <Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text>
-                    {subtitle && <Text style={[styles.settingSubtitle, { color: theme.textSecondary }]}>{subtitle}</Text>}
+                    {subtitle && (
+                        <Text style={[styles.settingSubtitle, { color: theme.textSecondary }]}>
+                            {subtitle}
+                        </Text>
+                    )}
                 </View>
             </View>
             <View style={styles.settingRight}>
-                {value && <Text style={[styles.settingValue, { color: theme.textSecondary }]}>{value}</Text>}
+                {value && (
+                    <Text style={[styles.settingValue, { color: theme.textSecondary }]}>
+                        {value}
+                    </Text>
+                )}
                 {hasSwitch && switchValue !== undefined && onSwitchToggle && (
                     <Switch
-                        value={switchValue}
+                        disabled={disabled}
+                        value={disabled ? false : switchValue}
                         onValueChange={onSwitchToggle}
                         trackColor={{ false: theme.background, true: theme.accent }}
                         thumbColor={switchValue ? '#ffffff' : theme.textSecondary}
