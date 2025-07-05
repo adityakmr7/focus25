@@ -8,8 +8,20 @@ import FlowAnalyticsScreen from '../screens/FlowAnalyticsScreen';
 import ThemeCustomizationScreen from '../screens/ThemeCustomizationScreen';
 import { useTheme } from '../providers/ThemeProvider';
 
-const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
+type AppTabParamList = {
+    Statistics: undefined;
+    FlowTimer: undefined;
+    Settings: undefined;
+};
+
+type AppStackParamList = {
+    Root: undefined;
+    FlowAnalytics: undefined;
+    ThemeCustomization: undefined;
+};
+
+const Tab = createBottomTabNavigator<AppTabParamList>();
+const Stack = createNativeStackNavigator<AppStackParamList>();
 
 const AppTabNavigation = () => {
     const { theme, isDark } = useTheme();
