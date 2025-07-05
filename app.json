@@ -18,6 +18,12 @@
     "ios": {
       "icon": "./assets/icon_ios.png",
       "supportsTablet": true,
+      "buildNumber": "1",
+      "requireFullScreen": true,
+      "userInterfaceStyle": "automatic",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "infoPlist": {
         "UIBackgroundModes": [
           "audio",
