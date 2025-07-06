@@ -7,11 +7,6 @@
     "icon": "./assets/icon_ios.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#16292b"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -21,6 +16,11 @@
       "buildNumber": "1",
       "requireFullScreen": true,
       "userInterfaceStyle": "automatic",
+      "splash": {
+        "image": "./assets/splash-ios.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#16292b"
+      },
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -31,12 +31,18 @@
           "background-processing"
         ],
         "NSMicrophoneUsageDescription": "This app uses the microphone for focus session audio feedback.",
-        "NSUserNotificationsUsageDescription": "This app sends notifications to remind you about focus sessions and breaks."
+        "NSUserNotificationsUsageDescription": "This app sends notifications to remind you about focus sessions and breaks.",
+        "UILaunchStoryboardName": "SplashScreen"
       },
       "bundleIdentifier": "com.focus25.app"
     },
     "android": {
       "icon": "./assets/icon_android.png",
+      "splash": {
+        "image": "./assets/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#16292b"
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#16292b"
@@ -59,7 +65,6 @@
     "plugins": [
       "expo-audio",
       "expo-notifications",
-      "expo-background-fetch",
       "expo-task-manager",
       [
         "expo-build-properties",
@@ -70,7 +75,8 @@
             "buildToolsVersion": "35.0.0"
           }
         }
-      ]
+      ],
+      "expo-background-task"
     ],
     "experiments": {
       "typedRoutes": true
