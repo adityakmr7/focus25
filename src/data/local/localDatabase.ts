@@ -22,6 +22,8 @@ import {
     ThemeMode,
     ThemeRow,
     TimerStyle,
+    Todo,
+    TodoRow,
 } from '../../types/database';
 
 // Database interface
@@ -57,6 +59,13 @@ export interface LocalDataBase {
     getSessionById(id: string): Promise<Session | null>;
     updateSession(id: string, updates: Partial<Session>): Promise<void>;
     deleteSession(id: string): Promise<void>;
+
+    // Todo operations
+    initializeTodos(): Promise<void>;
+    saveTodo(todo: Todo): Promise<void>;
+    getTodos(): Promise<Todo[]>;
+    updateTodo(id: string, updates: Partial<Todo>): Promise<void>;
+    deleteTodo(id: string): Promise<void>;
 
     // Export operations
     exportAllData(): Promise<string>;
@@ -210,6 +219,21 @@ class SQLiteService implements LocalDataBase {
         created_at TEXT NOT NULL
       );
 
+      -- Todos table
+      CREATE TABLE IF NOT EXISTS todos (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        is_completed BOOLEAN DEFAULT 0,
+        priority TEXT DEFAULT 'medium',
+        category TEXT DEFAULT 'personal',
+        due_date TEXT,
+        created_at TEXT NOT NULL,
+        completed_at TEXT,
+        tags TEXT,
+        notes TEXT
+      );
+
       -- Create indexes for better performance
       CREATE INDEX IF NOT EXISTS idx_statistics_date ON statistics(date);
       CREATE INDEX IF NOT EXISTS idx_sessions_start_time ON sessions(start_time);
@@ -217,6 +241,11 @@ class SQLiteService implements LocalDataBase {
       CREATE INDEX IF NOT EXISTS idx_goals_category ON goals(category);
       CREATE INDEX IF NOT EXISTS idx_goals_type ON goals(type);
       CREATE INDEX IF NOT EXISTS idx_goals_completed ON goals(is_completed);
+      CREATE INDEX IF NOT EXISTS idx_todos_completed ON todos(is_completed);
+      CREATE INDEX IF NOT EXISTS idx_todos_priority ON todos(priority);
+      CREATE INDEX IF NOT EXISTS idx_todos_category ON todos(category);
+      CREATE INDEX IF NOT EXISTS idx_todos_created_at ON todos(created_at);
+      CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos(due_date);
     `;
 
         await this.db.execAsync(createTablesSQL);
@@ -253,6 +282,23 @@ class SQLiteService implements LocalDataBase {
             distractions: row.distractions,
             notes: row.notes || undefined,
             createdAt: row.created_at,
+        };
+    }
+
+    // Helper method to map TodoRow to Todo
+    private mapTodoRowToTodo(row: TodoRow): Todo {
+        return {
+            id: row.id,
+            title: row.title,
+            description: row.description || undefined,
+            isCompleted: Boolean(row.is_completed),
+            priority: row.priority as any,
+            category: row.category as any,
+            dueDate: row.due_date || undefined,
+            createdAt: row.created_at,
+            completedAt: row.completed_at || undefined,
+            tags: row.tags ? row.tags.split(',').filter(Boolean) : undefined,
+            notes: row.notes || undefined,
         };
     }
 
@@ -692,6 +738,78 @@ class SQLiteService implements LocalDataBase {
         await this.db.runAsync('DELETE FROM sessions WHERE id = ?', [id]);
     }
 
+    // Todo operations
+    async initializeTodos(): Promise<void> {
+        await this.ensureInitialized();
+    }
+
+    async saveTodo(todo: Todo): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const sql = `
+            INSERT OR REPLACE INTO todos 
+            (id, title, description, is_completed, priority, category, due_date, created_at, completed_at, tags, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        await this.db.runAsync(sql, [
+            todo.id,
+            todo.title,
+            todo.description || null,
+            todo.isCompleted ? 1 : 0,
+            todo.priority,
+            todo.category,
+            todo.dueDate || null,
+            todo.createdAt,
+            todo.completedAt || null,
+            todo.tags ? todo.tags.join(',') : null,
+            todo.notes || null,
+        ]);
+    }
+
+    async getTodos(): Promise<Todo[]> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const result = (await this.db.getAllAsync(
+            'SELECT * FROM todos ORDER BY created_at DESC',
+        )) as TodoRow[];
+        return result.map((row) => this.mapTodoRowToTodo(row));
+    }
+
+    async updateTodo(id: string, updates: Partial<Todo>): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const setClause = Object.keys(updates)
+            .map((key) => {
+                const dbKey =
+                    key === 'isCompleted'
+                        ? 'is_completed'
+                        : key === 'createdAt'
+                          ? 'created_at'
+                          : key === 'completedAt'
+                            ? 'completed_at'
+                            : key === 'dueDate'
+                              ? 'due_date'
+                              : key;
+                return `${dbKey} = ?`;
+            })
+            .join(', ');
+
+        const values = Object.entries(updates).map(([key, value]) => {
+            if (typeof value === 'boolean') return value ? 1 : 0;
+            if (key === 'tags' && Array.isArray(value)) return value.join(',');
+            return value;
+        });
+
+        const sql = `UPDATE todos SET ${setClause} WHERE id = ?`;
+        await this.db.runAsync(sql, [...values, id]);
+    }
+
+    async deleteTodo(id: string): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        await this.db.runAsync('DELETE FROM todos WHERE id = ?', [id]);
+    }
+
     // Export operations
     async exportAllData(): Promise<string> {
         if (!this.db) throw new Error('Database not initialized');
@@ -973,6 +1091,49 @@ class WebStorageService implements LocalDataBase {
         const data = this.getData();
         if (data.sessions) {
             data.sessions = data.sessions.filter((s: Session) => s.id !== id);
+            this.saveData(data);
+        }
+    }
+
+    // Todo operations
+    async initializeTodos(): Promise<void> {
+        // No initialization needed for web storage
+    }
+
+    async saveTodo(todo: Todo): Promise<void> {
+        const data = this.getData();
+        if (!data.todos) data.todos = [];
+        
+        const existingIndex = data.todos.findIndex((t: Todo) => t.id === todo.id);
+        if (existingIndex >= 0) {
+            data.todos[existingIndex] = todo;
+        } else {
+            data.todos.push(todo);
+        }
+        
+        this.saveData(data);
+    }
+
+    async getTodos(): Promise<Todo[]> {
+        const data = this.getData();
+        return data.todos || [];
+    }
+
+    async updateTodo(id: string, updates: Partial<Todo>): Promise<void> {
+        const data = this.getData();
+        if (!data.todos) data.todos = [];
+        
+        const todoIndex = data.todos.findIndex((t: Todo) => t.id === id);
+        if (todoIndex >= 0) {
+            data.todos[todoIndex] = { ...data.todos[todoIndex], ...updates };
+            this.saveData(data);
+        }
+    }
+
+    async deleteTodo(id: string): Promise<void> {
+        const data = this.getData();
+        if (data.todos) {
+            data.todos = data.todos.filter((t: Todo) => t.id !== id);
             this.saveData(data);
         }
     }

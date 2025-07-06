@@ -167,6 +167,59 @@ class HybridDatabaseService {
         return await localDatabaseService.getTheme();
     }
 
+    // Todo operations
+    async initializeTodos(): Promise<void> {
+        const service = this.getService();
+        await service.initializeTodos();
+    }
+
+    async saveTodo(todo: any): Promise<void> {
+        const service = this.getService();
+        await service.saveTodo(todo);
+
+        // // If using local storage but authenticated, also sync to Supabase
+        // if (!this.useSupabase() && this.isAuthenticated) {
+        //     try {
+        //         await supabaseDatabaseService.saveTodo(todo);
+        //     } catch (error) {
+        //         console.warn('Failed to sync todo to Supabase:', error);
+        //     }
+        // }
+    }
+
+    async getTodos(): Promise<any[]> {
+        const service = this.getService();
+        return await service.getTodos();
+    }
+
+    async updateTodo(id: string, updates: any): Promise<void> {
+        const service = this.getService();
+        await service.updateTodo(id, updates);
+
+        // // If using local storage but authenticated, also sync to Supabase
+        // if (!this.useSupabase() && this.isAuthenticated) {
+        //     try {
+        //         await supabaseDatabaseService.updateTodo(id, updates);
+        //     } catch (error) {
+        //         console.warn('Failed to sync todo update to Supabase:', error);
+        //     }
+        // }
+    }
+
+    async deleteTodo(id: string): Promise<void> {
+        const service = this.getService();
+        await service.deleteTodo(id);
+
+        // // If using local storage but authenticated, also sync to Supabase
+        // if (!this.useSupabase() && this.isAuthenticated) {
+        //     try {
+        //         await supabaseDatabaseService.deleteTodo(id);
+        //     } catch (error) {
+        //         console.warn('Failed to sync todo deletion to Supabase:', error);
+        //     }
+        // }
+    }
+
     // Export operations
     async exportAllData(): Promise<string> {
         const service = this.getService();

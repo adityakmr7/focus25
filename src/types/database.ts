@@ -241,3 +241,49 @@ export interface SessionRow {
     notes?: string;
     created_at: string;
 }
+
+export interface Todo {
+    id: string;
+    title: string;
+    description?: string;
+    isCompleted: boolean;
+    priority: TodoPriority;
+    category: TodoCategory;
+    dueDate?: string;
+    createdAt: string;
+    completedAt?: string;
+    tags?: string[];
+    notes?: string;
+}
+
+export enum TodoPriority {
+    LOW = 'low',
+    MEDIUM = 'medium',
+    HIGH = 'high',
+    URGENT = 'urgent',
+}
+
+export enum TodoCategory {
+    PERSONAL = 'personal',
+    WORK = 'work',
+    HEALTH = 'health',
+    LEARNING = 'learning',
+    SHOPPING = 'shopping',
+    PROJECTS = 'projects',
+    HABITS = 'habits',
+    OTHER = 'other',
+}
+
+export interface TodoRow {
+    id: string;
+    title: string;
+    description?: string;
+    is_completed: number;
+    priority: string;
+    category: string;
+    due_date?: string;
+    created_at: string;
+    completed_at?: string;
+    tags?: string;
+    notes?: string;
+}

@@ -7,11 +7,13 @@ import SettingsScreen from '../screens/SettingsScreen';
 import FlowAnalyticsScreen from '../screens/FlowAnalyticsScreen';
 import ThemeCustomizationScreen from '../screens/ThemeCustomizationScreen';
 import { useTheme } from '../providers/ThemeProvider';
+import TodoScreen from '../screens/TodoScreen';
 
 type AppTabParamList = {
     Statistics: undefined;
     FlowTimer: undefined;
     Settings: undefined;
+    Todo: undefined;
 };
 
 type AppStackParamList = {
@@ -39,6 +41,8 @@ const AppTabNavigation = () => {
                         iconName = 'timer-outline';
                     } else if (route.name === 'Settings') {
                         iconName = 'person-outline';
+                    } else if (route.name === 'Todo') {
+                        iconName = 'create';
                     }
 
                     return <Ionicons name={iconName} size={size} color={color} />;
@@ -60,6 +64,7 @@ const AppTabNavigation = () => {
             initialRouteName="FlowTimer"
         >
             <Tab.Screen name="Statistics" component={StatisticsScreen} />
+            <Tab.Screen name="Todo" component={TodoScreen} />
             <Tab.Screen name="FlowTimer" component={FlowTimerScreen} />
             <Tab.Screen name="Settings" component={SettingsScreen} />
         </Tab.Navigator>
