@@ -27,7 +27,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useThemeStore } from '../store/themeStore';
 import { useColorScheme } from 'react-native';
-import { useAuthContext } from '../components/AuthProvider';
 import { hybridDatabaseService } from '../data/hybridDatabase';
 import { backgroundTimerService } from '../services/backgroundTimer';
 import { notificationService } from '../services/notificationService';
@@ -81,7 +80,6 @@ const defaultSettings: MusicSettings = {
 // Main Component
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     // Hooks and State
-    const { user, isAuthenticated } = useAuthContext();
     const { mode, getCurrentTheme } = useThemeStore();
     const { theme, isDark } = useTheme();
     // Audio and Music State
@@ -422,23 +420,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         );
     }, [containerAnimation]);
 
-    // Sync handler
-    const syncData = useCallback(async () => {
-        if (!isAuthenticated) return;
-
-        setTimerState((prev) => ({ ...prev, syncStatus: 'syncing' }));
-        try {
-            await hybridDatabaseService.syncToSupabase();
-            setTimerState((prev) => ({ ...prev, syncStatus: 'idle' }));
-        } catch (error) {
-            console.error('Sync failed:', error);
-            setTimerState((prev) => ({ ...prev, syncStatus: 'error' }));
-            setTimeout(() => {
-                setTimerState((prev) => ({ ...prev, syncStatus: 'idle' }));
-            }, 3000);
-        }
-    }, [isAuthenticated]);
-
     // Initialization
     useEffect(() => {
         const initializeApp = async () => {
@@ -472,15 +453,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
         initializeApp();
     }, [initializeSettings, initializePomodoro, loadSettings, containerAnimation]);
-
-    // Auth state updates
-    useEffect(() => {
-        try {
-            hybridDatabaseService.setAuthState(isAuthenticated, user?.id);
-        } catch (error) {
-            console.error('Failed to update auth state:', error);
-        }
-    }, [isAuthenticated, user?.id]);
 
     // Quick actions animation
     useEffect(() => {
@@ -679,9 +651,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             if (nextAppState === 'background') {
                 // App going to background
                 saveTimerState();
-                if (isAuthenticated) {
-                    syncData();
-                }
             } else if (nextAppState === 'active') {
                 // App coming to foreground
                 // Sync with background timer if supported
@@ -693,7 +662,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
         const subscription = AppState.addEventListener('change', handleAppStateChange);
         return () => subscription?.remove();
-    }, [saveTimerState, isAuthenticated, syncData, isConnectedToBackground]);
+    }, [saveTimerState, isConnectedToBackground]);
 
     // Volume animation
     useEffect(() => {
@@ -787,7 +756,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         showBreathingAnimation={showBreathingAnimation}
                         pulseAnimation={pulseAnimation}
                         onToggleTimer={handleToggleTimer}
-                        isAuthenticated={isAuthenticated}
+                        isAuthenticated={false} // Placeholder, replace with actual auth state
                         isPlaying={isPlaying}
                         handlePlayPause={handlePlayPause}
                         handleVolumeChange={handleVolumeChange}

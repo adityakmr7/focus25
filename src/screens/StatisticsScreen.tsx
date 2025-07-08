@@ -12,6 +12,7 @@ import {
     View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import StatisticsChart from '../components/StatisticsChart';
 import { useStatisticsStore } from '../store/statisticsStore';
 import { usePomodoroStore } from '../store/pomodoroStore';
@@ -20,7 +21,6 @@ import { FlowMetrics } from '../components/FlowMetrics';
 import { GoalsModal } from '../components/GoalsModal';
 import { useThemeStore } from '../store/themeStore';
 import { useColorScheme } from 'react-native';
-import { useAuthContext } from '../components/AuthProvider';
 import { hybridDatabaseService } from '../data/hybridDatabase';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -224,7 +224,6 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     const systemColorScheme = useColorScheme();
     const theme = getCurrentTheme();
     const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
-    const { user, isAuthenticated } = useAuthContext();
     const {
         selectedPeriod,
         currentDate,
@@ -253,9 +252,9 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     const headerAnimatedValue = useRef(new Animated.Value(0)).current;
 
     // Update hybrid database service with auth state
-    useEffect(() => {
-        hybridDatabaseService.setAuthState(isAuthenticated, user?.id);
-    }, [isAuthenticated, user?.id]);
+    // useEffect(() => {
+    //     hybridDatabaseService.setAuthState(isAuthenticated, user?.id);
+    // }, [isAuthenticated, user?.id]);
 
     useEffect(() => {
         Animated.timing(headerAnimatedValue, {
@@ -317,8 +316,6 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     };
 
     const handleSyncData = async () => {
-        if (!isAuthenticated) return;
-
         try {
             await hybridDatabaseService.syncToSupabase();
             setLastUpdateTime(new Date());
@@ -473,20 +470,11 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
                         <Text style={[styles.lastUpdate, { color: theme.textSecondary }]}>
                             Updated {formatLastUpdate(lastUpdateTime)}
                         </Text>
-                        {isAuthenticated && (
-                            <TouchableOpacity onPress={handleSyncData} style={styles.syncStatus}>
-                                <Icon name="cloud-done" size={16} color="#10B981" />
-                                <Text style={[styles.syncText, { color: '#10B981' }]}>Synced</Text>
-                            </TouchableOpacity>
-                        )}
-                        {!isAuthenticated && (
-                            <View style={styles.syncStatus}>
-                                <Icon name="cloud-offline" size={16} color="#F59E0B" />
-                                <Text style={[styles.syncText, { color: '#F59E0B' }]}>
-                                    Local Only
-                                </Text>
-                            </View>
-                        )}
+
+                        <View style={styles.syncStatus}>
+                            <Ionicons name="cloud-offline" size={16} color="#F59E0B" />
+                            <Text style={[styles.syncText, { color: '#F59E0B' }]}>Local Only</Text>
+                        </View>
                         <View style={styles.todayStats}>
                             <Text style={[styles.todayValue, { color: theme.text }]}>
                                 {flows.completed}

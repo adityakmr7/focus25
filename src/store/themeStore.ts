@@ -13,6 +13,11 @@ interface CustomTheme {
     text: string;
     textSecondary: string;
     accent: string;
+    success: string;
+    warning: string;
+    error: string;
+    info?: string; // Optional field for additional color
+    border?: string; // Optional field for border color
 }
 
 interface ThemeState {
@@ -55,6 +60,11 @@ const defaultLightTheme: CustomTheme = {
     text: '#1A202C',
     textSecondary: '#4A5568',
     accent: '#48BB78',
+    success: '#38A169',
+    warning: '#DD6B20',
+    error: '#E53E3E',
+    info: '#3182CE',
+    border: '#CBD5E0',
 };
 
 const defaultDarkTheme: CustomTheme = {
@@ -65,6 +75,11 @@ const defaultDarkTheme: CustomTheme = {
     text: '#E0E0E0',
     textSecondary: '#A0A0A0',
     accent: '#48BB78',
+    success: '#48BB78',
+    warning: '#F0A25B',
+    error: '#FC8181',
+    info: '#63B3ED',
+    border: '#2D3748',
 };
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
