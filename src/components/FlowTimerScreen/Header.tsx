@@ -23,7 +23,7 @@ const Header: React.FC<HeaderProps> = React.memo(
     }) => {
         return (
             <View style={styles.header}>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                     onPress={onShowAchievements}
                     style={[styles.headerButton, { backgroundColor: theme.surface }]}
                     disabled={isLoading}
@@ -37,7 +37,7 @@ const Header: React.FC<HeaderProps> = React.memo(
                             <Text style={styles.badgeText}>{flowMetrics.currentStreak}</Text>
                         </View>
                     )}
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
                 <TouchableOpacity
                     onPress={onToggleQuickActions}
