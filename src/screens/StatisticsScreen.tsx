@@ -18,7 +18,8 @@ import { usePomodoroStore } from '../store/pomodoroStore';
 import { useGoalsStore } from '../store/goalsStore';
 import { FlowMetrics } from '../components/FlowMetrics';
 import { GoalsModal } from '../components/GoalsModal';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 import { useAuthContext } from '../components/AuthProvider';
 import { hybridDatabaseService } from '../data/hybridDatabase';
 
@@ -63,7 +64,10 @@ const StatCard: React.FC<StatCardProps> = ({
     delay = 0,
     onPress,
 }) => {
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
     const animatedValue = useRef(new Animated.Value(0)).current;
     const scaleValue = useRef(new Animated.Value(0.8)).current;
 
@@ -157,7 +161,10 @@ const ActionButton: React.FC<{
     gradient: string[];
     delay?: number;
 }> = ({ icon, label, onPress, gradient, delay = 0 }) => {
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
     const animatedValue = useRef(new Animated.Value(0)).current;
     const scaleValue = useRef(new Animated.Value(0.9)).current;
 
@@ -213,7 +220,10 @@ const ActionButton: React.FC<{
 };
 
 const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
     const { user, isAuthenticated } = useAuthContext();
     const {
         selectedPeriod,

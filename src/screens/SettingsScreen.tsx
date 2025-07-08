@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, SafeAreaView, Share, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, SafeAreaView, Share, StyleSheet, Text, View, useColorScheme } from 'react-native';
 import Animated, {
     interpolate,
     useAnimatedStyle,
@@ -11,7 +11,6 @@ import { SettingItem } from '../components/SettingItem';
 import { SectionHeader } from '../components/SectionHeader';
 import { TimeDurationSelector } from '../components/TimeDurationSelector';
 import { useSettingsStore } from '../store/settingsStore';
-import { useTheme } from '../providers/ThemeProvider';
 import { useThemeStore } from '../store/themeStore';
 import { useGoalsStore } from '../store/goalsStore';
 import { useStatisticsStore } from '../store/statisticsStore';
@@ -39,8 +38,10 @@ interface StorageInfo {
 }
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
-    const { theme, isDark } = useTheme();
-    const { setMode } = useThemeStore();
+    const { mode, getCurrentTheme, setMode } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
     const {
         timeDuration,
         soundEffects,
@@ -57,7 +58,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         openSupport,
         openPrivacy,
         openTerms,
-        openStorage,
         openFeedback,
         breakDuration,
         setBreakDuration,

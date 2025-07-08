@@ -25,7 +25,8 @@ import Animated, {
     withSequence,
     withTiming,
 } from 'react-native-reanimated';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 import { useAuthContext } from '../components/AuthProvider';
 import { hybridDatabaseService } from '../data/hybridDatabase';
 import { backgroundTimerService } from '../services/backgroundTimer';
@@ -81,7 +82,10 @@ const defaultSettings: MusicSettings = {
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     // Hooks and State
     const { user, isAuthenticated } = useAuthContext();
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
 
     // Audio and Music State
     const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
@@ -729,7 +733,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar
-                barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'}
+                barStyle={isDark ? 'light-content' : 'dark-content'}
                 backgroundColor="transparent"
                 translucent
             />

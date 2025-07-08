@@ -14,7 +14,8 @@ import { FlowMetrics } from '../components/FlowMetrics';
 import { AdvancedAnalytics } from '../components/AdvancedAnalytics';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -26,7 +27,10 @@ interface FlowAnalyticsScreenProps {
 
 const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation }) => {
     const { flowMetrics } = usePomodoroStore();
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
     const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter' | 'year'>('week');
     const scrollY = useRef(new Animated.Value(0)).current;
     const headerAnimation = useRef(new Animated.Value(0)).current;
