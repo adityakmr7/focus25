@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 
 interface SectionHeaderProps {
     title: string;
@@ -11,7 +12,10 @@ interface SectionHeaderProps {
  * @param title - The section title text
  */
 export const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => {
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
 
     return <Text style={[styles.sectionHeader, { color: theme.textSecondary }]}>{title}</Text>;
 };

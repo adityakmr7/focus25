@@ -25,7 +25,8 @@ import Animated, {
     withSequence,
     withTiming,
 } from 'react-native-reanimated';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 import { useAuthContext } from '../components/AuthProvider';
 import { hybridDatabaseService } from '../data/hybridDatabase';
 import { backgroundTimerService } from '../services/backgroundTimer';
@@ -38,7 +39,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/FlowTimerScreen/Header';
 import QuickActionsPanel from '../components/FlowTimerScreen/QuickActionPanel';
 import TimerContainer from '../components/FlowTimerScreen/TimerContainer';
-
+import { useTheme } from '../hooks/useTheme';
 const MUSIC_SETTINGS_KEY = 'music_settings';
 const TIMER_STATE_KEY = 'timer_state';
 const { width: screenWidth } = Dimensions.get('window');
@@ -81,8 +82,8 @@ const defaultSettings: MusicSettings = {
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     // Hooks and State
     const { user, isAuthenticated } = useAuthContext();
-    const { theme } = useTheme();
-
+    const { mode, getCurrentTheme } = useThemeStore();
+    const { theme, isDark } = useTheme();
     // Audio and Music State
     const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -110,8 +111,16 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         return musicTracks.find((t) => t.id === selectedTrack)?.source || null;
     }, [selectedTrack]);
 
-    const { player, isReady, status, uri, isDownloading, downloadError, downloadProgress, usingFallback } =
-        useCachedAudio(currentTrackUrl);
+    const {
+        player,
+        isReady,
+        status,
+        uri,
+        isDownloading,
+        downloadError,
+        downloadProgress,
+        usingFallback,
+    } = useCachedAudio(currentTrackUrl);
 
     const alertPlayer = useAudioPlayer(audioSource);
 
@@ -230,7 +239,10 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             }
         } catch (error) {
             console.error('Failed to toggle playback:', error);
-            Alert.alert('Playback Error', 'Failed to control playback. The track may still be loading.');
+            Alert.alert(
+                'Playback Error',
+                'Failed to control playback. The track may still be loading.',
+            );
         }
     }, [player, isReady, uri, isDownloading, downloadProgress, usingFallback, isPlaying]);
 
@@ -436,7 +448,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
                 // Initialize stores
                 await Promise.all([initializeSettings(), initializePomodoro(), loadSettings()]);
-                
+
                 // Sync timer with loaded settings
                 updateTimerFromSettings();
                 console.log('🔄 Timer synchronized with settings');
@@ -729,7 +741,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar
-                barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'}
+                barStyle={isDark ? 'light-content' : 'dark-content'}
                 backgroundColor="transparent"
                 translucent
             />

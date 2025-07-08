@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     },
     breathingContainer: {
         position: 'absolute',
-        top: '30%',
+        top: '38%',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: -1,

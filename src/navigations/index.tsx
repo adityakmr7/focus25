@@ -6,13 +6,17 @@ import FlowTimerScreen from '../screens/FlowTimerScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import FlowAnalyticsScreen from '../screens/FlowAnalyticsScreen';
 import ThemeCustomizationScreen from '../screens/ThemeCustomizationScreen';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 const AppTabNavigation = () => {
-    const { theme, isDark } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
 
     return (
         <Tab.Navigator
@@ -55,7 +59,10 @@ const AppTabNavigation = () => {
 };
 
 const AppStackNavigation = () => {
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
 
     return (
         <Stack.Navigator

@@ -54,7 +54,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
     );
 
     const renderAnalogTimer = () => {
-        const size = 280;
+        const size = width * 0.7; // 80% of screen width
         const strokeWidth = 8;
         const radius = (size - strokeWidth) / 2;
         const circumference = 2 * Math.PI * radius;
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     analogContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        marginVertical: 40,
+        // marginVertical: 10,
     },
     analogSvg: {
         transform: [{ rotate: '0deg' }],
