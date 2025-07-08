@@ -26,9 +26,7 @@
       },
       "infoPlist": {
         "UIBackgroundModes": [
-          "audio",
-          "background-fetch",
-          "background-processing"
+          "audio"
         ],
         "NSMicrophoneUsageDescription": "This app uses the microphone for focus session audio feedback.",
         "NSUserNotificationsUsageDescription": "This app sends notifications to remind you about focus sessions and breaks.",
@@ -76,7 +74,9 @@
           }
         }
       ],
-      "expo-background-task"
+      "expo-background-task",
+      "expo-font",
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true
