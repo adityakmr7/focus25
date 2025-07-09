@@ -13,7 +13,8 @@ import {
     Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 import { useGoalsStore, Goal, GoalType, GoalCategory } from '../store/goalsStore';
 
 const { height } = Dimensions.get('window');
@@ -37,7 +38,10 @@ const goalTypes: { key: GoalType; label: string }[] = [
 ];
 
 export const GoalsModal: React.FC<GoalsModalProps> = ({ visible, onClose }) => {
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
     const { goals, createGoal, deleteGoal, getActiveGoals, getCompletedGoals, exportGoalsToCSV } =
         useGoalsStore();
 

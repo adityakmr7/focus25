@@ -16,7 +16,8 @@ import Animated, {
     withTiming,
     interpolate,
 } from 'react-native-reanimated';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { useStatisticsStore } from '../store/statisticsStore';
 import { useGoalsStore } from '../store/goalsStore';
@@ -43,7 +44,10 @@ export const AdvancedAnalytics: React.FC<AdvancedAnalyticsProps> = ({
     timeRange,
     onTimeRangeChange,
 }) => {
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
     const { flowMetrics } = usePomodoroStore();
     const { flows, breaks, interruptions } = useStatisticsStore();
     const { goals } = useGoalsStore();

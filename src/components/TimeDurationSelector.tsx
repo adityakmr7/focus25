@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, FlatList } from 'react-native';
 import { TimeDuration } from '../store/settingsStore';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 
 interface TimeDurationSelectorProps {
     value: TimeDuration;
@@ -12,7 +13,10 @@ const DURATION_OPTIONS: TimeDuration[] = [1, 5, 10, 15, 20, 25];
 
 export const TimeDurationSelector: React.FC<TimeDurationSelectorProps> = ({ value, onChange }) => {
     const [modalVisible, setModalVisible] = useState(false);
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
 
     const handleSelect = (duration: TimeDuration) => {
         onChange(duration);
