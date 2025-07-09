@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Alert,
     FlatList,
@@ -22,8 +22,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTodoStore } from '../store/todoStore';
 import { useTheme } from '../providers/ThemeProvider';
-import { Todo } from '../types/database';
-import TodoForm from '../components/TodoScreenComponents/TodoForm';
+import { Todo, TodoPriority, TodoCategory } from '../types/database';
+import TodoFormBottomSheet, {
+    TodoFormBottomSheetMethods,
+} from '../components/TodoScreenComponents/TodoFormBottomSheet';
 import TodoItem from '../components/TodoScreenComponents/TodoItem';
 
 const TodoScreen: React.FC = () => {
@@ -46,8 +48,7 @@ const TodoScreen: React.FC = () => {
         syncWithDatabase,
     } = useTodoStore();
 
-    const [showForm, setShowForm] = useState(false);
-    const [editingTodo, setEditingTodo] = useState<Todo | undefined>();
+    const todoFormRef = useRef<TodoFormBottomSheetMethods>(null);
     const [refreshing, setRefreshing] = useState(false);
     const headerAnimatedValue = useSharedValue(0);
     const statsAnimatedValue = useSharedValue(0);
@@ -74,22 +75,43 @@ const TodoScreen: React.FC = () => {
         }
     }, [syncWithDatabase]);
 
-    const handleCreateTodo = useCallback(
-        async (todoData: Omit<Todo, 'id' | 'createdAt' | 'isCompleted'>) => {
-            await createTodo(todoData);
-        },
-        [createTodo],
-    );
-
-    const handleUpdateTodo = useCallback(
-        async (todoData: Omit<Todo, 'id' | 'createdAt' | 'isCompleted'>) => {
-            if (editingTodo) {
-                await updateTodo(editingTodo.id, todoData);
-                setEditingTodo(undefined);
+    const handleSaveTodo = useCallback(
+        async (todoData: Partial<Todo>) => {
+            if (todoData.id) {
+                // Update existing todo
+                await updateTodo(todoData.id, todoData);
+            } else {
+                // Create new todo
+                // Ensure required fields are present and types are correct
+                if (!todoData.title) {
+                    Alert.alert('Validation Error', 'Title is required.');
+                    return;
+                }
+                const { title, description, dueDate, priority, category, tags } = todoData;
+                await createTodo({
+                    title,
+                    description: description ?? '',
+                    dueDate: dueDate ?? undefined,
+                    priority: priority ?? TodoPriority.MEDIUM,
+                    category: category ?? TodoCategory.OTHER,
+                    tags: tags ?? [],
+                });
             }
         },
-        [editingTodo, updateTodo],
+        [createTodo, updateTodo],
     );
+
+    const handleOpenCreateForm = useCallback(() => {
+        todoFormRef.current?.openForCreate();
+    }, []);
+
+    const handleOpenEditForm = useCallback((todo: Todo) => {
+        todoFormRef.current?.openForEdit(todo);
+    }, []);
+
+    const handleFormCancel = useCallback(() => {
+        // Bottom sheet will handle closing itself
+    }, []);
 
     const handleDeleteTodo = useCallback(
         (id: string) => {
@@ -172,7 +194,7 @@ const TodoScreen: React.FC = () => {
                 </View>
                 <TouchableOpacity
                     style={[styles.addButton, { backgroundColor: theme.accent }]}
-                    onPress={() => setShowForm(true)}
+                    onPress={handleOpenCreateForm}
                 >
                     <Ionicons name="add" size={24} color="white" />
                 </TouchableOpacity>
@@ -250,10 +272,7 @@ const TodoScreen: React.FC = () => {
                     <TodoItem
                         todo={item}
                         onToggle={toggleTodo}
-                        onEdit={(todo) => {
-                            setEditingTodo(todo);
-                            setShowForm(true);
-                        }}
+                        onEdit={handleOpenEditForm}
                         onDelete={handleDeleteTodo}
                         delay={index * 50}
                     />
@@ -283,15 +302,11 @@ const TodoScreen: React.FC = () => {
                 }
             />
 
-            {/* Todo Form Modal */}
-            <TodoForm
-                visible={showForm}
-                onClose={() => {
-                    setShowForm(false);
-                    setEditingTodo(undefined);
-                }}
-                todo={editingTodo}
-                onSubmit={editingTodo ? handleUpdateTodo : handleCreateTodo}
+            {/* Todo Form Bottom Sheet */}
+            <TodoFormBottomSheet
+                ref={todoFormRef}
+                onSave={handleSaveTodo}
+                onCancel={handleFormCancel}
             />
         </SafeAreaView>
     );
