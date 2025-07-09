@@ -26,8 +26,6 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import { useThemeStore } from '../store/themeStore';
-import { useColorScheme } from 'react-native';
-import { hybridDatabaseService } from '../data/hybridDatabase';
 import { backgroundTimerService } from '../services/backgroundTimer';
 import { notificationService } from '../services/notificationService';
 import { errorHandler } from '../services/errorHandler';
@@ -39,6 +37,7 @@ import Header from '../components/FlowTimerScreen/Header';
 import QuickActionsPanel from '../components/FlowTimerScreen/QuickActionPanel';
 import TimerContainer from '../components/FlowTimerScreen/TimerContainer';
 import { useTheme } from '../hooks/useTheme';
+
 const MUSIC_SETTINGS_KEY = 'music_settings';
 const TIMER_STATE_KEY = 'timer_state';
 const { width: screenWidth } = Dimensions.get('window');
@@ -481,6 +480,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             setAchievements(newAchievements);
             setShowAchievements(true);
 
+            console.log('calling new achievement notification');
             newAchievements.forEach((achievement) => {
                 notificationService.scheduleGoalAchievement(achievement);
             });
