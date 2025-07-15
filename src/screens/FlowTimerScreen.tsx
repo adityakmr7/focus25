@@ -15,7 +15,6 @@ import {
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useAudioPlayer } from 'expo-audio';
-import { GamificationOverlay } from '../components/GamificationOverlay';
 import { BottomSheetMusicPlayer } from '../components/BottomSheetMusicPlayer';
 import Animated, {
     interpolate,
@@ -784,15 +783,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     downloadError={downloadError}
                 />
             )}
-
-            {/* Gamification Overlay */}
-            <GamificationOverlay
-                flowMetrics={flowMetrics}
-                isVisible={showAchievements}
-                achievements={achievements}
-                animationValue={achievementAnimation}
-                onClose={handleCloseAchievements}
-            />
         </SafeAreaView>
     );
 };
