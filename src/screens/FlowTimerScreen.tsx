@@ -142,7 +142,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const pulseAnimation = useSharedValue(1);
     const progressAnimation = useSharedValue(0);
     const containerAnimation = useSharedValue(0);
-    const achievementAnimation = useSharedValue(0);
     const quickActionsAnimation = useSharedValue(0);
     const volumeAnimation = useSharedValue(settings.volume);
 
