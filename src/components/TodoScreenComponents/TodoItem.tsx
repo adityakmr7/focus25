@@ -1,6 +1,5 @@
 import { Todo, TodoCategory, TodoPriority } from '../../types/database';
 import React, { useEffect } from 'react';
-import { useTheme } from '../../providers/ThemeProvider';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -10,6 +9,7 @@ import Animated, {
     withDelay,
     withTiming,
 } from 'react-native-reanimated';
+import { useTheme } from '../../hooks/useTheme';
 
 interface TodoItemProps {
     todo: Todo;

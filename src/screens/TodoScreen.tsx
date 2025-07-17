@@ -21,12 +21,12 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import { useTodoStore } from '../store/todoStore';
-import { useTheme } from '../providers/ThemeProvider';
 import { Todo, TodoPriority, TodoCategory } from '../types/database';
 import TodoFormBottomSheet, {
     TodoFormBottomSheetMethods,
 } from '../components/TodoScreenComponents/TodoFormBottomSheet';
 import TodoItem from '../components/TodoScreenComponents/TodoItem';
+import { useTheme } from '../hooks/useTheme';
 
 const TodoScreen: React.FC = () => {
     const { theme } = useTheme();

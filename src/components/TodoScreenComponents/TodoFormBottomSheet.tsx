@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
+import React, {
+    useState,
+    useEffect,
+    useCallback,
+    useMemo,
+    forwardRef,
+    useImperativeHandle,
+} from 'react';
 import {
     View,
     Text,
@@ -12,8 +19,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types';
-import { useTheme } from '../../providers/ThemeProvider';
 import { Todo, TodoPriority, TodoCategory } from '../../types/database';
+import { useTheme } from '../../hooks/useTheme';
+
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -36,7 +44,7 @@ const TodoFormBottomSheet = forwardRef<TodoFormBottomSheetMethods, TodoFormBotto
     ({ onSave, onCancel }, ref) => {
         const { theme } = useTheme();
         const bottomSheetRef = React.useRef<BottomSheetMethods>(null);
-        
+
         const [editingTodo, setEditingTodo] = useState<Todo | undefined>();
         const [title, setTitle] = useState('');
         const [description, setDescription] = useState('');
@@ -109,7 +117,12 @@ const TodoFormBottomSheet = forwardRef<TodoFormBottomSheetMethods, TodoFormBotto
                 priority,
                 category,
                 dueDate: dueDate || undefined,
-                tags: tags ? tags.split(',').map(tag => tag.trim()).filter(Boolean) : undefined,
+                tags: tags
+                    ? tags
+                          .split(',')
+                          .map((tag) => tag.trim())
+                          .filter(Boolean)
+                    : undefined,
             };
 
             if (editingTodo) {
@@ -217,7 +230,9 @@ const TodoFormBottomSheet = forwardRef<TodoFormBottomSheetMethods, TodoFormBotto
                                 </View>
 
                                 <View style={styles.inputGroup}>
-                                    <Text style={[styles.label, { color: theme.text }]}>Description</Text>
+                                    <Text style={[styles.label, { color: theme.text }]}>
+                                        Description
+                                    </Text>
                                     <TextInput
                                         style={[
                                             styles.textArea,
@@ -238,7 +253,9 @@ const TodoFormBottomSheet = forwardRef<TodoFormBottomSheetMethods, TodoFormBotto
                                 </View>
 
                                 <View style={styles.inputGroup}>
-                                    <Text style={[styles.label, { color: theme.text }]}>Priority</Text>
+                                    <Text style={[styles.label, { color: theme.text }]}>
+                                        Priority
+                                    </Text>
                                     <View style={styles.priorityContainer}>
                                         {Object.values(TodoPriority).map((priorityLevel) => (
                                             <TouchableOpacity
@@ -248,7 +265,8 @@ const TodoFormBottomSheet = forwardRef<TodoFormBottomSheetMethods, TodoFormBotto
                                                     {
                                                         backgroundColor:
                                                             priority === priorityLevel
-                                                                ? getPriorityColor(priorityLevel) + '20'
+                                                                ? getPriorityColor(priorityLevel) +
+                                                                  '20'
                                                                 : theme.background,
                                                         borderColor:
                                                             priority === priorityLevel
@@ -264,7 +282,9 @@ const TodoFormBottomSheet = forwardRef<TodoFormBottomSheetMethods, TodoFormBotto
                                                         {
                                                             color:
                                                                 priority === priorityLevel
-                                                                    ? getPriorityColor(priorityLevel)
+                                                                    ? getPriorityColor(
+                                                                          priorityLevel,
+                                                                      )
                                                                     : theme.textSecondary,
                                                         },
                                                     ]}
@@ -277,7 +297,9 @@ const TodoFormBottomSheet = forwardRef<TodoFormBottomSheetMethods, TodoFormBotto
                                 </View>
 
                                 <View style={styles.inputGroup}>
-                                    <Text style={[styles.label, { color: theme.text }]}>Category</Text>
+                                    <Text style={[styles.label, { color: theme.text }]}>
+                                        Category
+                                    </Text>
                                     <View style={styles.categoryContainer}>
                                         {Object.values(TodoCategory).map((categoryType) => (
                                             <TouchableOpacity
@@ -326,7 +348,9 @@ const TodoFormBottomSheet = forwardRef<TodoFormBottomSheetMethods, TodoFormBotto
                                 </View>
 
                                 <View style={styles.inputGroup}>
-                                    <Text style={[styles.label, { color: theme.text }]}>Due Date</Text>
+                                    <Text style={[styles.label, { color: theme.text }]}>
+                                        Due Date
+                                    </Text>
                                     <TextInput
                                         style={[
                                             styles.input,
@@ -363,15 +387,26 @@ const TodoFormBottomSheet = forwardRef<TodoFormBottomSheetMethods, TodoFormBotto
 
                                 <View style={styles.buttonContainer}>
                                     <TouchableOpacity
-                                        style={[styles.cancelButton, { backgroundColor: theme.background }]}
+                                        style={[
+                                            styles.cancelButton,
+                                            { backgroundColor: theme.background },
+                                        ]}
                                         onPress={() => bottomSheetRef.current?.close()}
                                     >
-                                        <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>
+                                        <Text
+                                            style={[
+                                                styles.cancelButtonText,
+                                                { color: theme.textSecondary },
+                                            ]}
+                                        >
                                             Cancel
                                         </Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
-                                        style={[styles.saveButton, { backgroundColor: theme.accent }]}
+                                        style={[
+                                            styles.saveButton,
+                                            { backgroundColor: theme.accent },
+                                        ]}
                                         onPress={handleSave}
                                     >
                                         <Text style={styles.saveButtonText}>
