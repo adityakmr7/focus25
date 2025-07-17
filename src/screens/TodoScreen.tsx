@@ -106,7 +106,6 @@ const TodoScreen: React.FC = () => {
         [deleteTodo],
     );
 
-
     const headerAnimatedStyle = useAnimatedStyle(() => {
         return {
             opacity: interpolate(headerAnimatedValue.value, [0, 1], [0, 1]),
@@ -139,13 +138,7 @@ const TodoScreen: React.FC = () => {
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header */}
             <Animated.View style={[styles.header, headerAnimatedStyle]}>
-                <View />
-                <TouchableOpacity
-                    style={[styles.addButton, { backgroundColor: theme.accent }]}
-                    onPress={handleOpenCreateForm}
-                >
-                    <Ionicons name="add" size={24} color="white" />
-                </TouchableOpacity>
+                {/* Empty header space */}
             </Animated.View>
 
             {/* Todo List */}
@@ -186,6 +179,14 @@ const TodoScreen: React.FC = () => {
                 }
             />
 
+            {/* Floating Action Button */}
+            <TouchableOpacity
+                style={[styles.fab, { backgroundColor: theme.accent }]}
+                onPress={handleOpenCreateForm}
+            >
+                <Ionicons name="add" size={24} color="white" />
+            </TouchableOpacity>
+
             {/* Todo Form Bottom Sheet */}
             <TodoFormBottomSheet
                 ref={todoFormRef}
@@ -201,24 +202,24 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
         paddingHorizontal: 24,
         paddingTop: 20,
         paddingBottom: 16,
     },
-    addButton: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+    fab: {
+        position: 'absolute',
+        bottom: 30,
+        right: 24,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         justifyContent: 'center',
         alignItems: 'center',
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.25,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
                 shadowRadius: 8,
             },
             android: {
@@ -268,7 +269,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
-
 });
 
 export default TodoScreen;
