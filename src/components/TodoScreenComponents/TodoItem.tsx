@@ -4,11 +4,14 @@ import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
     interpolate,
+    runOnJS,
     useAnimatedStyle,
     useSharedValue,
     withDelay,
+    withSpring,
     withTiming,
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useTheme } from '../../hooks/useTheme';
 
 interface TodoItemProps {
@@ -23,11 +26,42 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onEdit, onDelete, d
     const { theme } = useTheme();
     const animatedValue = useSharedValue(0);
     const scaleValue = useSharedValue(0.9);
+    const translateX = useSharedValue(0);
+    const deleteOpacity = useSharedValue(0);
+    const SWIPE_THRESHOLD = -80;
 
     useEffect(() => {
         animatedValue.value = withDelay(delay, withTiming(1, { duration: 600 }));
         scaleValue.value = withDelay(delay, withTiming(1, { duration: 600 }));
     }, [delay]);
+
+    const panGesture = Gesture.Pan()
+        .onStart(() => {
+            translateX.value = 0;
+            deleteOpacity.value = 0;
+        })
+        .onUpdate((event) => {
+            const clampedTranslateX = Math.min(0, event.translationX);
+            translateX.value = clampedTranslateX;
+
+            // Show delete background as user swipes
+            const progress = Math.abs(clampedTranslateX) / Math.abs(SWIPE_THRESHOLD);
+            deleteOpacity.value = Math.min(1, progress);
+        })
+        .onEnd((event) => {
+            const shouldDelete = event.translationX <= SWIPE_THRESHOLD;
+
+            if (shouldDelete) {
+                // Animate out and delete
+                translateX.value = withTiming(-400, { duration: 300 });
+                deleteOpacity.value = withTiming(1, { duration: 300 });
+                runOnJS(onDelete)(todo.id);
+            } else {
+                // Snap back to original position
+                translateX.value = withSpring(0, { damping: 15, stiffness: 300 });
+                deleteOpacity.value = withTiming(0, { duration: 200 });
+            }
+        });
 
     const animatedStyle = useAnimatedStyle(() => {
         return {
@@ -35,66 +69,88 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onEdit, onDelete, d
             transform: [
                 { translateY: interpolate(animatedValue.value, [0, 1], [30, 0]) },
                 { scale: scaleValue.value },
+                { translateX: translateX.value },
             ],
         };
     });
 
+    const deleteBackgroundStyle = useAnimatedStyle(() => {
+        return {
+            opacity: deleteOpacity.value,
+        };
+    });
+
     return (
-        <Animated.View style={[styles.todoItem, { backgroundColor: theme.surface }, animatedStyle]}>
-            <TouchableOpacity
-                onPress={() => onToggle(todo.id)}
-                style={[
-                    styles.todoCheckbox,
-                    {
-                        backgroundColor: todo.isCompleted ? theme.accent : 'transparent',
-                        borderColor: todo.isCompleted ? theme.accent : theme.textSecondary,
-                    },
-                ]}
-            >
-                {todo.isCompleted && <Ionicons name="checkmark" size={16} color="white" />}
-            </TouchableOpacity>
-
-            <View style={styles.todoContent}>
-                <View style={styles.todoHeader}>
-                    <Text
-                        style={[
-                            styles.todoTitle,
-                            {
-                                color: todo.isCompleted ? theme.textSecondary : theme.text,
-                                textDecorationLine: todo.isCompleted ? 'line-through' : 'none',
-                            },
-                        ]}
-                    >
-                        {todo.title}
-                    </Text>
+        <View style={styles.todoContainer}>
+            <Animated.View style={[styles.deleteBackground, deleteBackgroundStyle]}>
+                <View style={styles.deleteContent}>
+                    <Ionicons name="trash" size={24} color="white" />
+                    <Text style={styles.deleteText}>Delete</Text>
                 </View>
-            </View>
-
-            <View style={styles.todoActions}>
-                <TouchableOpacity
-                    onPress={() => onEdit(todo)}
-                    style={[styles.actionButton, { backgroundColor: theme.accent + '20' }]}
+            </Animated.View>
+            <GestureDetector gesture={panGesture}>
+                <Animated.View
+                    style={[styles.todoItem, { backgroundColor: theme.surface }, animatedStyle]}
                 >
-                    <Ionicons name="create-outline" size={16} color={theme.accent} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    onPress={() => onDelete(todo.id)}
-                    style={[styles.actionButton, { backgroundColor: '#EF444420' }]}
-                >
-                    <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                </TouchableOpacity>
-            </View>
-        </Animated.View>
+                    <TouchableOpacity style={{ flex: 1 }} onPress={() => onToggle(todo.id)}>
+                        <View style={styles.todoContent}>
+                            <View style={styles.todoHeader}>
+                                <Text
+                                    style={[
+                                        styles.todoTitle,
+                                        {
+                                            color: todo.isCompleted
+                                                ? theme.textSecondary
+                                                : theme.text,
+                                            textDecorationLine: todo.isCompleted
+                                                ? 'line-through'
+                                                : 'none',
+                                        },
+                                    ]}
+                                >
+                                    {todo.title}
+                                </Text>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+                </Animated.View>
+            </GestureDetector>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
+    todoContainer: {
+        position: 'relative',
+        marginBottom: 12,
+    },
+    deleteBackground: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        backgroundColor: '#EF4444',
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'flex-end',
+        paddingRight: 20,
+    },
+    deleteContent: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    deleteText: {
+        color: 'white',
+        fontSize: 12,
+        fontWeight: '600',
+        marginTop: 4,
+    },
     todoItem: {
         flexDirection: 'row',
         alignItems: 'flex-start',
         padding: 16,
         borderRadius: 16,
-        marginBottom: 12,
         ...Platform.select({
             ios: {
                 shadowColor: '#000',

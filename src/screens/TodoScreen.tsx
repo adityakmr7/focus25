@@ -144,17 +144,6 @@ const TodoScreen: React.FC = () => {
         };
     });
 
-    const statsAnimatedStyle = useAnimatedStyle(() => {
-        return {
-            opacity: interpolate(statsAnimatedValue.value, [0, 1], [0, 1]),
-            transform: [
-                {
-                    translateY: interpolate(statsAnimatedValue.value, [0, 1], [20, 0]),
-                },
-            ],
-        };
-    });
-
     if (error) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
