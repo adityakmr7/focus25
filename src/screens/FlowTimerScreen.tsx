@@ -89,8 +89,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
     // App State
     const [showBreathingAnimation, setShowBreathingAnimation] = useState(false);
-    const [achievements, setAchievements] = useState<string[]>([]);
-    const [showAchievements, setShowAchievements] = useState(false);
     const [showQuickActions, setShowQuickActions] = useState(false);
     const [backgroundSessionId, setBackgroundSessionId] = useState<string | null>(null);
     const [isConnectedToBackground, setIsConnectedToBackground] = useState(false);
@@ -153,8 +151,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         () => musicTracks.find((track) => track.id === selectedTrack),
         [selectedTrack],
     );
-
-    const achievementCount = useMemo(() => achievements.length, [achievements]);
 
     // Load settings from storage
     const loadSettings = useCallback(async () => {
@@ -379,19 +375,19 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         }
     }, [resetTimer, isPlaying, player, status?.isLoaded, pulseAnimation]);
 
-    // UI handlers
-    const handleShowAchievements = useCallback(() => {
-        setShowAchievements(true);
-        achievementAnimation.value = withSequence(
-            withTiming(1, { duration: 300 }),
-            withRepeat(withTiming(1.1, { duration: 100 }), 2, true),
-        );
-    }, [achievementAnimation]);
+    // // UI handlers
+    // const handleShowAchievements = useCallback(() => {
+    //     setShowAchievements(true);
+    //     achievementAnimation.value = withSequence(
+    //         withTiming(1, { duration: 300 }),
+    //         withRepeat(withTiming(1.1, { duration: 100 }), 2, true),
+    //     );
+    // }, [achievementAnimation]);
 
-    const handleCloseAchievements = useCallback(() => {
-        setShowAchievements(false);
-        achievementAnimation.value = withTiming(0, { duration: 300 });
-    }, [achievementAnimation]);
+    // const handleCloseAchievements = useCallback(() => {
+    //     setShowAchievements(false);
+    //     achievementAnimation.value = withTiming(0, { duration: 300 });
+    // }, [achievementAnimation]);
 
     const handleToggleQuickActions = useCallback(() => {
         setShowQuickActions((prev) => !prev);
@@ -458,39 +454,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             duration: 300,
         });
     }, [showQuickActions, quickActionsAnimation]);
-
-    // Achievement detection
-    useEffect(() => {
-        if (!timerState.isInitialized) return;
-
-        const newAchievements = [];
-
-        if (flowMetrics.consecutiveSessions >= 5 && flowMetrics.consecutiveSessions % 5 === 0) {
-            newAchievements.push('🔥 Flow Master!');
-        }
-        if (flowMetrics.currentStreak >= 7 && flowMetrics.currentStreak % 7 === 0) {
-            newAchievements.push('⭐ Week Warrior!');
-        }
-        if (flowMetrics.flowIntensity === 'high' && flowMetrics.consecutiveSessions > 0) {
-            newAchievements.push('🚀 Deep Focus!');
-        }
-
-        if (newAchievements.length > 0 && newAchievements.length !== achievementCount) {
-            setAchievements(newAchievements);
-            setShowAchievements(true);
-
-            console.log('calling new achievement notification');
-            newAchievements.forEach((achievement) => {
-                notificationService.scheduleGoalAchievement(achievement);
-            });
-        }
-    }, [
-        flowMetrics.consecutiveSessions,
-        flowMetrics.currentStreak,
-        flowMetrics.flowIntensity,
-        achievementCount,
-        timerState.isInitialized,
-    ]);
 
     // Background timer sync
     useEffect(() => {
@@ -727,7 +690,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     <Header
                         theme={theme}
                         flowMetrics={flowMetrics}
-                        onShowAchievements={handleShowAchievements}
                         onToggleQuickActions={handleToggleQuickActions}
                         onReset={handleReset}
                         showQuickActions={showQuickActions}
