@@ -43,8 +43,6 @@ const TodoScreen: React.FC = () => {
         deleteCompletedTodos,
         setShowCompleted,
         setSearchQuery,
-        getFilteredTodos,
-        getTodoStats,
         syncWithDatabase,
     } = useTodoStore();
 
@@ -135,9 +133,6 @@ const TodoScreen: React.FC = () => {
         );
     }, [todos, deleteCompletedTodos]);
 
-    const filteredTodos = getFilteredTodos();
-    const stats = getTodoStats();
-
     const headerAnimatedStyle = useAnimatedStyle(() => {
         return {
             opacity: interpolate(headerAnimatedValue.value, [0, 1], [0, 1]),
@@ -192,7 +187,7 @@ const TodoScreen: React.FC = () => {
 
             {/* Todo List */}
             <FlatList
-                data={filteredTodos}
+                data={todos}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item, index }) => (
                     <TodoItem
