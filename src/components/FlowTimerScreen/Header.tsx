@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 interface HeaderProps {
     theme: any;
     flowMetrics: any;
-    onShowAchievements: () => void;
     onToggleQuickActions: () => void;
     onReset: () => void;
     showQuickActions: boolean;
@@ -15,7 +14,6 @@ const Header: React.FC<HeaderProps> = React.memo(
     ({
         theme,
         flowMetrics,
-        onShowAchievements,
         onToggleQuickActions,
         onReset,
         showQuickActions,
@@ -23,7 +21,7 @@ const Header: React.FC<HeaderProps> = React.memo(
     }) => {
         return (
             <View style={styles.header}>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                     onPress={onShowAchievements}
                     style={[styles.headerButton, { backgroundColor: theme.surface }]}
                     disabled={isLoading}
@@ -37,7 +35,7 @@ const Header: React.FC<HeaderProps> = React.memo(
                             <Text style={styles.badgeText}>{flowMetrics.currentStreak}</Text>
                         </View>
                     )}
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
                 <TouchableOpacity
                     onPress={onToggleQuickActions}

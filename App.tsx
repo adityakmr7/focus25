@@ -6,13 +6,13 @@ import { NavigationContainer } from '@react-navigation/native';
 import { AppStackNavigation } from './src/navigations';
 import './global.css';
 import * as Notifications from 'expo-notifications';
-import { Alert, AppState, AppStateStatus, Platform } from 'react-native';
+import { Alert, AppState, AppStateStatus, Platform, View, useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { useSettingsStore } from './src/store/settingsStore';
 import { useGoalsStore } from './src/store/goalsStore';
 import { useStatisticsStore } from './src/store/statisticsStore';
 import { usePomodoroStore } from './src/store/pomodoroStore';
 import { useThemeStore } from './src/store/themeStore';
-import { ThemeProvider } from './src/providers/ThemeProvider';
 import { AuthProvider } from './src/components/AuthProvider';
 import { hybridDatabaseService } from './src/data/hybridDatabase';
 import { backgroundTimerService } from './src/services/backgroundTimer';
@@ -37,7 +37,8 @@ const AppContent = () => {
     const { initializeStore: initializeGoals } = useGoalsStore();
     const { initializeStore: initializeStatistics } = useStatisticsStore();
     const { initializeStore: initializePomodoro } = usePomodoroStore();
-    const { initializeStore: initializeTheme } = useThemeStore();
+    const { initializeStore: initializeTheme, mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
 
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [isAppReady, setIsAppReady] = useState(false);
@@ -283,11 +284,17 @@ const AppContent = () => {
         return null; // Splash screen is still showing
     }
 
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
+    const theme = getCurrentTheme();
+
     return (
         <>
-            <NavigationContainer>
-                <AppStackNavigation />
-            </NavigationContainer>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+            <View style={{ flex: 1, backgroundColor: theme.background }}>
+                <NavigationContainer>
+                    <AppStackNavigation />
+                </NavigationContainer>
+            </View>
 
             {/* Onboarding Flow */}
             {/* Uncomment when ready to use onboarding */}
@@ -315,11 +322,7 @@ export default function App() {
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <AuthProvider>
-                <ThemeProvider>
-                    <AppContent />
-                </ThemeProvider>
-            </AuthProvider>
+            <AppContent />
         </GestureHandlerRootView>
     );
 }

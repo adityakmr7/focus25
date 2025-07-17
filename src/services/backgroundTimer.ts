@@ -1,4 +1,4 @@
-import * as BackgroundFetch from 'expo-background-fetch';
+import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -20,13 +20,13 @@ TaskManager.defineTask(BACKGROUND_TIMER_TASK, async () => {
     try {
         const timerStateString = await AsyncStorage.getItem(TIMER_STATE_KEY);
         if (!timerStateString) {
-            return BackgroundFetch.BackgroundFetchResult.NoData;
+            return BackgroundTask.BackgroundTaskResult.Success;
         }
 
         const timerState: BackgroundTimerState = JSON.parse(timerStateString);
 
         if (!timerState.isRunning) {
-            return BackgroundFetch.BackgroundFetchResult.NoData;
+            return BackgroundTask.BackgroundTaskResult.Success;
         }
 
         const now = Date.now();
@@ -53,8 +53,7 @@ TaskManager.defineTask(BACKGROUND_TIMER_TASK, async () => {
 
             // Clear the timer state
             await AsyncStorage.removeItem(TIMER_STATE_KEY);
-
-            return BackgroundFetch.BackgroundFetchResult.NewData;
+            return BackgroundTask.BackgroundTaskResult.Success;
         }
 
         // Timer still running - update progress notification if needed
@@ -76,10 +75,10 @@ TaskManager.defineTask(BACKGROUND_TIMER_TASK, async () => {
             });
         }
 
-        return BackgroundFetch.BackgroundFetchResult.NewData;
+        return BackgroundTask.BackgroundTaskResult.Success;
     } catch (error) {
         console.error('Background timer task error:', error);
-        return BackgroundFetch.BackgroundFetchResult.Failed;
+        return BackgroundTask.BackgroundTaskResult.Failed;
     }
 });
 
@@ -101,17 +100,23 @@ export class BackgroundTimerService {
         }
 
         try {
-            // Register background fetch
-            await BackgroundFetch.registerTaskAsync(BACKGROUND_TIMER_TASK, {
-                minimumInterval: 15000, // 15 seconds minimum
-                stopOnTerminate: false,
-                startOnBoot: true,
-            });
+            // Small delay to ensure task definition is processed
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Check if task is already registered
+            const isTaskRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_TIMER_TASK);
+            
+            if (!isTaskRegistered) {
+                // Register background task
+                await BackgroundTask.registerTaskAsync(BACKGROUND_TIMER_TASK, {
+                    minimumInterval: 15, // 15 minutes minimum
+                });
+            }
 
             this.isRegistered = true;
             console.log('Background timer service initialized');
         } catch (error) {
-            console.error('Failed to register background task:', error);
+            console.error('Failed to start background task:', error);
         }
     }
 
@@ -194,9 +199,8 @@ export class BackgroundTimerService {
 
             const now = Date.now();
             const elapsed = Math.floor((now - timerState.startTime) / 1000);
-            const remaining = Math.max(0, timerState.duration - elapsed);
-
-            return remaining;
+            
+            return Math.max(0, timerState.duration - elapsed);
         } catch (error) {
             console.error('Failed to get remaining time:', error);
             return 0;

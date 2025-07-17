@@ -3,19 +3,26 @@ import { useEffect, useState, useRef } from 'react';
 import { AudioStatus, useAudioPlayer } from 'expo-audio';
 import { AudioCacheManager } from '../utils/audioCache';
 import * as Network from 'expo-network';
+import { MusicTrack, parseDurationToSeconds } from '../utils/constants';
 
 const DOWNLOAD_TIMEOUT = 15000; // 15 seconds (faster timeout)
 const MAX_RETRIES = 1; // Fewer retries for faster fallback
 const FALLBACK_DELAY = 3000; // Start fallback after 3 seconds
 
-export function useCachedAudio(sourceUrl: string | null) {
+export function useCachedAudio(sourceUrl: string | null, track?: MusicTrack) {
     const [uri, setUri] = useState<string | null>(null);
     const [downloadError, setDownloadError] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState(0);
     const [isReady, setIsReady] = useState(false);
     const [usingFallback, setUsingFallback] = useState(false);
+    const [isLooping, setIsLooping] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [totalPlayTime, setTotalPlayTime] = useState(0);
+    
     const abortControllerRef = useRef<AbortController | null>(null);
+    const loopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const trackingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => {
         if (!sourceUrl) {
@@ -147,6 +154,98 @@ export function useCachedAudio(sourceUrl: string | null) {
 
     const player = useAudioPlayer(uri);
 
+    // Monitor player status and handle looping
+    useEffect(() => {
+        if (!player || !track) return;
+
+        const handleStatusChange = () => {
+            const status = player.currentStatus;
+            
+            if (status.isLoaded) {
+                setCurrentTime(status.currentTime || 0);
+                
+                // Check if track has finished playing
+                if (status.didJustFinish) {
+                    const targetDurationSeconds = parseDurationToSeconds(track.duration);
+                    
+                    // If we haven't reached the target duration, loop
+                    if (totalPlayTime < targetDurationSeconds) {
+                        setIsLooping(true);
+                        player.seekTo(0);
+                        player.play();
+                        console.log(`🔄 Looping ${track.name} - ${Math.floor(totalPlayTime / 60)}:${Math.floor(totalPlayTime % 60)} / ${track.duration}`);
+                    } else {
+                        // Target duration reached, stop looping
+                        setIsLooping(false);
+                        setTotalPlayTime(0);
+                        player.pause();
+                        console.log(`✅ Finished playing ${track.name} for ${track.duration}`);
+                    }
+                }
+            }
+        };
+
+        // Set up status monitoring
+        const interval = setInterval(handleStatusChange, 1000);
+
+        return () => {
+            clearInterval(interval);
+        };
+    }, [player, track, totalPlayTime]);
+
+    // Track total play time
+    useEffect(() => {
+        if (!player || !isLooping) return;
+
+        trackingIntervalRef.current = setInterval(() => {
+            const status = player.currentStatus;
+            if (status.isLoaded && status.playing) {
+                setTotalPlayTime(prev => prev + 1);
+            }
+        }, 1000);
+
+        return () => {
+            if (trackingIntervalRef.current) {
+                clearInterval(trackingIntervalRef.current);
+            }
+        };
+    }, [player, isLooping]);
+
+    // Enhanced startLoop function
+    const startLoop = () => {
+        if (!player || !track) return;
+        
+        const targetDurationSeconds = parseDurationToSeconds(track.duration);
+        setIsLooping(true);
+        setTotalPlayTime(0);
+        
+        console.log(`🎵 Starting loop for ${track.name} - Target duration: ${track.duration}`);
+        
+        // Start the loop timer for the total duration
+        loopTimerRef.current = setTimeout(() => {
+            setIsLooping(false);
+            setTotalPlayTime(0);
+            player.pause();
+            console.log(`⏰ Loop timer finished for ${track.name}`);
+        }, targetDurationSeconds * 1000);
+    };
+
+    // Stop loop function
+    const stopLoop = () => {
+        setIsLooping(false);
+        setTotalPlayTime(0);
+        
+        if (loopTimerRef.current) {
+            clearTimeout(loopTimerRef.current);
+            loopTimerRef.current = null;
+        }
+        
+        if (trackingIntervalRef.current) {
+            clearInterval(trackingIntervalRef.current);
+            trackingIntervalRef.current = null;
+        }
+    };
+
     // Clear cache function
     const clearCache = async () => {
         if (sourceUrl) {
@@ -160,6 +259,13 @@ export function useCachedAudio(sourceUrl: string | null) {
         }
     };
 
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            stopLoop();
+        };
+    }, []);
+
     const status: AudioStatus = player.currentStatus;
     return {
         player,
@@ -171,6 +277,11 @@ export function useCachedAudio(sourceUrl: string | null) {
         isReady,
         usingFallback,
         clearCache,
+        isLooping,
+        currentTime,
+        totalPlayTime,
+        startLoop,
+        stopLoop,
     };
 }
 

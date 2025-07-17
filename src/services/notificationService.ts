@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSettingsStore } from '../store/settingsStore';
 
 const NOTIFICATION_SETTINGS_KEY = 'notification_settings';
 
@@ -39,6 +40,11 @@ export class NotificationService {
             NotificationService.instance = new NotificationService();
         }
         return NotificationService.instance;
+    }
+
+    private isNotificationsEnabled(): boolean {
+        const settingsStore = useSettingsStore.getState();
+        return settingsStore.notifications;
     }
 
     async initialize(): Promise<boolean> {
@@ -143,6 +149,7 @@ export class NotificationService {
 
     async scheduleSessionComplete(isBreak: boolean = false): Promise<void> {
         if (
+            !this.isNotificationsEnabled() ||
             !this.settings.enabled ||
             (!this.settings.sessionComplete && !isBreak) ||
             (!this.settings.breakComplete && isBreak)
@@ -180,7 +187,7 @@ export class NotificationService {
     }
 
     async scheduleBreakReminder(minutes: number): Promise<void> {
-        if (!this.settings.enabled) return;
+        if (!this.isNotificationsEnabled() || !this.settings.enabled) return;
 
         await Notifications.scheduleNotificationAsync({
             content: {
@@ -197,7 +204,7 @@ export class NotificationService {
     }
 
     async scheduleDailyReminder(): Promise<void> {
-        if (!this.settings.enabled || !this.settings.dailyReminders) return;
+        if (!this.isNotificationsEnabled() || !this.settings.enabled || !this.settings.dailyReminders) return;
 
         // Cancel existing daily reminders
         await this.cancelNotificationsByType('daily_reminder');
@@ -224,7 +231,7 @@ export class NotificationService {
     }
 
     async scheduleWeeklyReport(): Promise<void> {
-        if (!this.settings.enabled || !this.settings.weeklyReports) return;
+        if (!this.isNotificationsEnabled() || !this.settings.enabled || !this.settings.weeklyReports) return;
 
         // Cancel existing weekly reports
         await this.cancelNotificationsByType('weekly_report');
@@ -249,7 +256,7 @@ export class NotificationService {
     }
 
     async scheduleGoalAchievement(goalTitle: string): Promise<void> {
-        if (!this.settings.enabled) return;
+        if (!this.isNotificationsEnabled() || !this.settings.enabled) return;
 
         const celebrationMessages = [
             `🏆 Goal achieved! "${goalTitle}" - You're unstoppable!`,
@@ -276,7 +283,7 @@ export class NotificationService {
     }
 
     async scheduleStreakMilestone(streak: number): Promise<void> {
-        if (!this.settings.enabled || !this.settings.motivationalMessages) return;
+        if (!this.isNotificationsEnabled() || !this.settings.enabled || !this.settings.motivationalMessages) return;
 
         const milestoneMessages = {
             3: "🔥 3-day streak! You're building momentum!",

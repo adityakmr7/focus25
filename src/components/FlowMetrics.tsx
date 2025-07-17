@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
 import { usePomodoroStore } from '../store/pomodoroStore';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 
 interface FlowMetricsProps {
     showDetailed?: boolean;
@@ -9,7 +10,10 @@ interface FlowMetricsProps {
 
 export const FlowMetrics: React.FC<FlowMetricsProps> = ({ showDetailed = false }) => {
     const { flowMetrics } = usePomodoroStore();
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
     const animatedValue = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {

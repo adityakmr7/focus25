@@ -14,8 +14,7 @@ import {
 } from 'react-native';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { useSettingsStore } from '../store/settingsStore';
-import { useAudioPlayer } from 'expo-audio';
-import { GamificationOverlay } from '../components/GamificationOverlay';
+import { useAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { BottomSheetMusicPlayer } from '../components/BottomSheetMusicPlayer';
 import Animated, {
     interpolate,
@@ -25,9 +24,7 @@ import Animated, {
     withSequence,
     withTiming,
 } from 'react-native-reanimated';
-import { useTheme } from '../providers/ThemeProvider';
-import { useAuthContext } from '../components/AuthProvider';
-import { hybridDatabaseService } from '../data/hybridDatabase';
+import { useThemeStore } from '../store/themeStore';
 import { backgroundTimerService } from '../services/backgroundTimer';
 import { notificationService } from '../services/notificationService';
 import { errorHandler } from '../services/errorHandler';
@@ -38,6 +35,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/FlowTimerScreen/Header';
 import QuickActionsPanel from '../components/FlowTimerScreen/QuickActionPanel';
 import TimerContainer from '../components/FlowTimerScreen/TimerContainer';
+import { useTheme } from '../hooks/useTheme';
 
 const MUSIC_SETTINGS_KEY = 'music_settings';
 const TIMER_STATE_KEY = 'timer_state';
@@ -80,9 +78,8 @@ const defaultSettings: MusicSettings = {
 // Main Component
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     // Hooks and State
-    const { user, isAuthenticated } = useAuthContext();
-    const { theme } = useTheme();
-
+    const { mode, getCurrentTheme } = useThemeStore();
+    const { theme, isDark } = useTheme();
     // Audio and Music State
     const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -92,12 +89,9 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
     // App State
     const [showBreathingAnimation, setShowBreathingAnimation] = useState(false);
-    const [achievements, setAchievements] = useState<string[]>([]);
-    const [showAchievements, setShowAchievements] = useState(false);
     const [showQuickActions, setShowQuickActions] = useState(false);
     const [backgroundSessionId, setBackgroundSessionId] = useState<string | null>(null);
     const [isConnectedToBackground, setIsConnectedToBackground] = useState(false);
-    const [focusModeActive, setFocusModeActive] = useState(false);
     const [timerState, setTimerState] = useState<TimerState>({
         isInitialized: false,
         isLoading: true,
@@ -110,8 +104,26 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         return musicTracks.find((t) => t.id === selectedTrack)?.source || null;
     }, [selectedTrack]);
 
-    const { player, isReady, status, uri, isDownloading, downloadError, downloadProgress, usingFallback } =
-        useCachedAudio(currentTrackUrl);
+    const selectedTrackData = useMemo(
+        () => musicTracks.find((track) => track.id === selectedTrack),
+        [selectedTrack],
+    );
+
+    const {
+        player,
+        isReady,
+        status,
+        uri,
+        isDownloading,
+        downloadError,
+        downloadProgress,
+        usingFallback,
+        isLooping,
+        currentTime,
+        totalPlayTime,
+        startLoop,
+        stopLoop,
+    } = useCachedAudio(currentTrackUrl, selectedTrackData);
 
     const alertPlayer = useAudioPlayer(audioSource);
 
@@ -125,6 +137,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         updateTimerFromSettings,
         flowMetrics,
         initializeStore: initializePomodoro,
+        focusModeActive,
+        updateFocusMode,
     } = usePomodoroStore();
 
     const { timeDuration, breakDuration, initializeStore: initializeSettings } = useSettingsStore();
@@ -139,17 +153,10 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const pulseAnimation = useSharedValue(1);
     const progressAnimation = useSharedValue(0);
     const containerAnimation = useSharedValue(0);
-    const achievementAnimation = useSharedValue(0);
     const quickActionsAnimation = useSharedValue(0);
     const volumeAnimation = useSharedValue(settings.volume);
 
-    // Memoized values
-    const selectedTrackData = useMemo(
-        () => musicTracks.find((track) => track.id === selectedTrack),
-        [selectedTrack],
-    );
-
-    const achievementCount = useMemo(() => achievements.length, [achievements]);
+    // Memoized values - selectedTrackData is now defined above with useCachedAudio
 
     // Load settings from storage
     const loadSettings = useCallback(async () => {
@@ -222,17 +229,22 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             }
 
             if (isPlaying) {
-                await player.pause();
+                player.pause();
+                stopLoop();
                 setIsPlaying(false);
             } else {
-                await player.play();
+                player.play();
+                startLoop();
                 setIsPlaying(true);
             }
         } catch (error) {
             console.error('Failed to toggle playback:', error);
-            Alert.alert('Playback Error', 'Failed to control playback. The track may still be loading.');
+            Alert.alert(
+                'Playback Error',
+                'Failed to control playback. The track may still be loading.',
+            );
         }
-    }, [player, isReady, uri, isDownloading, downloadProgress, usingFallback, isPlaying]);
+    }, [player, isReady, uri, isDownloading, downloadProgress, usingFallback, isPlaying, startLoop, stopLoop]);
 
     const handleTrackSelection = useCallback(
         async (trackId: string) => {
@@ -242,7 +254,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     // Stop current playback first
                     if (isPlaying && player) {
                         try {
-                            await player.pause();
+                            player.pause();
+                            stopLoop();
                             setIsPlaying(false);
                         } catch (error) {
                             console.warn('Failed to pause current track:', error);
@@ -264,7 +277,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 setIsLoadingTrack(false);
             }
         },
-        [selectedTrack, isPlaying, player, status?.isLoaded, handlePlayPause, saveSettings],
+        [selectedTrack, isPlaying, player, status?.isLoaded, handlePlayPause, saveSettings, stopLoop],
     );
 
     const handleVolumeChange = useCallback(
@@ -357,7 +370,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
             // Pause music on reset
             if (isPlaying && player && status?.isLoaded) {
-                await player.pause();
+                player.pause();
+                stopLoop();
                 setIsPlaying(false);
             }
 
@@ -369,21 +383,21 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 severity: 'low',
             });
         }
-    }, [resetTimer, isPlaying, player, status?.isLoaded, pulseAnimation]);
+    }, [resetTimer, isPlaying, player, status?.isLoaded, pulseAnimation, stopLoop]);
 
-    // UI handlers
-    const handleShowAchievements = useCallback(() => {
-        setShowAchievements(true);
-        achievementAnimation.value = withSequence(
-            withTiming(1, { duration: 300 }),
-            withRepeat(withTiming(1.1, { duration: 100 }), 2, true),
-        );
-    }, [achievementAnimation]);
+    // // UI handlers
+    // const handleShowAchievements = useCallback(() => {
+    //     setShowAchievements(true);
+    //     achievementAnimation.value = withSequence(
+    //         withTiming(1, { duration: 300 }),
+    //         withRepeat(withTiming(1.1, { duration: 100 }), 2, true),
+    //     );
+    // }, [achievementAnimation]);
 
-    const handleCloseAchievements = useCallback(() => {
-        setShowAchievements(false);
-        achievementAnimation.value = withTiming(0, { duration: 300 });
-    }, [achievementAnimation]);
+    // const handleCloseAchievements = useCallback(() => {
+    //     setShowAchievements(false);
+    //     achievementAnimation.value = withTiming(0, { duration: 300 });
+    // }, [achievementAnimation]);
 
     const handleToggleQuickActions = useCallback(() => {
         setShowQuickActions((prev) => !prev);
@@ -400,32 +414,14 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     }, []);
 
     const handleToggleFocusMode = useCallback(() => {
-        setFocusModeActive((prev) => !prev);
+        updateFocusMode(!focusModeActive);
         setShowQuickActions(false);
-
         // Animate focus mode transition
         containerAnimation.value = withSequence(
             withTiming(0.95, { duration: 200 }),
             withTiming(1, { duration: 200 }),
         );
-    }, [containerAnimation]);
-
-    // Sync handler
-    const syncData = useCallback(async () => {
-        if (!isAuthenticated) return;
-
-        setTimerState((prev) => ({ ...prev, syncStatus: 'syncing' }));
-        try {
-            await hybridDatabaseService.syncToSupabase();
-            setTimerState((prev) => ({ ...prev, syncStatus: 'idle' }));
-        } catch (error) {
-            console.error('Sync failed:', error);
-            setTimerState((prev) => ({ ...prev, syncStatus: 'error' }));
-            setTimeout(() => {
-                setTimerState((prev) => ({ ...prev, syncStatus: 'idle' }));
-            }, 3000);
-        }
-    }, [isAuthenticated]);
+    }, [containerAnimation, focusModeActive, updateFocusMode]);
 
     // Initialization
     useEffect(() => {
@@ -434,9 +430,20 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 setTimerState((prev) => ({ ...prev, isLoading: true }));
                 console.log('🚀 Initializing FlowTimer...');
 
+                // Configure audio mode for silent mode playback
+                try {
+                    await setAudioModeAsync({
+                        playsInSilentMode: true,
+                        allowsRecording: false,
+                    });
+                    console.log('🔊 Audio mode configured for silent mode playback');
+                } catch (error) {
+                    console.error('⚠️ Failed to configure audio mode:', error);
+                }
+
                 // Initialize stores
                 await Promise.all([initializeSettings(), initializePomodoro(), loadSettings()]);
-                
+
                 // Sync timer with loaded settings
                 updateTimerFromSettings();
                 console.log('🔄 Timer synchronized with settings');
@@ -461,53 +468,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         initializeApp();
     }, [initializeSettings, initializePomodoro, loadSettings, containerAnimation]);
 
-    // Auth state updates
-    useEffect(() => {
-        try {
-            hybridDatabaseService.setAuthState(isAuthenticated, user?.id);
-        } catch (error) {
-            console.error('Failed to update auth state:', error);
-        }
-    }, [isAuthenticated, user?.id]);
-
     // Quick actions animation
     useEffect(() => {
         quickActionsAnimation.value = withTiming(showQuickActions ? 1 : 0, {
             duration: 300,
         });
     }, [showQuickActions, quickActionsAnimation]);
-
-    // Achievement detection
-    useEffect(() => {
-        if (!timerState.isInitialized) return;
-
-        const newAchievements = [];
-
-        if (flowMetrics.consecutiveSessions >= 5 && flowMetrics.consecutiveSessions % 5 === 0) {
-            newAchievements.push('🔥 Flow Master!');
-        }
-        if (flowMetrics.currentStreak >= 7 && flowMetrics.currentStreak % 7 === 0) {
-            newAchievements.push('⭐ Week Warrior!');
-        }
-        if (flowMetrics.flowIntensity === 'high' && flowMetrics.consecutiveSessions > 0) {
-            newAchievements.push('🚀 Deep Focus!');
-        }
-
-        if (newAchievements.length > 0 && newAchievements.length !== achievementCount) {
-            setAchievements(newAchievements);
-            setShowAchievements(true);
-
-            newAchievements.forEach((achievement) => {
-                notificationService.scheduleGoalAchievement(achievement);
-            });
-        }
-    }, [
-        flowMetrics.consecutiveSessions,
-        flowMetrics.currentStreak,
-        flowMetrics.flowIntensity,
-        achievementCount,
-        timerState.isInitialized,
-    ]);
 
     // Background timer sync
     useEffect(() => {
@@ -667,9 +633,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             if (nextAppState === 'background') {
                 // App going to background
                 saveTimerState();
-                if (isAuthenticated) {
-                    syncData();
-                }
             } else if (nextAppState === 'active') {
                 // App coming to foreground
                 // Sync with background timer if supported
@@ -681,7 +644,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
         const subscription = AppState.addEventListener('change', handleAppStateChange);
         return () => subscription?.remove();
-    }, [saveTimerState, isAuthenticated, syncData, isConnectedToBackground]);
+    }, [saveTimerState, isConnectedToBackground]);
 
     // Volume animation
     useEffect(() => {
@@ -729,7 +692,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar
-                barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'}
+                barStyle={isDark ? 'light-content' : 'dark-content'}
                 backgroundColor="transparent"
                 translucent
             />
@@ -747,7 +710,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     <Header
                         theme={theme}
                         flowMetrics={flowMetrics}
-                        onShowAchievements={handleShowAchievements}
                         onToggleQuickActions={handleToggleQuickActions}
                         onReset={handleReset}
                         showQuickActions={showQuickActions}
@@ -775,13 +737,16 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         showBreathingAnimation={showBreathingAnimation}
                         pulseAnimation={pulseAnimation}
                         onToggleTimer={handleToggleTimer}
-                        isAuthenticated={isAuthenticated}
+                        isAuthenticated={false} // Placeholder, replace with actual auth state
                         isPlaying={isPlaying}
                         handlePlayPause={handlePlayPause}
                         handleVolumeChange={handleVolumeChange}
                         selectedTrackData={selectedTrackData}
                         isLoading={timerState.isLoading}
                         focusModeActive={focusModeActive}
+                        currentTime={currentTime}
+                        totalPlayTime={totalPlayTime}
+                        isLooping={isLooping}
                     />
                 </Animated.View>
             </ScrollView>
@@ -803,15 +768,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     downloadError={downloadError}
                 />
             )}
-
-            {/* Gamification Overlay */}
-            <GamificationOverlay
-                flowMetrics={flowMetrics}
-                isVisible={showAchievements}
-                achievements={achievements}
-                animationValue={achievementAnimation}
-                onClose={handleCloseAchievements}
-            />
         </SafeAreaView>
     );
 };

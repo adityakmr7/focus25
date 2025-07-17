@@ -10,11 +10,15 @@ import Animated, {
     interpolate,
 } from 'react-native-reanimated';
 import { usePomodoroStore } from '../store/pomodoroStore';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 
 export const FlowIntensityIndicator: React.FC = () => {
     const { flowMetrics } = usePomodoroStore();
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
 
     const pulse = useSharedValue(1);
     const glow = useSharedValue(0);

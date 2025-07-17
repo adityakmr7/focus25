@@ -9,7 +9,8 @@ import {
     View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 import { useStatisticsStore } from '../store/statisticsStore';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { databaseService } from '../data/database';
@@ -30,7 +31,10 @@ interface StatisticsChartProps {
 }
 
 const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => {
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
     const { flows, breaks, interruptions, syncWithDatabase } = useStatisticsStore();
     const { flowMetrics } = usePomodoroStore();
 

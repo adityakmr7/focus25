@@ -19,7 +19,8 @@ import Animated, {
     interpolate,
     runOnJS,
 } from 'react-native-reanimated';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
@@ -125,7 +126,10 @@ interface OnboardingFlowProps {
 }
 
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ visible, onComplete }) => {
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
     const [currentStep, setCurrentStep] = useState(0);
     const scrollViewRef = useRef<ScrollView>(null);
 
