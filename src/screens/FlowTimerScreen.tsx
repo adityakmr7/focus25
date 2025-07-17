@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { useSettingsStore } from '../store/settingsStore';
-import { useAudioPlayer } from 'expo-audio';
+import { useAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { BottomSheetMusicPlayer } from '../components/BottomSheetMusicPlayer';
 import Animated, {
     interpolate,
@@ -419,6 +419,17 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             try {
                 setTimerState((prev) => ({ ...prev, isLoading: true }));
                 console.log('🚀 Initializing FlowTimer...');
+
+                // Configure audio mode for silent mode playback
+                try {
+                    await setAudioModeAsync({
+                        playsInSilentMode: true,
+                        allowsRecording: false,
+                    });
+                    console.log('🔊 Audio mode configured for silent mode playback');
+                } catch (error) {
+                    console.error('⚠️ Failed to configure audio mode:', error);
+                }
 
                 // Initialize stores
                 await Promise.all([initializeSettings(), initializePomodoro(), loadSettings()]);
