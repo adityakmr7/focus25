@@ -10,8 +10,8 @@ import {
     Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../providers/ThemeProvider';
-import { Todo, TodoPriority, TodoCategory } from '../../types/database';
+import { useTheme } from '../../hooks/useTheme';
+import { Todo } from '../../types/database';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -28,11 +28,6 @@ interface TodoFormProps {
 const TodoForm: React.FC<TodoFormProps> = ({ initialTodo, onSave, onCancel }) => {
     const { theme } = useTheme();
     const [title, setTitle] = useState(initialTodo?.title || '');
-    const [description, setDescription] = useState(initialTodo?.description || '');
-    const [priority, setPriority] = useState(initialTodo?.priority || TodoPriority.MEDIUM);
-    const [category, setCategory] = useState(initialTodo?.category || TodoCategory.PERSONAL);
-    const [dueDate, setDueDate] = useState(initialTodo?.dueDate || '');
-    const [tags, setTags] = useState(initialTodo?.tags?.join(', ') || '');
 
     const animatedValue = useSharedValue(0);
 
@@ -55,11 +50,6 @@ const TodoForm: React.FC<TodoFormProps> = ({ initialTodo, onSave, onCancel }) =>
 
         const todoData: Partial<Todo> = {
             title: title.trim(),
-            description: description.trim() || undefined,
-            priority,
-            category,
-            dueDate: dueDate || undefined,
-            tags: tags ? tags.split(',').map(tag => tag.trim()).filter(Boolean) : undefined,
         };
 
         if (initialTodo) {
@@ -69,44 +59,10 @@ const TodoForm: React.FC<TodoFormProps> = ({ initialTodo, onSave, onCancel }) =>
         onSave(todoData);
     };
 
-    const getPriorityColor = (priorityLevel: TodoPriority) => {
-        switch (priorityLevel) {
-            case TodoPriority.URGENT:
-                return '#EF4444';
-            case TodoPriority.HIGH:
-                return '#F59E0B';
-            case TodoPriority.MEDIUM:
-                return '#3B82F6';
-            case TodoPriority.LOW:
-                return '#10B981';
-            default:
-                return theme.textSecondary;
-        }
-    };
-
-    const getCategoryIcon = (categoryType: TodoCategory) => {
-        switch (categoryType) {
-            case TodoCategory.WORK:
-                return 'briefcase-outline';
-            case TodoCategory.PERSONAL:
-                return 'person-outline';
-            case TodoCategory.HEALTH:
-                return 'fitness-outline';
-            case TodoCategory.LEARNING:
-                return 'book-outline';
-            case TodoCategory.SHOPPING:
-                return 'basket-outline';
-            case TodoCategory.PROJECTS:
-                return 'folder-outline';
-            case TodoCategory.HABITS:
-                return 'repeat-outline';
-            default:
-                return 'list-outline';
-        }
-    };
-
     return (
-        <Animated.View style={[styles.container, { backgroundColor: theme.background }, animatedStyle]}>
+        <Animated.View
+            style={[styles.container, { backgroundColor: theme.background }, animatedStyle]}
+        >
             <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
                 <View style={styles.content}>
                     <View style={styles.header}>
@@ -135,151 +91,6 @@ const TodoForm: React.FC<TodoFormProps> = ({ initialTodo, onSave, onCancel }) =>
                                 placeholder="Enter todo title..."
                                 placeholderTextColor={theme.textSecondary}
                                 returnKeyType="next"
-                            />
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: theme.text }]}>Description</Text>
-                            <TextInput
-                                style={[
-                                    styles.textArea,
-                                    {
-                                        backgroundColor: theme.background,
-                                        borderColor: theme.textSecondary + '30',
-                                        color: theme.text,
-                                    },
-                                ]}
-                                value={description}
-                                onChangeText={setDescription}
-                                placeholder="Enter description (optional)..."
-                                placeholderTextColor={theme.textSecondary}
-                                multiline
-                                numberOfLines={4}
-                                textAlignVertical="top"
-                            />
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: theme.text }]}>Priority</Text>
-                            <View style={styles.priorityContainer}>
-                                {Object.values(TodoPriority).map((priorityLevel) => (
-                                    <TouchableOpacity
-                                        key={priorityLevel}
-                                        style={[
-                                            styles.priorityButton,
-                                            {
-                                                backgroundColor:
-                                                    priority === priorityLevel
-                                                        ? getPriorityColor(priorityLevel) + '20'
-                                                        : theme.background,
-                                                borderColor:
-                                                    priority === priorityLevel
-                                                        ? getPriorityColor(priorityLevel)
-                                                        : theme.textSecondary + '30',
-                                            },
-                                        ]}
-                                        onPress={() => setPriority(priorityLevel)}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.priorityText,
-                                                {
-                                                    color:
-                                                        priority === priorityLevel
-                                                            ? getPriorityColor(priorityLevel)
-                                                            : theme.textSecondary,
-                                                },
-                                            ]}
-                                        >
-                                            {priorityLevel.toUpperCase()}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: theme.text }]}>Category</Text>
-                            <View style={styles.categoryContainer}>
-                                {Object.values(TodoCategory).map((categoryType) => (
-                                    <TouchableOpacity
-                                        key={categoryType}
-                                        style={[
-                                            styles.categoryButton,
-                                            {
-                                                backgroundColor:
-                                                    category === categoryType
-                                                        ? theme.accent + '20'
-                                                        : theme.background,
-                                                borderColor:
-                                                    category === categoryType
-                                                        ? theme.accent
-                                                        : theme.textSecondary + '30',
-                                            },
-                                        ]}
-                                        onPress={() => setCategory(categoryType)}
-                                    >
-                                        <Ionicons
-                                            name={getCategoryIcon(categoryType)}
-                                            size={16}
-                                            color={
-                                                category === categoryType
-                                                    ? theme.accent
-                                                    : theme.textSecondary
-                                            }
-                                        />
-                                        <Text
-                                            style={[
-                                                styles.categoryText,
-                                                {
-                                                    color:
-                                                        category === categoryType
-                                                            ? theme.accent
-                                                            : theme.textSecondary,
-                                                },
-                                            ]}
-                                        >
-                                            {categoryType.charAt(0).toUpperCase() +
-                                                categoryType.slice(1)}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: theme.text }]}>Due Date</Text>
-                            <TextInput
-                                style={[
-                                    styles.input,
-                                    {
-                                        backgroundColor: theme.background,
-                                        borderColor: theme.textSecondary + '30',
-                                        color: theme.text,
-                                    },
-                                ]}
-                                value={dueDate}
-                                onChangeText={setDueDate}
-                                placeholder="YYYY-MM-DD (optional)"
-                                placeholderTextColor={theme.textSecondary}
-                            />
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: theme.text }]}>Tags</Text>
-                            <TextInput
-                                style={[
-                                    styles.input,
-                                    {
-                                        backgroundColor: theme.background,
-                                        borderColor: theme.textSecondary + '30',
-                                        color: theme.text,
-                                    },
-                                ]}
-                                value={tags}
-                                onChangeText={setTags}
-                                placeholder="Enter tags separated by commas..."
-                                placeholderTextColor={theme.textSecondary}
                             />
                         </View>
                     </View>

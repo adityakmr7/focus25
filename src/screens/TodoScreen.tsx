@@ -21,7 +21,7 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import { useTodoStore } from '../store/todoStore';
-import { Todo, TodoPriority, TodoCategory } from '../types/database';
+import { Todo } from '../types/database';
 import TodoFormBottomSheet, {
     TodoFormBottomSheetMethods,
 } from '../components/TodoScreenComponents/TodoFormBottomSheet';
@@ -87,14 +87,9 @@ const TodoScreen: React.FC = () => {
                     Alert.alert('Validation Error', 'Title is required.');
                     return;
                 }
-                const { title, description, dueDate, priority, category, tags } = todoData;
+                const { title } = todoData;
                 await createTodo({
                     title,
-                    description: description ?? '',
-                    dueDate: dueDate ?? undefined,
-                    priority: priority ?? TodoPriority.MEDIUM,
-                    category: category ?? TodoCategory.OTHER,
-                    tags: tags ?? [],
                 });
             }
         },
@@ -186,12 +181,7 @@ const TodoScreen: React.FC = () => {
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header */}
             <Animated.View style={[styles.header, headerAnimatedStyle]}>
-                <View style={styles.headerContent}>
-                    <Text style={[styles.headerTitle, { color: theme.text }]}>Todos</Text>
-                    <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
-                        Stay organized and productive
-                    </Text>
-                </View>
+                <View />
                 <TouchableOpacity
                     style={[styles.addButton, { backgroundColor: theme.accent }]}
                     onPress={handleOpenCreateForm}
@@ -199,70 +189,6 @@ const TodoScreen: React.FC = () => {
                     <Ionicons name="add" size={24} color="white" />
                 </TouchableOpacity>
             </Animated.View>
-
-            {/* Stats */}
-            <Animated.View style={[styles.statsContainer, statsAnimatedStyle]}>
-                <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
-                    <Text style={[styles.statValue, { color: theme.text }]}>{stats.pending}</Text>
-                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Pending</Text>
-                </View>
-                <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
-                    <Text style={[styles.statValue, { color: theme.text }]}>{stats.completed}</Text>
-                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-                        Completed
-                    </Text>
-                </View>
-                <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
-                    <Text style={[styles.statValue, { color: theme.text }]}>{stats.overdue}</Text>
-                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Overdue</Text>
-                </View>
-            </Animated.View>
-
-            {/* Search and Filters */}
-            <View style={styles.searchContainer}>
-                <View style={[styles.searchInput, { backgroundColor: theme.surface }]}>
-                    <Ionicons name="search" size={20} color={theme.textSecondary} />
-                    <TextInput
-                        style={[styles.searchTextInput, { color: theme.text }]}
-                        placeholder="Search todos..."
-                        placeholderTextColor={theme.textSecondary}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                </View>
-
-                <View style={styles.filterContainer}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        <TouchableOpacity
-                            style={[
-                                styles.filterButton,
-                                {
-                                    backgroundColor: showCompleted ? theme.accent : theme.surface,
-                                },
-                            ]}
-                            onPress={() => setShowCompleted(!showCompleted)}
-                        >
-                            <Text
-                                style={[
-                                    styles.filterButtonText,
-                                    { color: showCompleted ? 'white' : theme.text },
-                                ]}
-                            >
-                                Show Completed
-                            </Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.filterButton, { backgroundColor: theme.surface }]}
-                            onPress={handleDeleteCompleted}
-                        >
-                            <Text style={[styles.filterButtonText, { color: theme.text }]}>
-                                Clear Completed
-                            </Text>
-                        </TouchableOpacity>
-                    </ScrollView>
-                </View>
-            </View>
 
             {/* Todo List */}
             <FlatList

@@ -1,4 +1,4 @@
-import { Todo, TodoCategory, TodoPriority } from '../../types/database';
+import { Todo } from '../../types/database';
 import React, { useEffect } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,44 +39,6 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onEdit, onDelete, d
         };
     });
 
-    const getPriorityColor = (priority: TodoPriority) => {
-        switch (priority) {
-            case TodoPriority.URGENT:
-                return '#EF4444';
-            case TodoPriority.HIGH:
-                return '#F59E0B';
-            case TodoPriority.MEDIUM:
-                return '#3B82F6';
-            case TodoPriority.LOW:
-                return '#10B981';
-            default:
-                return theme.textSecondary;
-        }
-    };
-
-    const getCategoryIcon = (category: TodoCategory) => {
-        switch (category) {
-            case TodoCategory.WORK:
-                return 'briefcase-outline';
-            case TodoCategory.PERSONAL:
-                return 'person-outline';
-            case TodoCategory.HEALTH:
-                return 'fitness-outline';
-            case TodoCategory.LEARNING:
-                return 'book-outline';
-            case TodoCategory.SHOPPING:
-                return 'basket-outline';
-            case TodoCategory.PROJECTS:
-                return 'folder-outline';
-            case TodoCategory.HABITS:
-                return 'repeat-outline';
-            default:
-                return 'list-outline';
-        }
-    };
-
-    const isOverdue = todo.dueDate && !todo.isCompleted && new Date(todo.dueDate) < new Date();
-
     return (
         <Animated.View style={[styles.todoItem, { backgroundColor: theme.surface }, animatedStyle]}>
             <TouchableOpacity
@@ -105,76 +67,7 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onEdit, onDelete, d
                     >
                         {todo.title}
                     </Text>
-                    <View style={styles.todoMetadata}>
-                        <View
-                            style={[
-                                styles.priorityBadge,
-                                { backgroundColor: getPriorityColor(todo.priority) + '20' },
-                            ]}
-                        >
-                            <Text
-                                style={[
-                                    styles.priorityText,
-                                    { color: getPriorityColor(todo.priority) },
-                                ]}
-                            >
-                                {todo.priority.toUpperCase()}
-                            </Text>
-                        </View>
-                        <View style={styles.categoryContainer}>
-                            <Ionicons
-                                name={getCategoryIcon(todo.category)}
-                                size={14}
-                                color={theme.textSecondary}
-                            />
-                        </View>
-                    </View>
                 </View>
-
-                {todo.description && (
-                    <Text
-                        style={[
-                            styles.todoDescription,
-                            {
-                                color: todo.isCompleted ? theme.textSecondary : theme.textSecondary,
-                            },
-                        ]}
-                    >
-                        {todo.description}
-                    </Text>
-                )}
-
-                {todo.dueDate && (
-                    <Text
-                        style={[
-                            styles.todoDueDate,
-                            {
-                                color: isOverdue ? '#EF4444' : theme.textSecondary,
-                            },
-                        ]}
-                    >
-                        Due: {new Date(todo.dueDate).toLocaleDateString()}
-                        {isOverdue && ' (Overdue)'}
-                    </Text>
-                )}
-
-                {todo.tags && todo.tags.length > 0 && (
-                    <View style={styles.tagsContainer}>
-                        {todo.tags.slice(0, 3).map((tag, index) => (
-                            <View
-                                key={index}
-                                style={[styles.tag, { backgroundColor: theme.accent + '20' }]}
-                            >
-                                <Text style={[styles.tagText, { color: theme.accent }]}>{tag}</Text>
-                            </View>
-                        ))}
-                        {todo.tags.length > 3 && (
-                            <Text style={[styles.moreTagsText, { color: theme.textSecondary }]}>
-                                +{todo.tags.length - 3} more
-                            </Text>
-                        )}
-                    </View>
-                )}
             </View>
 
             <View style={styles.todoActions}>
