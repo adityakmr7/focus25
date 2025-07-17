@@ -138,7 +138,7 @@ const TodoScreen: React.FC = () => {
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header */}
             <Animated.View style={[styles.header, headerAnimatedStyle]}>
-                {/* Empty header space */}
+                <Text style={[styles.headerDate, { color: theme.text }]}>17 July</Text>
             </Animated.View>
 
             {/* Todo List */}
@@ -202,9 +202,16 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
+        alignItems: 'flex-end',
+        justifyContent: 'center',
         paddingHorizontal: 24,
         paddingTop: 20,
         paddingBottom: 16,
+    },
+    headerDate: {
+        fontSize: 28,
+        fontWeight: '700',
+        letterSpacing: -0.5,
     },
     fab: {
         position: 'absolute',
