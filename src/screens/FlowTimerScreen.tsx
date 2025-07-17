@@ -92,7 +92,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const [showQuickActions, setShowQuickActions] = useState(false);
     const [backgroundSessionId, setBackgroundSessionId] = useState<string | null>(null);
     const [isConnectedToBackground, setIsConnectedToBackground] = useState(false);
-    const [focusModeActive, setFocusModeActive] = useState(false);
     const [timerState, setTimerState] = useState<TimerState>({
         isInitialized: false,
         isLoading: true,
@@ -128,6 +127,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         updateTimerFromSettings,
         flowMetrics,
         initializeStore: initializePomodoro,
+        focusModeActive,
+        updateFocusMode,
     } = usePomodoroStore();
 
     const { timeDuration, breakDuration, initializeStore: initializeSettings } = useSettingsStore();
@@ -403,15 +404,14 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     }, []);
 
     const handleToggleFocusMode = useCallback(() => {
-        setFocusModeActive((prev) => !prev);
+        updateFocusMode(!focusModeActive);
         setShowQuickActions(false);
-
         // Animate focus mode transition
         containerAnimation.value = withSequence(
             withTiming(0.95, { duration: 200 }),
             withTiming(1, { duration: 200 }),
         );
-    }, [containerAnimation]);
+    }, [containerAnimation, focusModeActive, updateFocusMode]);
 
     // Initialization
     useEffect(() => {

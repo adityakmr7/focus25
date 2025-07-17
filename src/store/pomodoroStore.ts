@@ -38,6 +38,7 @@ interface PomodoroState {
     flowMetrics: FlowMetrics;
     isInitialized: boolean;
     isUpdating: boolean; // Add guard for race conditions
+    focusModeActive: boolean;
 
     initializeStore: () => Promise<void>;
     setWorkDuration: (duration: number) => void;
@@ -59,6 +60,7 @@ interface PomodoroState {
     checkAndResetDailyMetrics: () => void;
     syncWithDatabase: () => Promise<void>;
     debouncedSyncWithDatabase: () => void;
+    updateFocusMode: (active: boolean) => void;
 }
 
 // Helper functions
@@ -143,6 +145,7 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     flowMetrics: getInitialFlowMetrics(),
     isInitialized: false,
     isUpdating: false,
+    focusModeActive: false,
 
     initializeStore: async () => {
         if (get().isInitialized) return;
@@ -161,6 +164,14 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
         }
     },
 
+    updateFocusMode: (active: boolean) => {
+        set({ focusModeActive: active });
+
+        // If focus mode is activated, reset the timer
+        if (active) {
+            get().resetTimer();
+        }
+    },
     checkAndResetDailyMetrics: () => {
         const state = get();
         if (isNewDay(state.flowMetrics.lastSessionDate)) {
