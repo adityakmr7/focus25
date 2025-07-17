@@ -26,6 +26,9 @@ interface TimerContainerProps {
     isPlaying: boolean;
     isLoading?: boolean;
     focusModeActive: boolean;
+    currentTime?: number;
+    totalPlayTime?: number;
+    isLooping?: boolean;
 }
 const TimerContainer: React.FC<TimerContainerProps> = React.memo(
     ({
@@ -45,6 +48,9 @@ const TimerContainer: React.FC<TimerContainerProps> = React.memo(
         isPlaying,
         isLoading = false,
         focusModeActive,
+        currentTime = 0,
+        totalPlayTime = 0,
+        isLooping = false,
     }) => {
         const containerAnimatedStyle = useAnimatedStyle(() => {
             return {
@@ -113,6 +119,9 @@ const TimerContainer: React.FC<TimerContainerProps> = React.memo(
                             settings={settings}
                             player={player}
                             volumeStyle={volumeStyle}
+                            currentTime={currentTime}
+                            totalPlayTime={totalPlayTime}
+                            isLooping={isLooping}
                         />
                     </View>
                 )}
@@ -158,7 +167,7 @@ const styles = StyleSheet.create({
     },
     breathingContainer: {
         position: 'absolute',
-        top: '30%',
+        top: '38%',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: -1,

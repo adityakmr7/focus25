@@ -26,7 +26,8 @@
       },
       "infoPlist": {
         "UIBackgroundModes": [
-          "audio"
+          "audio",
+          "processing"
         ],
         "NSMicrophoneUsageDescription": "This app uses the microphone for focus session audio feedback.",
         "NSUserNotificationsUsageDescription": "This app sends notifications to remind you about focus sessions and breaks.",

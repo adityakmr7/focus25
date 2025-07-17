@@ -14,7 +14,8 @@ import BottomSheet, {
     BottomSheetFlatList,
     BottomSheetView,
 } from '@gorhom/bottom-sheet';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types';
 import { MusicTrack, musicTracks } from '../utils/constants';
@@ -59,7 +60,10 @@ export const BottomSheetMusicPlayer: React.FC<BottomSheetMusicPlayerProps> = ({
     isPlaying,
     downloadProgress,
 }) => {
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
     const [filteredType, setFilteredType] = useState<string>('all');
     const waveAnimation = useSharedValue(0);
     const volumeAnimation = useSharedValue(settings.volume);

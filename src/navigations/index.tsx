@@ -6,8 +6,9 @@ import FlowTimerScreen from '../screens/FlowTimerScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import FlowAnalyticsScreen from '../screens/FlowAnalyticsScreen';
 import ThemeCustomizationScreen from '../screens/ThemeCustomizationScreen';
-import { useTheme } from '../providers/ThemeProvider';
 import TodoScreen from '../screens/TodoScreen';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 
 type AppTabParamList = {
     Statistics: undefined;
@@ -26,7 +27,10 @@ const Tab = createBottomTabNavigator<AppTabParamList>();
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
 const AppTabNavigation = () => {
-    const { theme, isDark } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
 
     return (
         <Tab.Navigator
@@ -72,7 +76,10 @@ const AppTabNavigation = () => {
 };
 
 const AppStackNavigation = () => {
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
 
     return (
         <Stack.Navigator

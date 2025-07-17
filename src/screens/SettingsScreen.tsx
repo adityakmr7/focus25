@@ -11,8 +11,8 @@ import { SettingItem } from '../components/SettingItem';
 import { SectionHeader } from '../components/SectionHeader';
 import { TimeDurationSelector } from '../components/TimeDurationSelector';
 import { useSettingsStore } from '../store/settingsStore';
-import { useTheme } from '../providers/ThemeProvider';
 import { useThemeStore } from '../store/themeStore';
+import { useTheme } from '../hooks/useTheme';
 import { useGoalsStore } from '../store/goalsStore';
 import { useStatisticsStore } from '../store/statisticsStore';
 import { usePomodoroStore } from '../store/pomodoroStore';
@@ -39,8 +39,8 @@ interface StorageInfo {
 }
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
-    const { theme, isDark } = useTheme();
     const { setMode } = useThemeStore();
+    const { theme, isDark } = useTheme();
     const {
         timeDuration,
         soundEffects,
@@ -57,7 +57,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         openSupport,
         openPrivacy,
         openTerms,
-        openStorage,
         openFeedback,
         breakDuration,
         setBreakDuration,

@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 import { AudioPlayer } from 'expo-audio';
 import { MusicTrack } from '../utils/constants';
 import Animated, {
@@ -26,6 +27,8 @@ interface MiniAudioPlayerProps {
     volumeStyle: ViewStyle;
     currentTime?: number;
     duration?: number;
+    totalPlayTime?: number;
+    isLooping?: boolean;
 }
 
 const MiniAudioPlayer = ({
@@ -38,8 +41,13 @@ const MiniAudioPlayer = ({
     volumeStyle,
     currentTime = 0,
     duration = 0,
+    totalPlayTime = 0,
+    isLooping = false,
 }: MiniAudioPlayerProps) => {
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
 
     // Animations
     const slideAnimation = useSharedValue(0);
@@ -236,9 +244,9 @@ const MiniAudioPlayer = ({
                     )}
 
                     {/* Time Display */}
-                    {duration > 0 && (
+                    {isLooping && (
                         <Text style={[styles.timeText, { color: theme.textSecondary }]}>
-                            {formatTime(currentTime)} / {formatTime(duration)}
+                            {formatTime(totalPlayTime)} / {selectedTrackData.duration}
                         </Text>
                     )}
                 </View>

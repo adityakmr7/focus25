@@ -9,7 +9,8 @@ import Animated, {
     interpolate,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../providers/ThemeProvider';
+import { useThemeStore } from '../store/themeStore';
+import { useColorScheme } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -41,7 +42,10 @@ export const GamificationOverlay: React.FC<GamificationOverlayProps> = ({
     animationValue,
     onClose,
 }) => {
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
     const scale = useSharedValue(0.8);
     const opacity = useSharedValue(0);
     const confettiAnimation = useSharedValue(0);
