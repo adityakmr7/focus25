@@ -27,6 +27,8 @@ interface MiniAudioPlayerProps {
     volumeStyle: ViewStyle;
     currentTime?: number;
     duration?: number;
+    totalPlayTime?: number;
+    isLooping?: boolean;
 }
 
 const MiniAudioPlayer = ({
@@ -39,6 +41,8 @@ const MiniAudioPlayer = ({
     volumeStyle,
     currentTime = 0,
     duration = 0,
+    totalPlayTime = 0,
+    isLooping = false,
 }: MiniAudioPlayerProps) => {
     const { mode, getCurrentTheme } = useThemeStore();
     const systemColorScheme = useColorScheme();
@@ -240,9 +244,9 @@ const MiniAudioPlayer = ({
                     )}
 
                     {/* Time Display */}
-                    {duration > 0 && (
+                    {isLooping && (
                         <Text style={[styles.timeText, { color: theme.textSecondary }]}>
-                            {formatTime(currentTime)} / {formatTime(duration)}
+                            {formatTime(totalPlayTime)} / {selectedTrackData.duration}
                         </Text>
                     )}
                 </View>

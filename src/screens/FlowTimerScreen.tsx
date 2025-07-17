@@ -104,6 +104,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         return musicTracks.find((t) => t.id === selectedTrack)?.source || null;
     }, [selectedTrack]);
 
+    const selectedTrackData = useMemo(
+        () => musicTracks.find((track) => track.id === selectedTrack),
+        [selectedTrack],
+    );
+
     const {
         player,
         isReady,
@@ -113,7 +118,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         downloadError,
         downloadProgress,
         usingFallback,
-    } = useCachedAudio(currentTrackUrl);
+        isLooping,
+        currentTime,
+        totalPlayTime,
+        startLoop,
+        stopLoop,
+    } = useCachedAudio(currentTrackUrl, selectedTrackData);
 
     const alertPlayer = useAudioPlayer(audioSource);
 
@@ -146,11 +156,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const quickActionsAnimation = useSharedValue(0);
     const volumeAnimation = useSharedValue(settings.volume);
 
-    // Memoized values
-    const selectedTrackData = useMemo(
-        () => musicTracks.find((track) => track.id === selectedTrack),
-        [selectedTrack],
-    );
+    // Memoized values - selectedTrackData is now defined above with useCachedAudio
 
     // Load settings from storage
     const loadSettings = useCallback(async () => {
@@ -223,10 +229,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             }
 
             if (isPlaying) {
-                await player.pause();
+                player.pause();
+                stopLoop();
                 setIsPlaying(false);
             } else {
-                await player.play();
+                player.play();
+                startLoop();
                 setIsPlaying(true);
             }
         } catch (error) {
@@ -236,7 +244,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 'Failed to control playback. The track may still be loading.',
             );
         }
-    }, [player, isReady, uri, isDownloading, downloadProgress, usingFallback, isPlaying]);
+    }, [player, isReady, uri, isDownloading, downloadProgress, usingFallback, isPlaying, startLoop, stopLoop]);
 
     const handleTrackSelection = useCallback(
         async (trackId: string) => {
@@ -246,7 +254,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     // Stop current playback first
                     if (isPlaying && player) {
                         try {
-                            await player.pause();
+                            player.pause();
+                            stopLoop();
                             setIsPlaying(false);
                         } catch (error) {
                             console.warn('Failed to pause current track:', error);
@@ -268,7 +277,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 setIsLoadingTrack(false);
             }
         },
-        [selectedTrack, isPlaying, player, status?.isLoaded, handlePlayPause, saveSettings],
+        [selectedTrack, isPlaying, player, status?.isLoaded, handlePlayPause, saveSettings, stopLoop],
     );
 
     const handleVolumeChange = useCallback(
@@ -361,7 +370,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
             // Pause music on reset
             if (isPlaying && player && status?.isLoaded) {
-                await player.pause();
+                player.pause();
+                stopLoop();
                 setIsPlaying(false);
             }
 
@@ -373,7 +383,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 severity: 'low',
             });
         }
-    }, [resetTimer, isPlaying, player, status?.isLoaded, pulseAnimation]);
+    }, [resetTimer, isPlaying, player, status?.isLoaded, pulseAnimation, stopLoop]);
 
     // // UI handlers
     // const handleShowAchievements = useCallback(() => {
@@ -734,6 +744,9 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         selectedTrackData={selectedTrackData}
                         isLoading={timerState.isLoading}
                         focusModeActive={focusModeActive}
+                        currentTime={currentTime}
+                        totalPlayTime={totalPlayTime}
+                        isLooping={isLooping}
                     />
                 </Animated.View>
             </ScrollView>
