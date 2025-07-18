@@ -13,7 +13,6 @@ import { TimeDurationSelector } from '../components/TimeDurationSelector';
 import { useSettingsStore } from '../store/settingsStore';
 import { useThemeStore } from '../store/themeStore';
 import { useTheme } from '../hooks/useTheme';
-import { useGoalsStore } from '../store/goalsStore';
 import { useStatisticsStore } from '../store/statisticsStore';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,7 +29,6 @@ interface SettingsScreenProps {
 interface StorageInfo {
     totalSize: number;
     breakdown: {
-        goals: number;
         statistics: number;
         settings: number;
         theme: number;
@@ -64,14 +62,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         setBreakDuration,
     } = useSettingsStore();
 
-    const { goals } = useGoalsStore();
     const { flows, breaks, interruptions } = useStatisticsStore();
     const { flowMetrics } = usePomodoroStore();
 
     const [storageInfo, setStorageInfo] = useState<StorageInfo>({
         totalSize: 0,
         breakdown: {
-            goals: 0,
             statistics: 0,
             settings: 0,
             theme: 0,
@@ -106,13 +102,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             // Only recalculate if initial animation has completed
             calculateStorageUsage();
         }
-    }, [goals.length, flows, breaks, interruptions, flowMetrics]);
+    }, [flows, breaks, interruptions, flowMetrics]);
 
     // Memoize storage calculation
     const calculateStorageUsage = useCallback(async () => {
         setIsCalculatingStorage(true);
         try {
-            const goalsSize = JSON.stringify(goals).length;
             const statisticsSize = JSON.stringify({ flows, breaks, interruptions }).length;
             const settingsSize = JSON.stringify({
                 timeDuration,
@@ -127,8 +122,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             const themeSize = 500;
             const flowMetricsSize = JSON.stringify(flowMetrics).length;
 
-            const totalSize =
-                goalsSize + statisticsSize + settingsSize + themeSize + flowMetricsSize;
+            const totalSize = statisticsSize + settingsSize + themeSize + flowMetricsSize;
 
             const formatBytes = (bytes: number): string => {
                 if (bytes === 0) return '0 B';
@@ -141,7 +135,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             setStorageInfo({
                 totalSize,
                 breakdown: {
-                    goals: goalsSize,
                     statistics: statisticsSize,
                     settings: settingsSize,
                     theme: themeSize,
@@ -155,7 +148,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             setIsCalculatingStorage(false);
         }
     }, [
-        goals,
         flows,
         breaks,
         interruptions,
@@ -229,7 +221,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 },
             ],
         );
-    }, [goals.length, deleteData, showAlert, calculateStorageUsage]);
+    }, [deleteData, showAlert, calculateStorageUsage]);
 
     const handleStorageDetails = useCallback((): void => {
         const breakdown = storageInfo.breakdown;
@@ -249,7 +241,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
         const message =
             `Storage Breakdown:\n\n` +
-            `📊 Goals: ${formatBytes(breakdown.goals)} (${getPercentage(breakdown.goals)})\n` +
             `📈 Statistics: ${formatBytes(breakdown.statistics)} (${getPercentage(breakdown.statistics)})\n` +
             `🔥 Flow Metrics: ${formatBytes(breakdown.flowMetrics)} (${getPercentage(breakdown.flowMetrics)})\n` +
             `⚙️ Settings: ${formatBytes(breakdown.settings)} (${getPercentage(breakdown.settings)})\n` +
@@ -292,15 +283,21 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         setIsCheckingUpdates(true);
         try {
             const updateInfo = await updateService.checkForUpdates(true); // Force check
-            
+
             if (updateInfo.isUpdateAvailable) {
                 await updateService.showUpdateAlert(updateInfo);
             } else {
-                showAlert('You\'re Up to Date!', `You have the latest version (${updateInfo.currentVersion}) of the app.`);
+                showAlert(
+                    "You're Up to Date!",
+                    `You have the latest version (${updateInfo.currentVersion}) of the app.`,
+                );
             }
         } catch (error) {
             console.error('Failed to check for updates:', error);
-            showAlert('Update Check Failed', 'Unable to check for updates. Please try again later.');
+            showAlert(
+                'Update Check Failed',
+                'Unable to check for updates. Please try again later.',
+            );
         } finally {
             setIsCheckingUpdates(false);
         }
@@ -520,7 +517,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         />
                         <SettingItem
                             title={isExporting ? 'Exporting...' : 'Export Data'}
-                            subtitle={`Download ${goals.length} goals, statistics & settings`}
+                            subtitle={`Download statistics & settings`}
                             icon="download-outline"
                             showArrow={!isExporting}
                             onPress={isExporting ? undefined : handleExportData}
@@ -551,8 +548,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             onPress={handleSupport}
                         />
                         <SettingItem
-                            title={isCheckingUpdates ? 'Checking for Updates...' : 'Check for Updates'}
-                            subtitle={isCheckingUpdates ? 'Please wait...' : 'Check if a new version is available'}
+                            title={
+                                isCheckingUpdates ? 'Checking for Updates...' : 'Check for Updates'
+                            }
+                            subtitle={
+                                isCheckingUpdates
+                                    ? 'Please wait...'
+                                    : 'Check if a new version is available'
+                            }
                             icon="refresh-outline"
                             showArrow={!isCheckingUpdates}
                             onPress={isCheckingUpdates ? undefined : handleCheckForUpdates}
@@ -603,7 +606,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     >
                         <SettingItem
                             title="Delete All Data"
-                            subtitle={`Permanently remove ${goals.length} goals and all statistics`}
+                            subtitle={`Permanently all statistics`}
                             icon="trash-outline"
                             showArrow={true}
                             onPress={handleDeleteData}

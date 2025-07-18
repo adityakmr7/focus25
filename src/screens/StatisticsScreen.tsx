@@ -16,7 +16,6 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import StatisticsChart from '../components/StatisticsChart';
 import { useStatisticsStore } from '../store/statisticsStore';
 import { usePomodoroStore } from '../store/pomodoroStore';
-import { useGoalsStore } from '../store/goalsStore';
 import { useThemeStore } from '../store/themeStore';
 import { useColorScheme } from 'react-native';
 import { hybridDatabaseService } from '../data/hybridDatabase';
@@ -172,14 +171,6 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
 
     const { flowMetrics, initializeStore: initializePomodoro } = usePomodoroStore();
 
-    const {
-        goals,
-        getActiveGoals,
-        updateGoalsFromStats,
-        initializeStore: initializeGoals,
-    } = useGoalsStore();
-
-    const [showGoalsModal, setShowGoalsModal] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
     const headerAnimatedValue = useRef(new Animated.Value(0)).current;
@@ -201,11 +192,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     useEffect(() => {
         const initializeStores = async () => {
             try {
-                await Promise.all([
-                    initializeStatistics(),
-                    initializePomodoro(),
-                    initializeGoals(),
-                ]);
+                await Promise.all([initializeStatistics(), initializePomodoro()]);
             } catch (error) {
                 console.error('Failed to initialize stores:', error);
             }
@@ -223,18 +210,6 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
 
         return () => clearInterval(interval);
     }, []);
-
-    // Update goals based on current statistics
-    useEffect(() => {
-        const stats = {
-            dailySessions: flows.completed,
-            dailyFocusTime: flows.minutes,
-            currentStreak: flowMetrics.currentStreak,
-            weeklyConsistency: flows.completed > 0 ? Math.min(85 + flows.completed * 5, 100) : 0,
-        };
-
-        updateGoalsFromStats(stats);
-    }, [flows, flowMetrics]);
 
     const handleRefresh = async () => {
         setRefreshing(true);
@@ -266,9 +241,6 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
         inputRange: [0, 1],
         outputRange: [-30, 0],
     });
-
-    const activeGoals = getActiveGoals();
-    const recentGoals = activeGoals.slice(0, 3);
 
     // Calculate dynamic trends based on historical data
     const calculateTrend = (current: number, category: string) => {

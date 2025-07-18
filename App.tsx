@@ -9,7 +9,6 @@ import * as Notifications from 'expo-notifications';
 import { Alert, AppState, AppStateStatus, Platform, View, useColorScheme } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSettingsStore } from './src/store/settingsStore';
-import { useGoalsStore } from './src/store/goalsStore';
 import { useStatisticsStore } from './src/store/statisticsStore';
 import { usePomodoroStore } from './src/store/pomodoroStore';
 import { useThemeStore } from './src/store/themeStore';
@@ -35,7 +34,6 @@ SplashScreen.preventAutoHideAsync();
 
 const AppContent = () => {
     const { updateNotification, initializeStore: initializeSettings } = useSettingsStore();
-    const { initializeStore: initializeGoals } = useGoalsStore();
     const { initializeStore: initializeStatistics } = useStatisticsStore();
     const { initializeStore: initializePomodoro } = usePomodoroStore();
     const { initializeStore: initializeTheme, mode, getCurrentTheme } = useThemeStore();
@@ -60,18 +58,16 @@ const AppContent = () => {
                     setIsSeeding(true);
 
                     try {
-                        const [goals, statistics] = await Promise.all([
-                            localDatabaseService.getGoals(),
+                        const [statistics] = await Promise.all([
                             localDatabaseService.getStatistics(),
                         ]);
 
                         console.log('📊 Database status:', {
-                            goalsCount: goals.length,
                             hasStatistics: statistics.totalCount > 0,
                         });
 
                         // Seed if database is empty
-                        if (goals.length === 0 && statistics.totalCount === 0) {
+                        if (statistics.totalCount === 0) {
                             console.log('🌱 Database is empty, starting seeding...');
                             await seedDatabase(localDatabaseService, { all: true });
                             console.log('✅ Database seeding completed successfully!');
@@ -126,7 +122,6 @@ const AppContent = () => {
                 console.log('🔄 Initializing stores...');
                 await Promise.all([
                     initializeSettings(),
-                    initializeGoals(),
                     initializeStatistics(),
                     initializePomodoro(),
                     initializeTheme(),
@@ -378,12 +373,8 @@ if (__DEV__) {
 
         async checkDB() {
             try {
-                const [goals, stats] = await Promise.all([
-                    localDatabaseService.getGoals(),
-                    localDatabaseService.getStatistics(),
-                ]);
+                const [stats] = await Promise.all([localDatabaseService.getStatistics()]);
                 console.log('📊 Database status:', {
-                    goals: goals.length,
                     stats: stats.totalCount,
                 });
             } catch (error) {
