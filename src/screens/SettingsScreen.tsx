@@ -259,22 +259,18 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
     const handleRateApp = useCallback((): void => {
         rateApp();
-        showAlert('Rate App', 'Thank you for using Focus25! Redirecting to app store...');
     }, [rateApp, showAlert]);
 
     const handleSupport = useCallback((): void => {
         openSupport();
-        showAlert('Support', 'Opening support page...');
     }, [openSupport, showAlert]);
 
     const handlePrivacy = useCallback((): void => {
         openPrivacy();
-        showAlert('Privacy Policy', 'Opening privacy policy...');
     }, [openPrivacy, showAlert]);
 
     const handleTerms = useCallback((): void => {
         openTerms();
-        showAlert('Terms of Service', 'Opening terms of service...');
     }, [openTerms, showAlert]);
 
     const handleTheme = useCallback((): void => {
@@ -283,7 +279,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
     const handleFeedback = useCallback((): void => {
         openFeedback();
-        showAlert('Feedback', 'Opening feedback form...');
     }, [openFeedback, showAlert]);
 
     const handleThemeCustomization = useCallback((): void => {
