@@ -11,12 +11,6 @@ import {
     View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, {
-    interpolate,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
-} from 'react-native-reanimated';
 import { useTodoStore } from '../store/todoStore';
 import { Todo } from '../types/database';
 import TodoFormBottomSheet, {
@@ -42,14 +36,14 @@ const TodoScreen: React.FC = () => {
     const calendarRef = useRef<FlatList>(null);
     const [refreshing, setRefreshing] = useState(false);
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const headerAnimatedValue = useSharedValue(0);
+    const [showHorizontalCalendar, setShowHorizontalCalendar] = useState(false);
 
     // Generate calendar days for the horizontal calendar
     const generateCalendarDays = () => {
         const days = [];
         const today = new Date();
 
-        // Generate 14 days (7 before and 7 after today)
+        // Generate 15 days (7 before and 7 after today)
         for (let i = -7; i <= 7; i++) {
             const date = new Date(today);
             date.setDate(today.getDate() + i);
@@ -86,12 +80,6 @@ const TodoScreen: React.FC = () => {
             }
         };
         void initialize();
-        headerAnimatedValue.value = withTiming(1, { duration: 800 });
-
-        // Scroll to today's date (index 7 in the 15-day calendar)
-        setTimeout(() => {
-            calendarRef.current?.scrollToIndex({ index: 7, animated: true, viewPosition: 0.5 });
-        }, 100);
     }, [initializeStore]);
 
     const handleRefresh = useCallback(async () => {
@@ -136,6 +124,24 @@ const TodoScreen: React.FC = () => {
         // Bottom sheet will handle closing itself
     }, []);
 
+    const handleDateSelect = useCallback((date: Date) => {
+        setSelectedDate(date);
+        setShowHorizontalCalendar(false);
+    }, []);
+
+    const handleHeaderLongPress = useCallback(() => {
+        setShowHorizontalCalendar(true);
+        // Scroll to today's date when calendar appears
+        setTimeout(() => {
+            calendarRef.current?.scrollToIndex({ index: 7, animated: true, viewPosition: 0.5 });
+        }, 100);
+    }, []);
+
+    const isToday = (date: Date) => {
+        const today = new Date();
+        return isSameDay(date, today);
+    };
+
     const handleDeleteTodo = useCallback(
         (id: string) => {
             Alert.alert('Delete Todo', 'Are you sure you want to delete this todo?', [
@@ -145,17 +151,6 @@ const TodoScreen: React.FC = () => {
         },
         [deleteTodo],
     );
-
-    const headerAnimatedStyle = useAnimatedStyle(() => {
-        return {
-            opacity: interpolate(headerAnimatedValue.value, [0, 1], [0, 1]),
-            transform: [
-                {
-                    translateY: interpolate(headerAnimatedValue.value, [0, 1], [-30, 0]),
-                },
-            ],
-        };
-    });
 
     if (error) {
         return (
@@ -177,61 +172,77 @@ const TodoScreen: React.FC = () => {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header */}
+            <TouchableOpacity
+                style={styles.header}
+                onLongPress={handleHeaderLongPress}
+                activeOpacity={0.7}
+            >
+                <Text style={[styles.headerDate, { color: theme.text }]}>
+                    {isToday(selectedDate)
+                        ? 'Today'
+                        : selectedDate.toLocaleDateString('en-GB', {
+                              day: 'numeric',
+                              month: 'long',
+                          })}
+                </Text>
+            </TouchableOpacity>
 
-            {/* Horizontal Calendar */}
-            <View style={styles.calendarContainer}>
-                <FlatList
-                    ref={calendarRef}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    data={generateCalendarDays()}
-                    keyExtractor={(item) => item.dateString}
-                    getItemLayout={(data, index) => ({
-                        length: 68,
-                        offset: 68 * index,
-                        index,
-                    })}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity
-                            style={[
-                                styles.calendarDay,
-                                {
-                                    backgroundColor: isSameDay(item.date, selectedDate)
-                                        ? theme.accent
-                                        : theme.background,
-                                },
-                            ]}
-                            onPress={() => setSelectedDate(item.date)}
-                        >
-                            <Text
+            {/* Horizontal Calendar - Only shown when showHorizontalCalendar is true */}
+            {showHorizontalCalendar && (
+                <View style={styles.calendarContainer}>
+                    <FlatList
+                        ref={calendarRef}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        data={generateCalendarDays()}
+                        keyExtractor={(item) => item.dateString}
+                        getItemLayout={(data, index) => ({
+                            length: 68,
+                            offset: 68 * index,
+                            index,
+                        })}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
                                 style={[
-                                    styles.calendarDayText,
+                                    styles.calendarDay,
                                     {
-                                        color: isSameDay(item.date, selectedDate)
-                                            ? 'white'
-                                            : theme.textSecondary,
+                                        backgroundColor: isSameDay(item.date, selectedDate)
+                                            ? theme.accent
+                                            : theme.background,
                                     },
                                 ]}
+                                onPress={() => handleDateSelect(item.date)}
                             >
-                                {item.dayName}
-                            </Text>
-                            <Text
-                                style={[
-                                    styles.calendarDateText,
-                                    {
-                                        color: isSameDay(item.date, selectedDate)
-                                            ? 'white'
-                                            : theme.text,
-                                    },
-                                ]}
-                            >
-                                {item.day}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-                    contentContainerStyle={styles.calendarList}
-                />
-            </View>
+                                <Text
+                                    style={[
+                                        styles.calendarDayText,
+                                        {
+                                            color: isSameDay(item.date, selectedDate)
+                                                ? 'white'
+                                                : theme.textSecondary,
+                                        },
+                                    ]}
+                                >
+                                    {item.dayName}
+                                </Text>
+                                <Text
+                                    style={[
+                                        styles.calendarDateText,
+                                        {
+                                            color: isSameDay(item.date, selectedDate)
+                                                ? 'white'
+                                                : theme.text,
+                                        },
+                                    ]}
+                                >
+                                    {item.day}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                        contentContainerStyle={styles.calendarList}
+                    />
+                </View>
+            )}
 
             {/* Todo List */}
             <FlatList
@@ -300,7 +311,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        alignItems: 'flex-end',
+        alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 24,
         paddingTop: 20,
