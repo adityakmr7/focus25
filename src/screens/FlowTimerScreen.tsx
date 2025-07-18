@@ -14,13 +14,12 @@ import {
 } from 'react-native';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { useSettingsStore } from '../store/settingsStore';
-import { useAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import { BottomSheetMusicPlayer } from '../components/BottomSheetMusicPlayer';
 import Animated, {
     interpolate,
     useAnimatedStyle,
     useSharedValue,
-    withRepeat,
     withSequence,
     withTiming,
 } from 'react-native-reanimated';
@@ -413,6 +412,9 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     await setAudioModeAsync({
                         playsInSilentMode: true,
                         allowsRecording: false,
+                        shouldPlayInBackground: true,
+                        shouldRouteThroughEarpiece: true,
+                        interruptionMode: 'doNotMix',
                     });
                     console.log('🔊 Audio mode configured for silent mode playback');
                 } catch (error) {
