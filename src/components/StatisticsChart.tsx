@@ -417,7 +417,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ onPeriodChange }) => 
                     <View style={styles.totalCountSection}>
                         <View style={styles.totalCountHeader}>
                             <Text style={[styles.totalCountLabel, { color: theme.textSecondary }]}>
-                                Total Flows
+                                Total sessions
                             </Text>
                             <View
                                 style={[
