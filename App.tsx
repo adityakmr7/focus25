@@ -25,7 +25,7 @@ import { AudioCacheManager } from './src/utils/audioCache';
 import { MusicTrack, musicTracks } from './src/utils/constants';
 import { localDatabaseService } from './src/data/local/localDatabase';
 import { seedDatabase } from './src/utils/seedData';
-
+import * as Font from 'expo-font';
 // Enable screens before any navigation components are rendered
 enableScreens();
 
@@ -99,6 +99,19 @@ const AppContent = () => {
         const initializeApp = async () => {
             try {
                 console.log('🚀 Starting app initialization...');
+
+                // Load fonts first
+                await Font.loadAsync({
+                    'SF-Pro-Display-Ultralight': require('./assets/fonts/SF-Pro-Display-Ultralight.otf'),
+                    'SF-Pro-Display-Thin': require('./assets/fonts/SF-Pro-Display-Thin.otf'),
+                    'SF-Pro-Display-Light': require('./assets/fonts/SF-Pro-Display-Light.otf'),
+                    'SF-Pro-Display-Regular': require('./assets/fonts/SF-Pro-Display-Regular.otf'),
+                    'SF-Pro-Display-Medium': require('./assets/fonts/SF-Pro-Display-Medium.otf'),
+                    'SF-Pro-Display-Semibold': require('./assets/fonts/SF-Pro-Display-Semibold.otf'),
+                    'SF-Pro-Display-Bold': require('./assets/fonts/SF-Pro-Display-Bold.otf'),
+                    'SF-Pro-Display-Heavy': require('./assets/fonts/SF-Pro-Display-Heavy.otf'),
+                });
+                console.log('✅ SF Pro Display fonts loaded');
 
                 // Initialize error handler first
                 await errorHandler.initialize();

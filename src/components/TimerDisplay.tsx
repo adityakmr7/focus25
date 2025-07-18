@@ -64,10 +64,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     digitalTime: {
-        fontSize: 64,
+        fontSize: 100,
         fontWeight: '200',
         letterSpacing: -2,
-        fontFamily: 'monospace',
+        fontFamily: 'SF-Pro-Display-Bold',
     },
     progressBar: {
         width: 200,
