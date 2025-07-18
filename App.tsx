@@ -18,6 +18,7 @@ import { hybridDatabaseService } from './src/data/hybridDatabase';
 import { backgroundTimerService } from './src/services/backgroundTimer';
 import { notificationService } from './src/services/notificationService';
 import { errorHandler } from './src/services/errorHandler';
+import { updateService } from './src/services/updateService';
 import { shouldShowOnboarding } from './src/components/OnboardingFlow';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -138,6 +139,7 @@ const AppContent = () => {
                     await Promise.all([
                         backgroundTimerService.initialize(),
                         notificationService.initialize(),
+                        updateService.initialize(),
                     ]);
                     console.log('✅ Background services initialized');
                 }
@@ -154,6 +156,18 @@ const AppContent = () => {
 
                 // Pre-download popular music tracks
                 await preDownloadPopularTracks();
+
+                // Check for app updates (mobile only)
+                if (Platform.OS !== 'web') {
+                    try {
+                        console.log('🔄 Checking for app updates...');
+                        await updateService.checkForUpdatesAndShow();
+                        console.log('✅ Update check completed');
+                    } catch (error) {
+                        console.warn('Update check failed:', error);
+                        // Don't block app initialization for update check failures
+                    }
+                }
 
                 console.log('🎉 App initialization completed successfully');
                 setIsAppReady(true);

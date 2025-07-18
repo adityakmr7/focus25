@@ -156,8 +156,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         }
     },
 
-    rateApp: () => {
-        console.log('Opening app store...');
+    rateApp: async () => {
+        await Linking.openURL(
+            `https://apps.apple.com/app/apple-store/id${APP_CONFIG.APP_ID}?action=write-review`,
+        );
     },
 
     openSupport: async () => {

@@ -18,6 +18,7 @@ import { useStatisticsStore } from '../store/statisticsStore';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { Ionicons } from '@expo/vector-icons';
 import { version } from '../../package.json';
+import { updateService } from '../services/updateService';
 
 interface SettingsScreenProps {
     navigation?: {
@@ -82,6 +83,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const [isExporting, setIsExporting] = useState(false);
     const [isCalculatingStorage, setIsCalculatingStorage] = useState(false);
     const [hasAnimated, setHasAnimated] = useState(false); // Track if animations have run
+    const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
 
     // Reanimated shared values
     const headerProgress = useSharedValue(0);
@@ -280,6 +282,29 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const handleFeedback = useCallback((): void => {
         openFeedback();
     }, [openFeedback, showAlert]);
+
+    const handleCheckForUpdates = useCallback(async (): Promise<void> => {
+        if (Platform.OS === 'web') {
+            showAlert('Not Available', 'Update checking is not available on the web version.');
+            return;
+        }
+
+        setIsCheckingUpdates(true);
+        try {
+            const updateInfo = await updateService.checkForUpdates(true); // Force check
+            
+            if (updateInfo.isUpdateAvailable) {
+                await updateService.showUpdateAlert(updateInfo);
+            } else {
+                showAlert('You\'re Up to Date!', `You have the latest version (${updateInfo.currentVersion}) of the app.`);
+            }
+        } catch (error) {
+            console.error('Failed to check for updates:', error);
+            showAlert('Update Check Failed', 'Unable to check for updates. Please try again later.');
+        } finally {
+            setIsCheckingUpdates(false);
+        }
+    }, [showAlert]);
 
     const handleThemeCustomization = useCallback((): void => {
         if (navigation) {
@@ -524,6 +549,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             icon="help-circle-outline"
                             showArrow={true}
                             onPress={handleSupport}
+                        />
+                        <SettingItem
+                            title={isCheckingUpdates ? 'Checking for Updates...' : 'Check for Updates'}
+                            subtitle={isCheckingUpdates ? 'Please wait...' : 'Check if a new version is available'}
+                            icon="refresh-outline"
+                            showArrow={!isCheckingUpdates}
+                            onPress={isCheckingUpdates ? undefined : handleCheckForUpdates}
                         />
                         <SettingItem
                             title="Rate App"
