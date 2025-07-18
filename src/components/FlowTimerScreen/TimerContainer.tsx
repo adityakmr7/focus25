@@ -4,6 +4,7 @@ import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { TimerDisplay } from '../TimerDisplay';
 import { PlayPauseButton } from '../PlayPauseButton';
 import { MusicSettings } from '../BottomSheetMusicPlayer';
+import { LiquidDropAnimation } from '../LiquidDropAnimation';
 import { AudioPlayer } from 'expo-audio';
 
 interface TimerContainerProps {
@@ -68,6 +69,16 @@ const TimerContainer: React.FC<TimerContainerProps> = React.memo(
                         isRunning={timer.isRunning}
                         pulseAnimation={pulseAnimation}
                     />
+                    <Text style={[styles.flowLabel, { color: theme.text }]}>
+                        {timer.isBreak ? 'Break' : 'Focus'}
+                    </Text>
+                    {/* Liquid Drop Animation for session progress */}
+                    <LiquidDropAnimation
+                        currentSession={timer.currentSession}
+                        totalSessions={timer.totalSessions}
+                        isRunning={timer.isRunning}
+                        isBreak={timer.isBreak}
+                    />
                 </View>
 
                 {/* Removed session dots for cleaner interface */}
@@ -112,6 +123,12 @@ const styles = StyleSheet.create({
     },
     musicIcon: {
         fontSize: 16,
+        textAlign: 'center',
+    },
+    flowLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        fontFamily: 'SF-Pro-Display-Thin',
         textAlign: 'center',
     },
 });
