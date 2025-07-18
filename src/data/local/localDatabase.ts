@@ -498,17 +498,11 @@ class SQLiteService implements LocalDataBase {
         const now = new Date().toISOString();
         const sql = `
             INSERT OR REPLACE INTO theme 
-      (id, mode, accent_color, timer_style, custom_themes, active_custom_theme, updated_at)
-      VALUES (1, ?, ?, ?, ?, ?, ?)
+      (id, mode, accent_color, updated_at)
+      VALUES (1, ?, ?, ?)
         `;
 
-        await this.db.runAsync(sql, [
-            theme.mode,
-            theme.accentColor,
-            theme.timerStyle,
-            theme.activeCustomTheme || null,
-            now,
-        ]);
+        await this.db.runAsync(sql, [theme.mode, theme.accentColor, now]);
     }
 
     async getTheme(): Promise<Theme> {
@@ -623,8 +617,8 @@ class SQLiteService implements LocalDataBase {
 
         const sql = `
             INSERT OR REPLACE INTO todos 
-            (id, title, description, is_completed, priority, category, due_date, created_at, completed_at, tags, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, title, is_completed, created_at, completed_at)
+            VALUES (?, ?, ?, ?, ?)
         `;
 
         await this.db.runAsync(sql, [
@@ -657,16 +651,13 @@ class SQLiteService implements LocalDataBase {
                           ? 'created_at'
                           : key === 'completedAt'
                             ? 'completed_at'
-                            : key === 'dueDate'
-                              ? 'due_date'
-                              : key;
+                            : key;
                 return `${dbKey} = ?`;
             })
             .join(', ');
 
-        const values = Object.entries(updates).map(([key, value]) => {
+        const values = Object.entries(updates).map(([, value]) => {
             if (typeof value === 'boolean') return value ? 1 : 0;
-            if (key === 'tags' && Array.isArray(value)) return value.join(',');
             return value;
         });
 
