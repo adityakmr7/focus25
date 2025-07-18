@@ -32,7 +32,7 @@ export class DatabaseSeeder {
         try {
             await this.db.initializeDatabase();
 
-            await this.seedGoals();
+            // await this.seedGoals();
             await this.seedStatistics();
             await this.seedFlowMetrics();
             await this.seedSettings();
