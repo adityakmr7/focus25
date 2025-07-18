@@ -6,18 +6,13 @@ import React, {
     forwardRef,
     useImperativeHandle,
 } from 'react';
-import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    StyleSheet,
-    Platform,
-    Alert,
-    KeyboardAvoidingView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Alert, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import BottomSheet, {
+    BottomSheetBackdrop,
+    BottomSheetScrollView,
+    BottomSheetTextInput,
+} from '@gorhom/bottom-sheet';
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types';
 import { Todo } from '../../types/database';
 import { useTheme } from '../../hooks/useTheme';
@@ -50,7 +45,7 @@ const TodoFormBottomSheet = forwardRef<TodoFormBottomSheetMethods, TodoFormBotto
 
         const animatedValue = useSharedValue(0);
 
-        const snapPoints = useMemo(() => ['50%'], []);
+        const snapPoints = useMemo(() => ['10%', '30%'], []);
 
         const renderBackdrop = useCallback(
             (props: any) => (
@@ -59,6 +54,7 @@ const TodoFormBottomSheet = forwardRef<TodoFormBottomSheetMethods, TodoFormBotto
                     disappearsOnIndex={-1}
                     appearsOnIndex={0}
                     opacity={0.5}
+                    onPress={Keyboard.dismiss}
                 />
             ),
             [],
@@ -129,78 +125,73 @@ const TodoFormBottomSheet = forwardRef<TodoFormBottomSheetMethods, TodoFormBotto
                 backgroundStyle={{ backgroundColor: theme.surface }}
                 handleIndicatorStyle={{ backgroundColor: theme.textSecondary }}
                 onClose={handleClose}
+                keyboardBehavior="interactive"
+                keyboardBlurBehavior="restore"
+                android_keyboardInputMode="adjustResize"
             >
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    style={styles.container}
-                >
-                    <BottomSheetScrollView showsVerticalScrollIndicator={false}>
-                        <Animated.View style={[styles.content, animatedStyle]}>
-                            <View style={styles.header}>
-                                <Text style={[styles.title, { color: theme.text }]}>
-                                    {editingTodo ? 'Edit Todo' : 'New Todo'}
-                                </Text>
+                <BottomSheetScrollView showsVerticalScrollIndicator={false}>
+                    <Animated.View style={[styles.content, animatedStyle]}>
+                        <View style={styles.header}>
+                            <Text style={[styles.title, { color: theme.text }]}>
+                                {editingTodo ? 'Edit Todo' : 'New Todo'}
+                            </Text>
+                            <TouchableOpacity
+                                onPress={() => bottomSheetRef.current?.close()}
+                                style={styles.closeButton}
+                            >
+                                <Ionicons name="close" size={24} color={theme.textSecondary} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.form}>
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.label, { color: theme.text }]}>Title</Text>
+                                <BottomSheetTextInput
+                                    style={[
+                                        styles.input,
+                                        {
+                                            backgroundColor: theme.background,
+                                            borderColor: theme.textSecondary + '30',
+                                            color: theme.text,
+                                        },
+                                    ]}
+                                    value={title}
+                                    onChangeText={setTitle}
+                                    placeholder="Enter todo title..."
+                                    placeholderTextColor={theme.textSecondary}
+                                    returnKeyType="next"
+                                />
+                            </View>
+
+                            <View style={styles.buttonContainer}>
                                 <TouchableOpacity
+                                    style={[
+                                        styles.cancelButton,
+                                        { backgroundColor: theme.background },
+                                    ]}
                                     onPress={() => bottomSheetRef.current?.close()}
-                                    style={styles.closeButton}
                                 >
-                                    <Ionicons name="close" size={24} color={theme.textSecondary} />
+                                    <Text
+                                        style={[
+                                            styles.cancelButtonText,
+                                            { color: theme.textSecondary },
+                                        ]}
+                                    >
+                                        Cancel
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.saveButton, { backgroundColor: theme.accent }]}
+                                    onPress={handleSave}
+                                >
+                                    <Text style={styles.saveButtonText}>
+                                        {editingTodo ? 'Update' : 'Create'}
+                                    </Text>
                                 </TouchableOpacity>
                             </View>
-
-                            <View style={styles.form}>
-                                <View style={styles.inputGroup}>
-                                    <Text style={[styles.label, { color: theme.text }]}>Title</Text>
-                                    <TextInput
-                                        style={[
-                                            styles.input,
-                                            {
-                                                backgroundColor: theme.background,
-                                                borderColor: theme.textSecondary + '30',
-                                                color: theme.text,
-                                            },
-                                        ]}
-                                        value={title}
-                                        onChangeText={setTitle}
-                                        placeholder="Enter todo title..."
-                                        placeholderTextColor={theme.textSecondary}
-                                        returnKeyType="next"
-                                    />
-                                </View>
-
-                                <View style={styles.buttonContainer}>
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.cancelButton,
-                                            { backgroundColor: theme.background },
-                                        ]}
-                                        onPress={() => bottomSheetRef.current?.close()}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.cancelButtonText,
-                                                { color: theme.textSecondary },
-                                            ]}
-                                        >
-                                            Cancel
-                                        </Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.saveButton,
-                                            { backgroundColor: theme.accent },
-                                        ]}
-                                        onPress={handleSave}
-                                    >
-                                        <Text style={styles.saveButtonText}>
-                                            {editingTodo ? 'Update' : 'Create'}
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </Animated.View>
-                    </BottomSheetScrollView>
-                </KeyboardAvoidingView>
+                        </View>
+                    </Animated.View>
+                </BottomSheetScrollView>
             </BottomSheet>
         );
     },
