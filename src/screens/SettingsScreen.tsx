@@ -49,6 +49,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         focusReminders,
         weeklyReports,
         dataSync,
+        showStatistics,
         toggleSetting,
         setTimeDuration,
         exportData,
@@ -465,6 +466,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             hasSwitch={true}
                             switchValue={soundEffects}
                             onSwitchToggle={() => toggleSetting('soundEffects')}
+                        />
+                        <SettingItem
+                            title="Show Statistics"
+                            subtitle="Show statistics tab in navigation"
+                            icon="bar-chart-outline"
+                            hasSwitch={true}
+                            switchValue={showStatistics}
+                            onSwitchToggle={() => toggleSetting('showStatistics')}
                         />
                         {/*<SettingItem*/}
                         {/*    title="Auto Break"*/}

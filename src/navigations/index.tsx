@@ -8,6 +8,7 @@ import FlowAnalyticsScreen from '../screens/FlowAnalyticsScreen';
 import ThemeCustomizationScreen from '../screens/ThemeCustomizationScreen';
 import TodoScreen from '../screens/TodoScreen';
 import { useThemeStore } from '../store/themeStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { useColorScheme } from 'react-native';
 import { View, Text } from 'react-native';
 
@@ -29,6 +30,7 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 
 const AppTabNavigation = () => {
     const { mode, getCurrentTheme } = useThemeStore();
+    const { showStatistics } = useSettingsStore();
     const systemColorScheme = useColorScheme();
     const theme = getCurrentTheme();
     const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
@@ -92,7 +94,9 @@ const AppTabNavigation = () => {
             })}
             initialRouteName="FlowTimer"
         >
-            <Tab.Screen name="Statistics" component={StatisticsScreen} />
+            {showStatistics && (
+                <Tab.Screen name="Statistics" component={StatisticsScreen} />
+            )}
             <Tab.Screen name="Todo" component={TodoScreen} />
             <Tab.Screen name="FlowTimer" component={FlowTimerScreen} />
             <Tab.Screen name="Settings" component={SettingsScreen} />
