@@ -31,7 +31,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
 
     return (
         <Animated.View style={[styles.digitalContainer, animatedStyle]}>
-            <View style={[styles.digitalBackground, { backgroundColor: theme.surface }]}>
+            <View style={[styles.digitalBackground]}>
                 <Text style={[styles.digitalTime, { color: theme.text }]}>
                     {formatTime(minutes, seconds)}
                 </Text>
@@ -62,11 +62,6 @@ const styles = StyleSheet.create({
         paddingVertical: 30,
         borderRadius: 20,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 8,
     },
     digitalTime: {
         fontSize: 64,

@@ -238,7 +238,17 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 'Failed to control playback. The track may still be loading.',
             );
         }
-    }, [player, isReady, uri, isDownloading, downloadProgress, usingFallback, isPlaying, startLoop, stopLoop]);
+    }, [
+        player,
+        isReady,
+        uri,
+        isDownloading,
+        downloadProgress,
+        usingFallback,
+        isPlaying,
+        startLoop,
+        stopLoop,
+    ]);
 
     const handleTrackSelection = useCallback(
         async (trackId: string) => {
@@ -271,7 +281,15 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 setIsLoadingTrack(false);
             }
         },
-        [selectedTrack, isPlaying, player, status?.isLoaded, handlePlayPause, saveSettings, stopLoop],
+        [
+            selectedTrack,
+            isPlaying,
+            player,
+            status?.isLoaded,
+            handlePlayPause,
+            saveSettings,
+            stopLoop,
+        ],
     );
 
     const handleVolumeChange = useCallback(
@@ -379,7 +397,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         }
     }, [resetTimer, isPlaying, player, status?.isLoaded, pulseAnimation, stopLoop]);
 
-
     const handleOpenMusicPlayer = useCallback(() => {
         bottomSheetRef.current?.expand();
     }, []);
@@ -428,7 +445,6 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
         initializeApp();
     }, [initializeSettings, initializePomodoro, loadSettings, containerAnimation]);
-
 
     // Background timer sync
     useEffect(() => {
@@ -637,7 +653,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
                 <View style={styles.loadingContainer}>
                     <Text style={[styles.loadingText, { color: theme.text }]}>
-                        Initializing Flow Timer...
+                        Initializing Timer...
                     </Text>
                 </View>
             </SafeAreaView>
@@ -729,9 +745,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        flexGrow: 1,
-        minHeight: '100%',
-        paddingBottom: 20, // Extra space at bottom for better scrolling
+        flex: 1,
     },
     content: {
         flex: 1,
