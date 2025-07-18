@@ -1,6 +1,8 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { themes } from '../utils/color-theme';
+import { useTheme } from '../hooks/useTheme';
 
 interface PlayPauseButtonProps {
     isRunning: boolean;
@@ -20,18 +22,30 @@ export const PlayPauseButton: React.FC<PlayPauseButtonProps> = ({
     isPaused,
     onPress,
     disabled = false,
-}) => (
-    <TouchableOpacity
-        disabled={disabled}
-        style={styles.playButton}
-        onPress={onPress}
-        activeOpacity={0.8}
-    >
-        <View style={styles.playButtonInner}>
-            <Ionicons name={isRunning && !isPaused ? 'pause' : 'play'} size={32} color="#4CAF50" />
-        </View>
-    </TouchableOpacity>
-);
+}) => {
+    const { theme } = useTheme();
+    return (
+        <TouchableOpacity
+            disabled={disabled}
+            style={styles.playButton}
+            onPress={onPress}
+            activeOpacity={0.8}
+        >
+            <View
+                style={[
+                    styles.playButtonInner,
+                    { backgroundColor: theme.surface, borderColor: theme.accent },
+                ]}
+            >
+                <Ionicons
+                    name={isRunning && !isPaused ? 'pause' : 'play'}
+                    size={32}
+                    color={theme.accent}
+                />
+            </View>
+        </TouchableOpacity>
+    );
+};
 
 const styles = StyleSheet.create({
     playButton: {
@@ -41,9 +55,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: 'rgba(76, 175, 80, 0.1)',
         borderWidth: 2,
-        borderColor: '#4CAF50',
         justifyContent: 'center',
         alignItems: 'center',
     },

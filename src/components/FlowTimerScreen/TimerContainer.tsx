@@ -98,9 +98,7 @@ const styles = StyleSheet.create({
     timerContainer: {
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 60,
         flex: 1,
-        minHeight: 600,
     },
     timerDisplayWrapper: {
         marginBottom: 60,
