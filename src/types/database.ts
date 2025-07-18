@@ -95,7 +95,6 @@ export interface Theme {
     mode: ThemeMode;
     accentColor: AccentColor;
     timerStyle: TimerStyle;
-    customThemes: Record<string, CustomTheme>;
     activeCustomTheme?: string;
 }
 

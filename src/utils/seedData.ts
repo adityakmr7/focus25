@@ -36,7 +36,7 @@ export class DatabaseSeeder {
             await this.seedStatistics();
             await this.seedFlowMetrics();
             await this.seedSettings();
-            await this.seedTheme();
+            // await this.seedTheme();
             await this.seedSessions();
 
             console.log('✅ Database seeding completed successfully!');
@@ -241,24 +241,6 @@ export class DatabaseSeeder {
             mode: ThemeMode.AUTO,
             accentColor: AccentColor.BLUE,
             timerStyle: TimerStyle.DIGITAL,
-            customThemes: {
-                ocean: {
-                    name: 'Ocean Breeze',
-                    primaryColor: '#0077be',
-                    secondaryColor: '#87ceeb',
-                    backgroundColor: '#f0f8ff',
-                    textColor: '#2c3e50',
-                    accentColor: '#00ced1',
-                },
-                sunset: {
-                    name: 'Sunset Glow',
-                    primaryColor: '#ff6b35',
-                    secondaryColor: '#f7931e',
-                    backgroundColor: '#fff5ee',
-                    textColor: '#8b4513',
-                    accentColor: '#ff4500',
-                },
-            },
             activeCustomTheme: 'ocean',
         };
 
