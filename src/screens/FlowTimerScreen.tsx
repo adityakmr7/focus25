@@ -547,18 +547,9 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         }
     }, [timer.totalSeconds, timer.initialSeconds, progressAnimation]);
 
-    // Pulse animation
+    // Reset animation when timer stops
     useEffect(() => {
-        if (timer.isRunning && !timer.isPaused) {
-            pulseAnimation.value = withRepeat(
-                withSequence(
-                    withTiming(1.02, { duration: 1000 }),
-                    withTiming(1, { duration: 1000 }),
-                ),
-                -1,
-                false,
-            );
-        } else {
+        if (!timer.isRunning || timer.isPaused) {
             pulseAnimation.value = withTiming(1, { duration: 300 });
         }
     }, [timer.isRunning, timer.isPaused, pulseAnimation]);
