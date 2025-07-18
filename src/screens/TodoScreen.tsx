@@ -39,8 +39,43 @@ const TodoScreen: React.FC = () => {
     } = useTodoStore();
 
     const todoFormRef = useRef<TodoFormBottomSheetMethods>(null);
+    const calendarRef = useRef<FlatList>(null);
     const [refreshing, setRefreshing] = useState(false);
+    const [selectedDate, setSelectedDate] = useState(new Date());
     const headerAnimatedValue = useSharedValue(0);
+
+    // Generate calendar days for the horizontal calendar
+    const generateCalendarDays = () => {
+        const days = [];
+        const today = new Date();
+
+        // Generate 14 days (7 before and 7 after today)
+        for (let i = -7; i <= 7; i++) {
+            const date = new Date(today);
+            date.setDate(today.getDate() + i);
+
+            days.push({
+                date,
+                day: date.getDate().toString(),
+                dayName: date.toLocaleDateString('en-GB', { weekday: 'short' }),
+                dateString: date.toISOString().split('T')[0],
+            });
+        }
+
+        return days;
+    };
+
+    // Helper function to check if two dates are the same day
+    const isSameDay = (date1: Date, date2: Date) => {
+        return date1.toDateString() === date2.toDateString();
+    };
+
+    // Filter todos based on selected date
+    const filteredTodos = todos.filter((todo) => {
+        if (!todo.createdAt) return false;
+        const todoDate = new Date(todo.createdAt);
+        return isSameDay(todoDate, selectedDate);
+    });
 
     useEffect(() => {
         const initialize = async () => {
@@ -52,6 +87,11 @@ const TodoScreen: React.FC = () => {
         };
         void initialize();
         headerAnimatedValue.value = withTiming(1, { duration: 800 });
+
+        // Scroll to today's date (index 7 in the 15-day calendar)
+        setTimeout(() => {
+            calendarRef.current?.scrollToIndex({ index: 7, animated: true, viewPosition: 0.5 });
+        }, 100);
     }, [initializeStore]);
 
     const handleRefresh = useCallback(async () => {
@@ -137,13 +177,65 @@ const TodoScreen: React.FC = () => {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header */}
-            <Animated.View style={[styles.header, headerAnimatedStyle]}>
-                <Text style={[styles.headerDate, { color: theme.text }]}>17 July</Text>
-            </Animated.View>
+
+            {/* Horizontal Calendar */}
+            <View style={styles.calendarContainer}>
+                <FlatList
+                    ref={calendarRef}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    data={generateCalendarDays()}
+                    keyExtractor={(item) => item.dateString}
+                    getItemLayout={(data, index) => ({
+                        length: 68,
+                        offset: 68 * index,
+                        index,
+                    })}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={[
+                                styles.calendarDay,
+                                {
+                                    backgroundColor: isSameDay(item.date, selectedDate)
+                                        ? theme.accent
+                                        : theme.background,
+                                },
+                            ]}
+                            onPress={() => setSelectedDate(item.date)}
+                        >
+                            <Text
+                                style={[
+                                    styles.calendarDayText,
+                                    {
+                                        color: isSameDay(item.date, selectedDate)
+                                            ? 'white'
+                                            : theme.textSecondary,
+                                    },
+                                ]}
+                            >
+                                {item.dayName}
+                            </Text>
+                            <Text
+                                style={[
+                                    styles.calendarDateText,
+                                    {
+                                        color: isSameDay(item.date, selectedDate)
+                                            ? 'white'
+                                            : theme.text,
+                                    },
+                                ]}
+                            >
+                                {item.day}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                    contentContainerStyle={styles.calendarList}
+                />
+            </View>
 
             {/* Todo List */}
             <FlatList
-                data={todos}
+                data={filteredTodos}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item, index }) => (
                     <TodoItem
@@ -171,9 +263,15 @@ const TodoScreen: React.FC = () => {
                             size={64}
                             color={theme.textSecondary}
                         />
-                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No todos yet</Text>
+                        <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                            No todos for this date
+                        </Text>
                         <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-                            Tap the + button to create your first todo
+                            Tap the + button to create a todo for{' '}
+                            {selectedDate.toLocaleDateString('en-GB', {
+                                day: 'numeric',
+                                month: 'long',
+                            })}
                         </Text>
                     </View>
                 }
@@ -212,6 +310,43 @@ const styles = StyleSheet.create({
         fontSize: 28,
         fontWeight: '700',
         letterSpacing: -0.5,
+    },
+    calendarContainer: {
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.1)',
+    },
+    calendarList: {
+        paddingHorizontal: 16,
+        gap: 8,
+    },
+    calendarDay: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 60,
+        height: 70,
+        marginHorizontal: 4,
+        borderRadius: 16,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 2,
+            },
+        }),
+    },
+    calendarDayText: {
+        fontSize: 12,
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    calendarDateText: {
+        fontSize: 16,
+        fontWeight: '700',
     },
     fab: {
         position: 'absolute',
