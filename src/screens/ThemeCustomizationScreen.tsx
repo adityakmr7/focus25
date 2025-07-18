@@ -96,7 +96,7 @@ const ThemeCustomizationScreen: React.FC<ThemeCustomizationScreenProps> = ({ nav
                 <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: theme.text }]}>Theme Customization</Text>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>Custom</Text>
                 <View style={styles.placeholder} />
             </View>
 
@@ -160,50 +160,6 @@ const ThemeCustomizationScreen: React.FC<ThemeCustomizationScreenProps> = ({ nav
                                 {accentColor === key && (
                                     <Ionicons name="checkmark" size={20} color="#fff" />
                                 )}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
-
-                {/* Timer Style Section */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Timer Style</Text>
-                    <View style={styles.optionsGrid}>
-                        {timerStyles.map((style) => (
-                            <TouchableOpacity
-                                key={style.key}
-                                style={[
-                                    styles.optionCard,
-                                    { backgroundColor: theme.surface },
-                                    timerStyle === style.key && {
-                                        borderColor: theme.accent,
-                                        borderWidth: 2,
-                                    },
-                                ]}
-                                onPress={() => setTimerStyle(style.key)}
-                            >
-                                <Ionicons
-                                    name={style.icon as any}
-                                    size={24}
-                                    color={
-                                        timerStyle === style.key
-                                            ? theme.accent
-                                            : theme.textSecondary
-                                    }
-                                />
-                                <Text
-                                    style={[
-                                        styles.optionText,
-                                        {
-                                            color:
-                                                timerStyle === style.key
-                                                    ? theme.accent
-                                                    : theme.textSecondary,
-                                        },
-                                    ]}
-                                >
-                                    {style.label}
-                                </Text>
                             </TouchableOpacity>
                         ))}
                     </View>
