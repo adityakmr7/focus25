@@ -9,6 +9,7 @@ import ThemeCustomizationScreen from '../screens/ThemeCustomizationScreen';
 import TodoScreen from '../screens/TodoScreen';
 import { useThemeStore } from '../store/themeStore';
 import { useColorScheme } from 'react-native';
+import { View, Text } from 'react-native';
 
 type AppTabParamList = {
     Statistics: undefined;
@@ -46,7 +47,31 @@ const AppTabNavigation = () => {
                     } else if (route.name === 'Settings') {
                         iconName = 'person-outline';
                     } else if (route.name === 'Todo') {
-                        iconName = 'create';
+                        const today = new Date().getDate();
+                        return (
+                            <View
+                                style={{
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    minWidth: size,
+                                    minHeight: size,
+                                    borderRadius: 4,
+                                    borderColor: color,
+                                    borderWidth: 2,
+                                    padding: 1,
+                                }}
+                            >
+                                <Text
+                                    style={{
+                                        fontSize: 16,
+                                        fontWeight: '600',
+                                        color: color,
+                                    }}
+                                >
+                                    {today}
+                                </Text>
+                            </View>
+                        );
                     }
 
                     return <Ionicons name={iconName} size={size} color={color} />;
