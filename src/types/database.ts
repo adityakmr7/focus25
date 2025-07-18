@@ -105,12 +105,11 @@ export enum ThemeMode {
 }
 
 export enum AccentColor {
-    GREEN = 'green',
-    BLUE = 'blue',
-    PURPLE = 'purple',
-    RED = 'red',
-    ORANGE = 'orange',
-    PINK = 'pink',
+    SAGE = 'sage',
+    WARM_GRAY = 'warmGray',
+    SOFT_TEAL = 'softTeal',
+    MUTED_LAVENDER = 'mutedLavender',
+    CREAM = 'cream',
 }
 
 export enum TimerStyle {

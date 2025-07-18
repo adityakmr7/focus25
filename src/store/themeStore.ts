@@ -96,10 +96,17 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
         try {
             const savedTheme = await databaseService.getTheme();
 
-            set({
-                ...savedTheme,
-                isInitialized: true,
-            });
+            // Ensure we have valid data before merging
+            if (savedTheme) {
+                set({
+                    ...savedTheme,
+                    isInitialized: true,
+                });
+            } else {
+                // If no saved theme, use defaults and save them to database
+                set({ isInitialized: true });
+                await get().syncWithDatabase();
+            }
         } catch (error) {
             console.error('Failed to initialize theme store:', error);
             set({ isInitialized: true }); // Continue with defaults
