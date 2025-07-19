@@ -22,9 +22,9 @@ const defaultSettings: NotificationSettings = {
     enabled: true,
     sessionComplete: true,
     breakComplete: true,
-    dailyReminders: true,
-    weeklyReports: true,
-    motivationalMessages: true,
+    dailyReminders: false, // Disabled by default to reduce spam
+    weeklyReports: false, // Disabled by default to reduce spam
+    motivationalMessages: false, // Disabled by default to reduce spam
     soundEnabled: true,
     vibrationEnabled: true,
     reminderTime: '09:00',
@@ -184,6 +184,64 @@ export class NotificationService {
             },
             trigger: null,
         });
+    }
+
+    async scheduleTimerCompletion(seconds: number, isBreak: boolean = false): Promise<void> {
+        if (
+            !this.isNotificationsEnabled() ||
+            !this.settings.enabled ||
+            (!this.settings.sessionComplete && !isBreak) ||
+            (!this.settings.breakComplete && isBreak)
+        ) {
+            return;
+        }
+
+        // Cancel any existing timer notifications
+        await this.cancelTimerNotifications();
+
+        const motivationalMessages = [
+            "🎉 Amazing work! You're building incredible focus habits!",
+            "🔥 You're on fire! That focus session was fantastic!",
+            "⭐ Excellent! You're becoming a productivity master!",
+            "🚀 Outstanding focus! You're reaching new heights!",
+            '💪 Incredible dedication! Your consistency is inspiring!',
+        ];
+
+        const randomMessage =
+            motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+
+        const notificationId = await Notifications.scheduleNotificationAsync({
+            content: {
+                title: isBreak ? 'Break Complete! 🌟' : 'Focus Session Complete! 🎯',
+                body: isBreak
+                    ? 'Ready to dive back into deep work?'
+                    : this.settings.motivationalMessages
+                      ? randomMessage
+                      : 'Time for a well-deserved break!',
+                sound: this.settings.soundEnabled,
+                data: {
+                    type: isBreak ? 'break_complete' : 'session_complete',
+                    isTimerNotification: true,
+                    timestamp: Date.now(),
+                },
+            },
+            trigger: {
+                seconds: seconds,
+            } as Notifications.TimeIntervalTriggerInput,
+        });
+
+        console.log(`⏰ Timer completion notification scheduled for ${seconds} seconds (ID: ${notificationId})`);
+    }
+
+    async cancelTimerNotifications(): Promise<void> {
+        const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+
+        for (const notification of scheduledNotifications) {
+            if (notification.content.data?.isTimerNotification) {
+                await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+                console.log(`🚫 Cancelled timer notification: ${notification.identifier}`);
+            }
+        }
     }
 
     async scheduleBreakReminder(minutes: number): Promise<void> {

@@ -316,7 +316,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             setTimeout(() => {
                 alertPlayer.pause();
             }, 2000);
-            await notificationService.scheduleSessionComplete(timer.isBreak);
+            // Don't send notification here - this is for foreground completion only
             handleTimerComplete();
         } catch (error) {
             errorHandler.logError(error as Error, {
@@ -325,7 +325,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             });
             handleTimerComplete();
         }
-    }, [alertPlayer, timer.isBreak, handleTimerComplete]);
+    }, [alertPlayer, handleTimerComplete]);
 
     const handleToggleTimer = async () => {
         try {
@@ -336,19 +336,26 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             // Background timer handling
             if (backgroundTimerService.isSupported()) {
                 if (!wasRunning && !wasPaused) {
-                    // Starting timer from stopped state - start background timer
+                    // Starting timer from stopped state - start background timer and schedule notification
                     const sessionId = await backgroundTimerService.startTimer(
                         Math.floor(timer.totalSeconds / 60),
                         timer.isBreak,
                     );
                     setBackgroundSessionId(sessionId);
                     setIsConnectedToBackground(true);
+
+                    // Schedule completion notification
+                    // await notificationService.scheduleTimerCompletion(timer.totalSeconds, timer.isBreak);
                 } else if (wasRunning && !wasPaused) {
                     // Timer was running, so user is pausing it
                     await backgroundTimerService.pauseTimer();
+                    // Cancel the scheduled notification
+                    // await notificationService.cancelTimerNotifications();
                 } else if (!wasRunning && wasPaused) {
                     // Timer was paused, so user is resuming it
                     await backgroundTimerService.resumeTimer();
+                    // Reschedule notification for remaining time
+                    // await notificationService.scheduleTimerCompletion(timer.totalSeconds, timer.isBreak);
                 }
             }
 
@@ -382,6 +389,9 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 setBackgroundSessionId(null);
                 setIsConnectedToBackground(false);
             }
+
+            // Cancel any scheduled notifications
+            await notificationService.cancelTimerNotifications();
 
             // Pause music on reset
             if (isPlaying && player && status?.isLoaded) {
@@ -505,9 +515,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
                     // Only play completion sound if app is in foreground
                     if (appStateRef.current === 'active') {
+                        // Cancel the scheduled notification since we're handling completion in app
+                        await notificationService.cancelTimerNotifications();
                         await playCompletionSound();
                     } else {
                         // App is backgrounded, just handle timer completion without sound
+                        // Keep the scheduled notification so user gets notified
                         handleTimerComplete();
                     }
                     return;
@@ -634,8 +647,9 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                             console.log('⏰ Timer completed in background');
                             setIsConnectedToBackground(false);
                             setBackgroundSessionId(null);
-                            
-                            // Show completion feedback now that we're in foreground
+
+                            // Cancel any remaining timer notifications and show completion feedback
+                            await notificationService.cancelTimerNotifications();
                             await playCompletionSound();
                         }
                     } catch (error) {

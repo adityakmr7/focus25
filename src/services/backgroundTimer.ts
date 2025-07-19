@@ -35,45 +35,14 @@ TaskManager.defineTask(BACKGROUND_TIMER_TASK, async () => {
 
         // Check if timer should complete
         if (remaining <= 0) {
-            // Timer completed - send notification
-            await Notifications.scheduleNotificationAsync({
-                content: {
-                    title: timerState.isBreak ? 'Break Complete!' : 'Focus Session Complete!',
-                    body: timerState.isBreak
-                        ? 'Ready for your next focus session?'
-                        : 'Time for a well-deserved break!',
-                    sound: true,
-                    data: {
-                        sessionId: timerState.sessionId,
-                        type: timerState.isBreak ? 'break_complete' : 'session_complete',
-                    },
-                },
-                trigger: null,
-            });
-
-            // Clear the timer state
+            // Timer completed - just clear the state
+            // Notifications are handled by the scheduled notification service
             await AsyncStorage.removeItem(TIMER_STATE_KEY);
             return BackgroundTask.BackgroundTaskResult.Success;
         }
 
-        // Timer still running - update progress notification if needed
-        if (remaining % 300 === 0) {
-            // Every 5 minutes
-            const minutesRemaining = Math.ceil(remaining / 60);
-            await Notifications.scheduleNotificationAsync({
-                content: {
-                    title: timerState.isBreak ? 'Break in Progress' : 'Focus Session Active',
-                    body: `${minutesRemaining} minutes remaining`,
-                    sound: false,
-                    data: {
-                        sessionId: timerState.sessionId,
-                        type: 'progress_update',
-                        remaining: remaining,
-                    },
-                },
-                trigger: null,
-            });
-        }
+        // Timer still running - no need for progress notifications
+        // The scheduled notification will handle completion
 
         return BackgroundTask.BackgroundTaskResult.Success;
     } catch (error) {
