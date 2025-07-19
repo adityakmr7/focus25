@@ -268,22 +268,28 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     },
 
     resetTimer: () =>
-        set((state) => ({
-            timer: {
-                ...state.timer,
-                currentSession: 1, // Fix: should be 1, not 0
-                minutes: Math.floor(state.timer.initialSeconds / 60),
-                seconds: state.timer.initialSeconds % 60,
-                isRunning: false,
-                isPaused: false,
-                isBreak: false,
-                totalSeconds: state.timer.initialSeconds,
-            },
-            flowMetrics: {
-                ...state.flowMetrics,
-                sessionStartTime: null,
-            },
-        })),
+        set((state) => {
+            const settings = useSettingsStore.getState();
+            const workDurationSeconds = settings.timeDuration * 60;
+            
+            return {
+                timer: {
+                    ...state.timer,
+                    currentSession: 1, // Reset to first session
+                    minutes: settings.timeDuration,
+                    seconds: 0,
+                    isRunning: false,
+                    isPaused: false,
+                    isBreak: false,
+                    totalSeconds: workDurationSeconds,
+                    initialSeconds: workDurationSeconds,
+                },
+                flowMetrics: {
+                    ...state.flowMetrics,
+                    sessionStartTime: null,
+                },
+            };
+        }),
 
     stopTimer: () =>
         set((state) => ({
