@@ -6,18 +6,18 @@ import { NavigationContainer } from '@react-navigation/native';
 import { AppStackNavigation } from './src/navigations';
 import './global.css';
 import * as Notifications from 'expo-notifications';
-import { Alert, AppState, AppStateStatus, Platform } from 'react-native';
+import { Alert, AppState, AppStateStatus, Platform, View, useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { useSettingsStore } from './src/store/settingsStore';
-import { useGoalsStore } from './src/store/goalsStore';
 import { useStatisticsStore } from './src/store/statisticsStore';
 import { usePomodoroStore } from './src/store/pomodoroStore';
 import { useThemeStore } from './src/store/themeStore';
-import { ThemeProvider } from './src/providers/ThemeProvider';
 import { AuthProvider } from './src/components/AuthProvider';
 import { hybridDatabaseService } from './src/data/hybridDatabase';
 import { backgroundTimerService } from './src/services/backgroundTimer';
 import { notificationService } from './src/services/notificationService';
 import { errorHandler } from './src/services/errorHandler';
+import { updateService } from './src/services/updateService';
 import { shouldShowOnboarding } from './src/components/OnboardingFlow';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -25,7 +25,7 @@ import { AudioCacheManager } from './src/utils/audioCache';
 import { MusicTrack, musicTracks } from './src/utils/constants';
 import { localDatabaseService } from './src/data/local/localDatabase';
 import { seedDatabase } from './src/utils/seedData';
-
+import * as Font from 'expo-font';
 // Enable screens before any navigation components are rendered
 enableScreens();
 
@@ -34,10 +34,10 @@ SplashScreen.preventAutoHideAsync();
 
 const AppContent = () => {
     const { updateNotification, initializeStore: initializeSettings } = useSettingsStore();
-    const { initializeStore: initializeGoals } = useGoalsStore();
     const { initializeStore: initializeStatistics } = useStatisticsStore();
     const { initializeStore: initializePomodoro } = usePomodoroStore();
-    const { initializeStore: initializeTheme } = useThemeStore();
+    const { initializeStore: initializeTheme, mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
 
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [isAppReady, setIsAppReady] = useState(false);
@@ -58,18 +58,16 @@ const AppContent = () => {
                     setIsSeeding(true);
 
                     try {
-                        const [goals, statistics] = await Promise.all([
-                            localDatabaseService.getGoals(),
+                        const [statistics] = await Promise.all([
                             localDatabaseService.getStatistics(),
                         ]);
 
                         console.log('📊 Database status:', {
-                            goalsCount: goals.length,
                             hasStatistics: statistics.totalCount > 0,
                         });
 
                         // Seed if database is empty
-                        if (goals.length === 0 && statistics.totalCount === 0) {
+                        if (statistics.totalCount === 0) {
                             console.log('🌱 Database is empty, starting seeding...');
                             await seedDatabase(localDatabaseService, { all: true });
                             console.log('✅ Database seeding completed successfully!');
@@ -99,6 +97,19 @@ const AppContent = () => {
             try {
                 console.log('🚀 Starting app initialization...');
 
+                // Load fonts first
+                await Font.loadAsync({
+                    'SF-Pro-Display-Ultralight': require('./assets/fonts/SF-Pro-Display-Ultralight.otf'),
+                    'SF-Pro-Display-Thin': require('./assets/fonts/SF-Pro-Display-Thin.otf'),
+                    'SF-Pro-Display-Light': require('./assets/fonts/SF-Pro-Display-Light.otf'),
+                    'SF-Pro-Display-Regular': require('./assets/fonts/SF-Pro-Display-Regular.otf'),
+                    'SF-Pro-Display-Medium': require('./assets/fonts/SF-Pro-Display-Medium.otf'),
+                    'SF-Pro-Display-Semibold': require('./assets/fonts/SF-Pro-Display-Semibold.otf'),
+                    'SF-Pro-Display-Bold': require('./assets/fonts/SF-Pro-Display-Bold.otf'),
+                    'SF-Pro-Display-Heavy': require('./assets/fonts/SF-Pro-Display-Heavy.otf'),
+                });
+                console.log('✅ SF Pro Display fonts loaded');
+
                 // Initialize error handler first
                 await errorHandler.initialize();
                 console.log('✅ Error handler initialized');
@@ -111,7 +122,6 @@ const AppContent = () => {
                 console.log('🔄 Initializing stores...');
                 await Promise.all([
                     initializeSettings(),
-                    initializeGoals(),
                     initializeStatistics(),
                     initializePomodoro(),
                     initializeTheme(),
@@ -124,6 +134,7 @@ const AppContent = () => {
                     await Promise.all([
                         backgroundTimerService.initialize(),
                         notificationService.initialize(),
+                        updateService.initialize(),
                     ]);
                     console.log('✅ Background services initialized');
                 }
@@ -140,6 +151,18 @@ const AppContent = () => {
 
                 // Pre-download popular music tracks
                 await preDownloadPopularTracks();
+
+                // Check for app updates (mobile only)
+                if (Platform.OS !== 'web') {
+                    try {
+                        console.log('🔄 Checking for app updates...');
+                        await updateService.checkForUpdatesAndShow();
+                        console.log('✅ Update check completed');
+                    } catch (error) {
+                        console.warn('Update check failed:', error);
+                        // Don't block app initialization for update check failures
+                    }
+                }
 
                 console.log('🎉 App initialization completed successfully');
                 setIsAppReady(true);
@@ -283,11 +306,17 @@ const AppContent = () => {
         return null; // Splash screen is still showing
     }
 
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
+    const theme = getCurrentTheme();
+
     return (
         <>
-            <NavigationContainer>
-                <AppStackNavigation />
-            </NavigationContainer>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+            <View style={{ flex: 1, backgroundColor: theme.background }}>
+                <NavigationContainer>
+                    <AppStackNavigation />
+                </NavigationContainer>
+            </View>
 
             {/* Onboarding Flow */}
             {/* Uncomment when ready to use onboarding */}
@@ -315,11 +344,7 @@ export default function App() {
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <AuthProvider>
-                <ThemeProvider>
-                    <AppContent />
-                </ThemeProvider>
-            </AuthProvider>
+            <AppContent />
         </GestureHandlerRootView>
     );
 }
@@ -348,12 +373,8 @@ if (__DEV__) {
 
         async checkDB() {
             try {
-                const [goals, stats] = await Promise.all([
-                    localDatabaseService.getGoals(),
-                    localDatabaseService.getStatistics(),
-                ]);
+                const [stats] = await Promise.all([localDatabaseService.getStatistics()]);
                 console.log('📊 Database status:', {
-                    goals: goals.length,
                     stats: stats.totalCount,
                 });
             } catch (error) {

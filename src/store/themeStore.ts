@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { databaseService } from '../data/database';
 
 export type ThemeMode = 'light' | 'dark' | 'auto';
-export type AccentColor = 'green' | 'blue' | 'purple' | 'orange' | 'pink' | 'teal';
+export type AccentColor = 'sage' | 'warmGray' | 'softTeal' | 'mutedLavender' | 'cream';
 export type TimerStyle = 'digital' | 'analog' | 'minimal';
 
 interface CustomTheme {
@@ -13,6 +13,11 @@ interface CustomTheme {
     text: string;
     textSecondary: string;
     accent: string;
+    success: string;
+    warning: string;
+    error: string;
+    info?: string; // Optional field for additional color
+    border?: string; // Optional field for border color
 }
 
 interface ThemeState {
@@ -38,13 +43,13 @@ interface ThemeState {
     syncWithDatabase: () => Promise<void>;
 }
 
+// Updated mindful accent colors
 const accentColors: Record<AccentColor, string> = {
-    green: '#48BB78',
-    blue: '#4299E1',
-    purple: '#9F7AEA',
-    orange: '#ED8936',
-    pink: '#ED64A6',
-    teal: '#38B2AC',
+    sage: '#9CAF88',
+    warmGray: '#9B9B9B',
+    softTeal: '#7FB3B3',
+    mutedLavender: '#B19CD9',
+    cream: '#F0E6D2',
 };
 
 const defaultLightTheme: CustomTheme = {
@@ -54,7 +59,12 @@ const defaultLightTheme: CustomTheme = {
     surface: '#F7F7F9',
     text: '#1A202C',
     textSecondary: '#4A5568',
-    accent: '#48BB78',
+    accent: '#9CAF88', // Default to sage green
+    success: '#9CAF88', // Using sage for success too
+    warning: '#E6C2A6', // Gentle peach for warnings
+    error: '#D4A5A5', // Dusty rose for errors
+    info: '#7FB3B3', // Soft teal for info
+    border: '#CBD5E0',
 };
 
 const defaultDarkTheme: CustomTheme = {
@@ -64,12 +74,17 @@ const defaultDarkTheme: CustomTheme = {
     surface: '#1E1E1E',
     text: '#E0E0E0',
     textSecondary: '#A0A0A0',
-    accent: '#48BB78',
+    accent: '#9CAF88', // Default to sage green
+    success: '#9CAF88', // Using sage for success
+    warning: '#E6C2A6', // Gentle peach for warnings
+    error: '#D4A5A5', // Dusty rose for errors
+    info: '#7FB3B3', // Soft teal for info
+    border: '#2D3748',
 };
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
     mode: 'auto',
-    accentColor: 'green',
+    accentColor: 'sage', // Default to sage green
     timerStyle: 'digital',
     customThemes: {},
     activeCustomTheme: null,
@@ -81,10 +96,17 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
         try {
             const savedTheme = await databaseService.getTheme();
 
-            set({
-                ...savedTheme,
-                isInitialized: true,
-            });
+            // Ensure we have valid data before merging
+            if (savedTheme) {
+                set({
+                    ...savedTheme,
+                    isInitialized: true,
+                });
+            } else {
+                // If no saved theme, use defaults and save them to database
+                set({ isInitialized: true });
+                await get().syncWithDatabase();
+            }
         } catch (error) {
             console.error('Failed to initialize theme store:', error);
             set({ isInitialized: true }); // Continue with defaults

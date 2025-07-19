@@ -11,13 +11,13 @@ import { SettingItem } from '../components/SettingItem';
 import { SectionHeader } from '../components/SectionHeader';
 import { TimeDurationSelector } from '../components/TimeDurationSelector';
 import { useSettingsStore } from '../store/settingsStore';
-import { useTheme } from '../providers/ThemeProvider';
 import { useThemeStore } from '../store/themeStore';
-import { useGoalsStore } from '../store/goalsStore';
+import { useTheme } from '../hooks/useTheme';
 import { useStatisticsStore } from '../store/statisticsStore';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { Ionicons } from '@expo/vector-icons';
 import { version } from '../../package.json';
+import { updateService } from '../services/updateService';
 
 interface SettingsScreenProps {
     navigation?: {
@@ -29,7 +29,6 @@ interface SettingsScreenProps {
 interface StorageInfo {
     totalSize: number;
     breakdown: {
-        goals: number;
         statistics: number;
         settings: number;
         theme: number;
@@ -39,8 +38,8 @@ interface StorageInfo {
 }
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
-    const { theme, isDark } = useTheme();
     const { setMode } = useThemeStore();
+    const { theme, isDark } = useTheme();
     const {
         timeDuration,
         soundEffects,
@@ -49,6 +48,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         focusReminders,
         weeklyReports,
         dataSync,
+        showStatistics,
         toggleSetting,
         setTimeDuration,
         exportData,
@@ -57,20 +57,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         openSupport,
         openPrivacy,
         openTerms,
-        openStorage,
         openFeedback,
         breakDuration,
         setBreakDuration,
     } = useSettingsStore();
 
-    const { goals } = useGoalsStore();
     const { flows, breaks, interruptions } = useStatisticsStore();
     const { flowMetrics } = usePomodoroStore();
 
     const [storageInfo, setStorageInfo] = useState<StorageInfo>({
         totalSize: 0,
         breakdown: {
-            goals: 0,
             statistics: 0,
             settings: 0,
             theme: 0,
@@ -82,6 +79,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const [isExporting, setIsExporting] = useState(false);
     const [isCalculatingStorage, setIsCalculatingStorage] = useState(false);
     const [hasAnimated, setHasAnimated] = useState(false); // Track if animations have run
+    const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
 
     // Reanimated shared values
     const headerProgress = useSharedValue(0);
@@ -104,13 +102,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             // Only recalculate if initial animation has completed
             calculateStorageUsage();
         }
-    }, [goals.length, flows, breaks, interruptions, flowMetrics]);
+    }, [flows, breaks, interruptions, flowMetrics]);
 
     // Memoize storage calculation
     const calculateStorageUsage = useCallback(async () => {
         setIsCalculatingStorage(true);
         try {
-            const goalsSize = JSON.stringify(goals).length;
             const statisticsSize = JSON.stringify({ flows, breaks, interruptions }).length;
             const settingsSize = JSON.stringify({
                 timeDuration,
@@ -125,8 +122,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             const themeSize = 500;
             const flowMetricsSize = JSON.stringify(flowMetrics).length;
 
-            const totalSize =
-                goalsSize + statisticsSize + settingsSize + themeSize + flowMetricsSize;
+            const totalSize = statisticsSize + settingsSize + themeSize + flowMetricsSize;
 
             const formatBytes = (bytes: number): string => {
                 if (bytes === 0) return '0 B';
@@ -139,7 +135,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             setStorageInfo({
                 totalSize,
                 breakdown: {
-                    goals: goalsSize,
                     statistics: statisticsSize,
                     settings: settingsSize,
                     theme: themeSize,
@@ -153,7 +148,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             setIsCalculatingStorage(false);
         }
     }, [
-        goals,
         flows,
         breaks,
         interruptions,
@@ -227,7 +221,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 },
             ],
         );
-    }, [goals.length, deleteData, showAlert, calculateStorageUsage]);
+    }, [deleteData, showAlert, calculateStorageUsage]);
 
     const handleStorageDetails = useCallback((): void => {
         const breakdown = storageInfo.breakdown;
@@ -247,7 +241,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
         const message =
             `Storage Breakdown:\n\n` +
-            `📊 Goals: ${formatBytes(breakdown.goals)} (${getPercentage(breakdown.goals)})\n` +
             `📈 Statistics: ${formatBytes(breakdown.statistics)} (${getPercentage(breakdown.statistics)})\n` +
             `🔥 Flow Metrics: ${formatBytes(breakdown.flowMetrics)} (${getPercentage(breakdown.flowMetrics)})\n` +
             `⚙️ Settings: ${formatBytes(breakdown.settings)} (${getPercentage(breakdown.settings)})\n` +
@@ -259,22 +252,18 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
     const handleRateApp = useCallback((): void => {
         rateApp();
-        showAlert('Rate App', 'Thank you for using Focus25! Redirecting to app store...');
     }, [rateApp, showAlert]);
 
     const handleSupport = useCallback((): void => {
         openSupport();
-        showAlert('Support', 'Opening support page...');
     }, [openSupport, showAlert]);
 
     const handlePrivacy = useCallback((): void => {
         openPrivacy();
-        showAlert('Privacy Policy', 'Opening privacy policy...');
     }, [openPrivacy, showAlert]);
 
     const handleTerms = useCallback((): void => {
         openTerms();
-        showAlert('Terms of Service', 'Opening terms of service...');
     }, [openTerms, showAlert]);
 
     const handleTheme = useCallback((): void => {
@@ -283,8 +272,36 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
     const handleFeedback = useCallback((): void => {
         openFeedback();
-        showAlert('Feedback', 'Opening feedback form...');
     }, [openFeedback, showAlert]);
+
+    const handleCheckForUpdates = useCallback(async (): Promise<void> => {
+        if (Platform.OS === 'web') {
+            showAlert('Not Available', 'Update checking is not available on the web version.');
+            return;
+        }
+
+        setIsCheckingUpdates(true);
+        try {
+            const updateInfo = await updateService.checkForUpdates(true); // Force check
+
+            if (updateInfo.isUpdateAvailable) {
+                await updateService.showUpdateAlert(updateInfo);
+            } else {
+                showAlert(
+                    "You're Up to Date!",
+                    `You have the latest version (${updateInfo.currentVersion}) of the app.`,
+                );
+            }
+        } catch (error) {
+            console.error('Failed to check for updates:', error);
+            showAlert(
+                'Update Check Failed',
+                'Unable to check for updates. Please try again later.',
+            );
+        } finally {
+            setIsCheckingUpdates(false);
+        }
+    }, [showAlert]);
 
     const handleThemeCustomization = useCallback((): void => {
         if (navigation) {
@@ -467,6 +484,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             switchValue={soundEffects}
                             onSwitchToggle={() => toggleSetting('soundEffects')}
                         />
+                        <SettingItem
+                            title="Show Statistics"
+                            subtitle="Show statistics tab in navigation"
+                            icon="bar-chart-outline"
+                            hasSwitch={true}
+                            switchValue={showStatistics}
+                            onSwitchToggle={() => toggleSetting('showStatistics')}
+                        />
                         {/*<SettingItem*/}
                         {/*    title="Auto Break"*/}
                         {/*    subtitle="Automatically start break sessions"*/}
@@ -492,7 +517,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                         />
                         <SettingItem
                             title={isExporting ? 'Exporting...' : 'Export Data'}
-                            subtitle={`Download ${goals.length} goals, statistics & settings`}
+                            subtitle={`Download statistics & settings`}
                             icon="download-outline"
                             showArrow={!isExporting}
                             onPress={isExporting ? undefined : handleExportData}
@@ -521,6 +546,19 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             icon="help-circle-outline"
                             showArrow={true}
                             onPress={handleSupport}
+                        />
+                        <SettingItem
+                            title={
+                                isCheckingUpdates ? 'Checking for Updates...' : 'Check for Updates'
+                            }
+                            subtitle={
+                                isCheckingUpdates
+                                    ? 'Please wait...'
+                                    : 'Check if a new version is available'
+                            }
+                            icon="refresh-outline"
+                            showArrow={!isCheckingUpdates}
+                            onPress={isCheckingUpdates ? undefined : handleCheckForUpdates}
                         />
                         <SettingItem
                             title="Rate App"
@@ -568,7 +606,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     >
                         <SettingItem
                             title="Delete All Data"
-                            subtitle={`Permanently remove ${goals.length} goals and all statistics`}
+                            subtitle={`Permanently all statistics`}
                             icon="trash-outline"
                             showArrow={true}
                             onPress={handleDeleteData}

@@ -17,6 +17,7 @@ interface Settings {
     focusReminders: boolean;
     weeklyReports: boolean;
     dataSync: boolean;
+    showStatistics: boolean;
     notificationStatus: string | null;
 }
 
@@ -53,6 +54,7 @@ const initialSettings: Settings = {
     focusReminders: true,
     weeklyReports: true,
     dataSync: false,
+    showStatistics: false,
     notificationStatus: null,
 };
 
@@ -154,8 +156,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         }
     },
 
-    rateApp: () => {
-        console.log('Opening app store...');
+    rateApp: async () => {
+        await Linking.openURL(
+            `https://apps.apple.com/app/apple-store/id${APP_CONFIG.APP_ID}?action=write-review`,
+        );
     },
 
     openSupport: async () => {
@@ -205,6 +209,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
                 focusReminders: state.focusReminders,
                 weeklyReports: state.weeklyReports,
                 dataSync: state.dataSync,
+                showStatistics: state.showStatistics,
                 notificationStatus: state.notificationStatus,
             };
 

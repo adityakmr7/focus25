@@ -9,6 +9,12 @@ export interface MusicTrack {
     isLocal: boolean;
 }
 export const audioSource = require('../../assets/sounds/smooth-completed-notify-starting-alert.mp3');
+// Utility function to parse duration string (e.g., "45:00") to seconds
+export const parseDurationToSeconds = (duration: string): number => {
+    const [minutes, seconds] = duration.split(':').map(Number);
+    return minutes * 60 + seconds;
+};
+
 export const musicTracks: MusicTrack[] = [
     {
         id: 'forest-rain',

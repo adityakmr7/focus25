@@ -101,7 +101,6 @@ The app uses Zustand for state management with the following stores:
 - `pomodoroStore` - Timer state and flow metrics
 - `settingsStore` - User preferences and configuration
 - `statisticsStore` - Usage analytics and historical data
-- `goalsStore` - Goal tracking and achievement system
 - `themeStore` - Theme customization and appearance
 
 ### Database Schema

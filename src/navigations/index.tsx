@@ -6,13 +6,34 @@ import FlowTimerScreen from '../screens/FlowTimerScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import FlowAnalyticsScreen from '../screens/FlowAnalyticsScreen';
 import ThemeCustomizationScreen from '../screens/ThemeCustomizationScreen';
-import { useTheme } from '../providers/ThemeProvider';
+import TodoScreen from '../screens/TodoScreen';
+import { useThemeStore } from '../store/themeStore';
+import { useSettingsStore } from '../store/settingsStore';
+import { useColorScheme } from 'react-native';
+import { View, Text } from 'react-native';
 
-const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
+type AppTabParamList = {
+    Statistics: undefined;
+    FlowTimer: undefined;
+    Settings: undefined;
+    Todo: undefined;
+};
+
+type AppStackParamList = {
+    Root: undefined;
+    FlowAnalytics: undefined;
+    ThemeCustomization: undefined;
+};
+
+const Tab = createBottomTabNavigator<AppTabParamList>();
+const Stack = createNativeStackNavigator<AppStackParamList>();
 
 const AppTabNavigation = () => {
-    const { theme, isDark } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const { showStatistics } = useSettingsStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
 
     return (
         <Tab.Navigator
@@ -27,6 +48,32 @@ const AppTabNavigation = () => {
                         iconName = 'timer-outline';
                     } else if (route.name === 'Settings') {
                         iconName = 'person-outline';
+                    } else if (route.name === 'Todo') {
+                        const today = new Date().getDate();
+                        return (
+                            <View
+                                style={{
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    minWidth: size,
+                                    minHeight: size,
+                                    borderRadius: 4,
+                                    borderColor: color,
+                                    borderWidth: 2,
+                                    padding: 1,
+                                }}
+                            >
+                                <Text
+                                    style={{
+                                        fontSize: 16,
+                                        fontWeight: '600',
+                                        color: color,
+                                    }}
+                                >
+                                    {today}
+                                </Text>
+                            </View>
+                        );
                     }
 
                     return <Ionicons name={iconName} size={size} color={color} />;
@@ -47,7 +94,10 @@ const AppTabNavigation = () => {
             })}
             initialRouteName="FlowTimer"
         >
-            <Tab.Screen name="Statistics" component={StatisticsScreen} />
+            {showStatistics && (
+                <Tab.Screen name="Statistics" component={StatisticsScreen} />
+            )}
+            <Tab.Screen name="Todo" component={TodoScreen} />
             <Tab.Screen name="FlowTimer" component={FlowTimerScreen} />
             <Tab.Screen name="Settings" component={SettingsScreen} />
         </Tab.Navigator>
@@ -55,7 +105,10 @@ const AppTabNavigation = () => {
 };
 
 const AppStackNavigation = () => {
-    const { theme } = useTheme();
+    const { mode, getCurrentTheme } = useThemeStore();
+    const systemColorScheme = useColorScheme();
+    const theme = getCurrentTheme();
+    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
 
     return (
         <Stack.Navigator
