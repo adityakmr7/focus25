@@ -316,7 +316,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             setTimeout(() => {
                 alertPlayer.pause();
             }, 2000);
-            await notificationService.scheduleSessionComplete(timer.isBreak);
+            // Don't send notification here - this is for foreground completion only
             handleTimerComplete();
         } catch (error) {
             errorHandler.logError(error as Error, {
@@ -325,26 +325,37 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
             });
             handleTimerComplete();
         }
-    }, [alertPlayer, timer.isBreak, handleTimerComplete]);
+    }, [alertPlayer, handleTimerComplete]);
 
     const handleToggleTimer = async () => {
         try {
             const wasRunning = timer.isRunning;
+            const wasPaused = timer.isPaused;
             toggleTimer();
 
             // Background timer handling
             if (backgroundTimerService.isSupported()) {
-                if (!wasRunning) {
+                if (!wasRunning && !wasPaused) {
+                    // Starting timer from stopped state - start background timer and schedule notification
                     const sessionId = await backgroundTimerService.startTimer(
                         Math.floor(timer.totalSeconds / 60),
                         timer.isBreak,
                     );
                     setBackgroundSessionId(sessionId);
                     setIsConnectedToBackground(true);
-                } else if (timer.isPaused) {
-                    await backgroundTimerService.resumeTimer();
-                } else {
+
+                    // Schedule completion notification
+                    // await notificationService.scheduleTimerCompletion(timer.totalSeconds, timer.isBreak);
+                } else if (wasRunning && !wasPaused) {
+                    // Timer was running, so user is pausing it
                     await backgroundTimerService.pauseTimer();
+                    // Cancel the scheduled notification
+                    // await notificationService.cancelTimerNotifications();
+                } else if (!wasRunning && wasPaused) {
+                    // Timer was paused, so user is resuming it
+                    await backgroundTimerService.resumeTimer();
+                    // Reschedule notification for remaining time
+                    // await notificationService.scheduleTimerCompletion(timer.totalSeconds, timer.isBreak);
                 }
             }
 
@@ -371,13 +382,15 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
     const handleReset = useCallback(async () => {
         try {
-            resetTimer();
-
+            // First stop everything
             if (backgroundTimerService.isSupported()) {
                 await backgroundTimerService.stopTimer();
                 setBackgroundSessionId(null);
                 setIsConnectedToBackground(false);
             }
+
+            // Cancel any scheduled notifications
+            await notificationService.cancelTimerNotifications();
 
             // Pause music on reset
             if (isPlaying && player && status?.isLoaded) {
@@ -385,6 +398,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 stopLoop();
                 setIsPlaying(false);
             }
+
+            // Reset timer state
+            resetTimer();
+            
+            // Force sync with settings to ensure correct state
+            updateTimerFromSettings();
 
             // Reset pulse animation
             pulseAnimation.value = withTiming(1, { duration: 300 });
@@ -394,7 +413,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 severity: 'low',
             });
         }
-    }, [resetTimer, isPlaying, player, status?.isLoaded, pulseAnimation, stopLoop]);
+    }, [resetTimer, updateTimerFromSettings, isPlaying, player, status?.isLoaded, pulseAnimation, stopLoop]);
 
     const handleOpenMusicPlayer = useCallback(() => {
         bottomSheetRef.current?.expand();
@@ -499,8 +518,16 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         setIsConnectedToBackground(false);
                     }
 
-                    // Play completion sound and handle completion
-                    await playCompletionSound();
+                    // Only play completion sound if app is in foreground
+                    if (appStateRef.current === 'active') {
+                        // Cancel the scheduled notification since we're handling completion in app
+                        await notificationService.cancelTimerNotifications();
+                        await playCompletionSound();
+                    } else {
+                        // App is backgrounded, just handle timer completion without sound
+                        // Keep the scheduled notification so user gets notified
+                        handleTimerComplete();
+                    }
                     return;
                 }
 
@@ -589,26 +616,57 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
     // App state handling
     useEffect(() => {
-        const handleAppStateChange = (nextAppState: AppStateStatus) => {
+        const handleAppStateChange = async (nextAppState: AppStateStatus) => {
             if (Platform.OS === 'web') return;
 
             appStateRef.current = nextAppState;
 
             if (nextAppState === 'background') {
-                // App going to background
+                // App going to background - just save state, don't pause timer
                 saveTimerState();
+                console.log('📱 App backgrounded - timer continues running');
             } else if (nextAppState === 'active') {
-                // App coming to foreground
-                // Sync with background timer if supported
+                // App coming to foreground - sync with background timer
+                console.log('📱 App foregrounded - syncing timer state');
                 if (backgroundTimerService.isSupported() && isConnectedToBackground) {
-                    // Re-sync timer state
+                    try {
+                        const backgroundState = await backgroundTimerService.getTimerState();
+                        const remainingTime = await backgroundTimerService.getRemainingTime();
+
+                        if (backgroundState && backgroundState.isRunning && remainingTime > 0) {
+                            // Timer is still running - sync with current state
+                            const minutes = Math.floor(remainingTime / 60);
+                            const seconds = remainingTime % 60;
+
+                            setTimer({
+                                minutes,
+                                seconds,
+                                totalSeconds: remainingTime,
+                                isRunning: true,
+                                isPaused: false,
+                                isBreak: backgroundState.isBreak,
+                            });
+                            console.log('⏰ Timer synced with background state');
+                        } else if (!backgroundState || remainingTime <= 0) {
+                            // Timer completed while in background
+                            console.log('⏰ Timer completed in background');
+                            setIsConnectedToBackground(false);
+                            setBackgroundSessionId(null);
+
+                            // Cancel any remaining timer notifications and show completion feedback
+                            await notificationService.cancelTimerNotifications();
+                            await playCompletionSound();
+                        }
+                    } catch (error) {
+                        console.error('Failed to sync with background timer:', error);
+                    }
                 }
             }
         };
 
         const subscription = AppState.addEventListener('change', handleAppStateChange);
         return () => subscription?.remove();
-    }, [saveTimerState, isConnectedToBackground]);
+    }, [saveTimerState, isConnectedToBackground, setTimer]);
 
     // Volume animation
     useEffect(() => {
