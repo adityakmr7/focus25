@@ -330,21 +330,25 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const handleToggleTimer = async () => {
         try {
             const wasRunning = timer.isRunning;
+            const wasPaused = timer.isPaused;
             toggleTimer();
 
             // Background timer handling
             if (backgroundTimerService.isSupported()) {
-                if (!wasRunning) {
+                if (!wasRunning && !wasPaused) {
+                    // Starting timer from stopped state - start background timer
                     const sessionId = await backgroundTimerService.startTimer(
                         Math.floor(timer.totalSeconds / 60),
                         timer.isBreak,
                     );
                     setBackgroundSessionId(sessionId);
                     setIsConnectedToBackground(true);
-                } else if (timer.isPaused) {
-                    await backgroundTimerService.resumeTimer();
-                } else {
+                } else if (wasRunning && !wasPaused) {
+                    // Timer was running, so user is pausing it
                     await backgroundTimerService.pauseTimer();
+                } else if (!wasRunning && wasPaused) {
+                    // Timer was paused, so user is resuming it
+                    await backgroundTimerService.resumeTimer();
                 }
             }
 
@@ -589,26 +593,48 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
     // App state handling
     useEffect(() => {
-        const handleAppStateChange = (nextAppState: AppStateStatus) => {
+        const handleAppStateChange = async (nextAppState: AppStateStatus) => {
             if (Platform.OS === 'web') return;
 
             appStateRef.current = nextAppState;
 
             if (nextAppState === 'background') {
-                // App going to background
+                // App going to background - just save state, don't pause timer
                 saveTimerState();
+                console.log('📱 App backgrounded - timer continues running');
             } else if (nextAppState === 'active') {
-                // App coming to foreground
-                // Sync with background timer if supported
+                // App coming to foreground - sync with background timer
+                console.log('📱 App foregrounded - syncing timer state');
                 if (backgroundTimerService.isSupported() && isConnectedToBackground) {
-                    // Re-sync timer state
+                    try {
+                        const backgroundState = await backgroundTimerService.getTimerState();
+                        const remainingTime = await backgroundTimerService.getRemainingTime();
+
+                        if (backgroundState && backgroundState.isRunning && remainingTime > 0) {
+                            // Update timer with current state from background
+                            const minutes = Math.floor(remainingTime / 60);
+                            const seconds = remainingTime % 60;
+
+                            setTimer({
+                                minutes,
+                                seconds,
+                                totalSeconds: remainingTime,
+                                isRunning: true,
+                                isPaused: false,
+                                isBreak: backgroundState.isBreak,
+                            });
+                            console.log('⏰ Timer synced with background state');
+                        }
+                    } catch (error) {
+                        console.error('Failed to sync with background timer:', error);
+                    }
                 }
             }
         };
 
         const subscription = AppState.addEventListener('change', handleAppStateChange);
         return () => subscription?.remove();
-    }, [saveTimerState, isConnectedToBackground]);
+    }, [saveTimerState, isConnectedToBackground, setTimer]);
 
     // Volume animation
     useEffect(() => {

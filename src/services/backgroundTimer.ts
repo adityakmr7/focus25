@@ -171,8 +171,17 @@ export class BackgroundTimerService {
             const timerStateString = await AsyncStorage.getItem(TIMER_STATE_KEY);
             if (timerStateString) {
                 const timerState: BackgroundTimerState = JSON.parse(timerStateString);
+                
+                // Calculate elapsed time when paused and adjust remaining duration
+                const now = Date.now();
+                const elapsed = Math.floor((now - timerState.startTime) / 1000);
+                const remaining = timerState.duration - elapsed;
+                
+                // Update state for resuming
                 timerState.isRunning = true;
-                timerState.startTime = Date.now(); // Reset start time
+                timerState.startTime = now; // New start time
+                timerState.duration = remaining; // Remaining time becomes new duration
+                
                 await AsyncStorage.setItem(TIMER_STATE_KEY, JSON.stringify(timerState));
             }
         } catch (error) {
