@@ -503,8 +503,13 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         setIsConnectedToBackground(false);
                     }
 
-                    // Play completion sound and handle completion
-                    await playCompletionSound();
+                    // Only play completion sound if app is in foreground
+                    if (appStateRef.current === 'active') {
+                        await playCompletionSound();
+                    } else {
+                        // App is backgrounded, just handle timer completion without sound
+                        handleTimerComplete();
+                    }
                     return;
                 }
 
@@ -611,7 +616,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                         const remainingTime = await backgroundTimerService.getRemainingTime();
 
                         if (backgroundState && backgroundState.isRunning && remainingTime > 0) {
-                            // Update timer with current state from background
+                            // Timer is still running - sync with current state
                             const minutes = Math.floor(remainingTime / 60);
                             const seconds = remainingTime % 60;
 
@@ -624,6 +629,14 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                                 isBreak: backgroundState.isBreak,
                             });
                             console.log('⏰ Timer synced with background state');
+                        } else if (!backgroundState || remainingTime <= 0) {
+                            // Timer completed while in background
+                            console.log('⏰ Timer completed in background');
+                            setIsConnectedToBackground(false);
+                            setBackgroundSessionId(null);
+                            
+                            // Show completion feedback now that we're in foreground
+                            await playCompletionSound();
                         }
                     } catch (error) {
                         console.error('Failed to sync with background timer:', error);

@@ -109,7 +109,7 @@ export class BackgroundTimerService {
             if (!isTaskRegistered) {
                 // Register background task
                 await BackgroundTask.registerTaskAsync(BACKGROUND_TIMER_TASK, {
-                    minimumInterval: 15, // 15 minutes minimum
+                    minimumInterval: 1, // 1 second for accurate timer tracking
                 });
             }
 
