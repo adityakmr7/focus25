@@ -11,7 +11,6 @@ import {
     TouchableOpacity,
 } from 'react-native';
 import { FlowMetrics } from '../components/FlowMetrics';
-import { AdvancedAnalytics } from '../components/AdvancedAnalytics';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../store/themeStore';
@@ -230,8 +229,6 @@ const FlowAnalyticsScreen: React.FC<FlowAnalyticsScreenProps> = ({ navigation })
                 <FlowMetrics showDetailed={true} />
 
                 {/* Advanced Analytics */}
-                <AdvancedAnalytics timeRange={timeRange} onTimeRangeChange={setTimeRange} />
-
                 {/* Insights Grid */}
                 <View style={styles.insightsSection}>
                     <Text style={[styles.sectionTitle, { color: theme.text }]}>Key Insights</Text>

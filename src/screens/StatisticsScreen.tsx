@@ -16,9 +16,6 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import StatisticsChart from '../components/StatisticsChart';
 import { useStatisticsStore } from '../store/statisticsStore';
 import { usePomodoroStore } from '../store/pomodoroStore';
-import { useGoalsStore } from '../store/goalsStore';
-import { FlowMetrics } from '../components/FlowMetrics';
-import { GoalsModal } from '../components/GoalsModal';
 import { useThemeStore } from '../store/themeStore';
 import { useColorScheme } from 'react-native';
 import { hybridDatabaseService } from '../data/hybridDatabase';
@@ -154,71 +151,6 @@ const StatCard: React.FC<StatCardProps> = ({
     );
 };
 
-const ActionButton: React.FC<{
-    icon: string;
-    label: string;
-    onPress: () => void;
-    gradient: string[];
-    delay?: number;
-}> = ({ icon, label, onPress, gradient, delay = 0 }) => {
-    const { mode, getCurrentTheme } = useThemeStore();
-    const systemColorScheme = useColorScheme();
-    const theme = getCurrentTheme();
-    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
-    const animatedValue = useRef(new Animated.Value(0)).current;
-    const scaleValue = useRef(new Animated.Value(0.9)).current;
-
-    useEffect(() => {
-        Animated.parallel([
-            Animated.timing(animatedValue, {
-                toValue: 1,
-                duration: 600,
-                delay,
-                useNativeDriver: true,
-            }),
-            Animated.spring(scaleValue, {
-                toValue: 1,
-                delay,
-                useNativeDriver: true,
-                tension: 120,
-                friction: 7,
-            }),
-        ]).start();
-    }, []);
-
-    const translateY = animatedValue.interpolate({
-        inputRange: [0, 1],
-        outputRange: [30, 0],
-    });
-
-    const opacity = animatedValue.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, 1],
-    });
-
-    return (
-        <Animated.View
-            style={[
-                {
-                    transform: [{ translateY }, { scale: scaleValue }],
-                    opacity,
-                },
-            ]}
-        >
-            <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: theme.surface }]}
-                onPress={onPress}
-                activeOpacity={0.8}
-            >
-                <View style={[styles.actionIconContainer, { backgroundColor: gradient[0] }]}>
-                    <Icon name={icon} size={20} color="#FFFFFF" />
-                </View>
-                <Text style={[styles.actionButtonText, { color: theme.text }]}>{label}</Text>
-            </TouchableOpacity>
-        </Animated.View>
-    );
-};
-
 const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     const { mode, getCurrentTheme } = useThemeStore();
     const systemColorScheme = useColorScheme();
@@ -239,14 +171,6 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
 
     const { flowMetrics, initializeStore: initializePomodoro } = usePomodoroStore();
 
-    const {
-        goals,
-        getActiveGoals,
-        updateGoalsFromStats,
-        initializeStore: initializeGoals,
-    } = useGoalsStore();
-
-    const [showGoalsModal, setShowGoalsModal] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
     const headerAnimatedValue = useRef(new Animated.Value(0)).current;
@@ -268,11 +192,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
     useEffect(() => {
         const initializeStores = async () => {
             try {
-                await Promise.all([
-                    initializeStatistics(),
-                    initializePomodoro(),
-                    initializeGoals(),
-                ]);
+                await Promise.all([initializeStatistics(), initializePomodoro()]);
             } catch (error) {
                 console.error('Failed to initialize stores:', error);
             }
@@ -290,18 +210,6 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
 
         return () => clearInterval(interval);
     }, []);
-
-    // Update goals based on current statistics
-    useEffect(() => {
-        const stats = {
-            dailySessions: flows.completed,
-            dailyFocusTime: flows.minutes,
-            currentStreak: flowMetrics.currentStreak,
-            weeklyConsistency: flows.completed > 0 ? Math.min(85 + flows.completed * 5, 100) : 0,
-        };
-
-        updateGoalsFromStats(stats);
-    }, [flows, flowMetrics]);
 
     const handleRefresh = async () => {
         setRefreshing(true);
@@ -333,9 +241,6 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
         inputRange: [0, 1],
         outputRange: [-30, 0],
     });
-
-    const activeGoals = getActiveGoals();
-    const recentGoals = activeGoals.slice(0, 3);
 
     // Calculate dynamic trends based on historical data
     const calculateTrend = (current: number, category: string) => {
@@ -508,245 +413,9 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
                     ))}
                 </View>
 
-                {/* Goals Overview Section */}
-                <View style={styles.goalsSection}>
-                    <Animated.View
-                        style={[
-                            styles.sectionHeader,
-                            {
-                                opacity: headerOpacity,
-                                transform: [{ translateY: headerTranslateY }],
-                            },
-                        ]}
-                    >
-                        <View style={styles.sectionTitleContainer}>
-                            <Icon name="flag" size={24} color={theme.accent} />
-                            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                                Active Goals ({activeGoals.length})
-                            </Text>
-                        </View>
-                        <TouchableOpacity
-                            style={[styles.viewAllButton, { backgroundColor: theme.accent + '20' }]}
-                            onPress={() => setShowGoalsModal(true)}
-                        >
-                            <Text style={[styles.viewAllText, { color: theme.accent }]}>
-                                {activeGoals.length > 3
-                                    ? `View All ${activeGoals.length}`
-                                    : 'Manage'}
-                            </Text>
-                        </TouchableOpacity>
-                    </Animated.View>
-
-                    {recentGoals.length > 0 ? (
-                        <View style={styles.goalsGrid}>
-                            {recentGoals.map((goal, index) => (
-                                <Animated.View
-                                    key={goal.id}
-                                    style={[
-                                        styles.goalCard,
-                                        { backgroundColor: theme.surface },
-                                        {
-                                            opacity: headerOpacity,
-                                            transform: [{ translateY: headerTranslateY }],
-                                        },
-                                    ]}
-                                >
-                                    <View style={styles.goalHeader}>
-                                        <View
-                                            style={[
-                                                styles.goalIcon,
-                                                {
-                                                    backgroundColor:
-                                                        getGoalColor(goal.category) + '20',
-                                                },
-                                            ]}
-                                        >
-                                            <Icon
-                                                name={
-                                                    goal.category === 'sessions'
-                                                        ? 'timer'
-                                                        : goal.category === 'focus_time'
-                                                          ? 'schedule'
-                                                          : goal.category === 'streak'
-                                                            ? 'local-fire-department'
-                                                            : 'calendar-today'
-                                                }
-                                                size={16}
-                                                color={getGoalColor(goal.category)}
-                                            />
-                                        </View>
-                                        <Text style={[styles.goalTitle, { color: theme.text }]}>
-                                            {goal.title}
-                                        </Text>
-                                        {goal.isCompleted && (
-                                            <Icon name="check-circle" size={16} color="#10B981" />
-                                        )}
-                                    </View>
-
-                                    <View style={styles.goalProgress}>
-                                        <Text
-                                            style={[
-                                                styles.goalProgressText,
-                                                { color: theme.textSecondary },
-                                            ]}
-                                        >
-                                            {goal.current} / {goal.target} {goal.unit}
-                                        </Text>
-                                        <View
-                                            style={[
-                                                styles.goalProgressBar,
-                                                { backgroundColor: '#E5E7EB' },
-                                            ]}
-                                        >
-                                            <View
-                                                style={[
-                                                    styles.goalProgressFill,
-                                                    {
-                                                        width: `${getGoalProgress(goal)}%`,
-                                                        backgroundColor: goal.isCompleted
-                                                            ? '#10B981'
-                                                            : getGoalColor(goal.category),
-                                                    },
-                                                ]}
-                                            />
-                                        </View>
-                                        <Text
-                                            style={[
-                                                styles.goalPercentage,
-                                                { color: theme.textSecondary },
-                                            ]}
-                                        >
-                                            {Math.round(getGoalProgress(goal))}% complete
-                                        </Text>
-                                    </View>
-                                </Animated.View>
-                            ))}
-                        </View>
-                    ) : (
-                        <TouchableOpacity
-                            style={[styles.emptyGoalsCard, { backgroundColor: theme.surface }]}
-                            onPress={() => setShowGoalsModal(true)}
-                        >
-                            <Icon name="flag-outline" size={32} color={theme.accent} />
-                            <Text style={[styles.emptyGoalsTitle, { color: theme.text }]}>
-                                Set Your First Goal
-                            </Text>
-                            <Text
-                                style={[styles.emptyGoalsSubtitle, { color: theme.textSecondary }]}
-                            >
-                                Track your progress and stay motivated
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-
-                {/* Action Buttons */}
-                <View style={styles.actionButtonsContainer}>
-                    <ActionButton
-                        icon="flag"
-                        label="Manage Goals"
-                        onPress={() => setShowGoalsModal(true)}
-                        gradient={['#9F7AEA', '#C084FC']}
-                        delay={400}
-                    />
-                </View>
-
-                {/* Flow Metrics Section */}
-                <View style={styles.flowMetricsSection}>
-                    <Animated.View
-                        style={[
-                            styles.sectionHeader,
-                            {
-                                opacity: headerOpacity,
-                                transform: [{ translateY: headerTranslateY }],
-                            },
-                        ]}
-                    >
-                        <View style={styles.sectionTitleContainer}>
-                            <Icon name="psychology" size={24} color="#4ECDC4" />
-                            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                                Flow State Analysis
-                            </Text>
-                        </View>
-                        <View style={styles.flowIntensityBadge}>
-                            <Text
-                                style={[
-                                    styles.flowIntensityText,
-                                    {
-                                        color:
-                                            flowMetrics.flowIntensity === 'high'
-                                                ? '#10B981'
-                                                : flowMetrics.flowIntensity === 'medium'
-                                                  ? '#F59E0B'
-                                                  : '#EF4444',
-                                    },
-                                ]}
-                            >
-                                {flowMetrics.flowIntensity.toUpperCase()}
-                            </Text>
-                        </View>
-                    </Animated.View>
-                    <FlowMetrics showDetailed={false} />
-                </View>
-
-                {/*/!* Quick Insights *!/*/}
-                {/*<View style={styles.insightsSection}>*/}
-                {/*  <Animated.View*/}
-                {/*    style={[*/}
-                {/*      styles.sectionHeader,*/}
-                {/*      {*/}
-                {/*        opacity: headerOpacity,*/}
-                {/*        transform: [{ translateY: headerTranslateY }],*/}
-                {/*      },*/}
-                {/*    ]}*/}
-                {/*  >*/}
-                {/*    <View style={styles.sectionTitleContainer}>*/}
-                {/*      <Icon name="lightbulb" size={24} color="#FFD93D" />*/}
-                {/*      <Text style={[styles.sectionTitle, { color: theme.text }]}>*/}
-                {/*        Quick Insights*/}
-                {/*      </Text>*/}
-                {/*    </View>*/}
-                {/*  </Animated.View>*/}
-
-                {/*  <View style={styles.insightsGrid}>*/}
-                {/*    <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>*/}
-                {/*      <Icon name="trending-up" size={20} color="#10B981" />*/}
-                {/*      <Text style={[styles.insightTitle, { color: theme.text }]}>*/}
-                {/*        Best Time*/}
-                {/*      </Text>*/}
-                {/*      <Text style={[styles.insightValue, { color: theme.textSecondary }]}>*/}
-                {/*        {flows.completed > 0 ? '2:00 PM' : 'Not enough data'}*/}
-                {/*      </Text>*/}
-                {/*    </View>*/}
-
-                {/*    <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>*/}
-                {/*      <Icon name="speed" size={20} color="#4ECDC4" />*/}
-                {/*      <Text style={[styles.insightTitle, { color: theme.text }]}>*/}
-                {/*        Streak*/}
-                {/*      </Text>*/}
-                {/*      <Text style={[styles.insightValue, { color: theme.textSecondary }]}>*/}
-                {/*        {flowMetrics.currentStreak} days*/}
-                {/*      </Text>*/}
-                {/*    </View>*/}
-
-                {/*    <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>*/}
-                {/*      <Icon name="emoji-events" size={20} color="#FFD93D" />*/}
-                {/*      <Text style={[styles.insightTitle, { color: theme.text }]}>*/}
-                {/*        This Week*/}
-                {/*      </Text>*/}
-                {/*      <Text style={[styles.insightValue, { color: theme.textSecondary }]}>*/}
-                {/*        {flows.completed * 7} sessions*/}
-                {/*      </Text>*/}
-                {/*    </View>*/}
-                {/*  </View>*/}
-                {/*</View>*/}
-
                 {/* Bottom Spacing */}
                 <View style={styles.bottomSpacing} />
             </ScrollView>
-
-            {/* Goals Modal */}
-            <GoalsModal visible={showGoalsModal} onClose={() => setShowGoalsModal(false)} />
         </SafeAreaView>
     );
 };

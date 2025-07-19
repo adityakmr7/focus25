@@ -1,37 +1,3 @@
-export interface Goal {
-    id: string;
-    title: string;
-    description?: string;
-    category: GoalCategory;
-    type: GoalType;
-    target: number;
-    current: number;
-    unit: string;
-    isCompleted: boolean;
-    createdAt: string;
-    completedAt?: string;
-    deadline?: string;
-    reward?: string;
-}
-
-export enum GoalCategory {
-    PRODUCTIVITY = 'productivity',
-    HEALTH = 'health',
-    LEARNING = 'learning',
-    PERSONAL = 'personal',
-    WORK = 'work',
-    FITNESS = 'fitness',
-    CREATIVITY = 'creativity',
-}
-
-export enum GoalType {
-    DAILY = 'daily',
-    WEEKLY = 'weekly',
-    MONTHLY = 'monthly',
-    YEARLY = 'yearly',
-    ONE_TIME = 'one_time',
-}
-
 export interface Statistics {
     date: string;
     totalCount: number;
@@ -95,7 +61,6 @@ export interface Theme {
     mode: ThemeMode;
     accentColor: AccentColor;
     timerStyle: TimerStyle;
-    customThemes: Record<string, CustomTheme>;
     activeCustomTheme?: string;
 }
 
@@ -106,12 +71,11 @@ export enum ThemeMode {
 }
 
 export enum AccentColor {
-    GREEN = 'green',
-    BLUE = 'blue',
-    PURPLE = 'purple',
-    RED = 'red',
-    ORANGE = 'orange',
-    PINK = 'pink',
+    SAGE = 'sage',
+    WARM_GRAY = 'warmGray',
+    SOFT_TEAL = 'softTeal',
+    MUTED_LAVENDER = 'mutedLavender',
+    CREAM = 'cream',
 }
 
 export enum TimerStyle {
@@ -119,15 +83,6 @@ export enum TimerStyle {
     ANALOG = 'analog',
     MINIMAL = 'minimal',
     CIRCULAR = 'circular',
-}
-
-export interface CustomTheme {
-    name: string;
-    primaryColor: string;
-    secondaryColor: string;
-    backgroundColor: string;
-    textColor: string;
-    accentColor: string;
 }
 
 export interface Session {
@@ -149,7 +104,6 @@ export enum SessionType {
 }
 
 export interface ExportData {
-    goals: Goal[];
     statistics: Statistics[];
     flowMetrics: FlowMetrics;
     settings: Settings;
@@ -157,23 +111,6 @@ export interface ExportData {
     sessions?: Session[];
     exportedAt: string;
     version: string;
-}
-
-// Database row interfaces (for mapping SQL results)
-export interface GoalRow {
-    id: string;
-    title: string;
-    description: string;
-    category: string;
-    type: string;
-    target: number;
-    current: number;
-    unit: string;
-    is_completed: number;
-    created_at: string;
-    completed_at?: string;
-    deadline?: string;
-    reward?: string;
 }
 
 export interface StatisticsRow {
@@ -225,8 +162,6 @@ export interface ThemeRow {
     mode: string;
     accent_color: string;
     timer_style: string;
-    custom_themes: string;
-    active_custom_theme?: string;
     updated_at: string;
 }
 
@@ -240,4 +175,26 @@ export interface SessionRow {
     distractions: number;
     notes?: string;
     created_at: string;
+}
+
+export interface Todo {
+    id: string;
+    title: string;
+    isCompleted: boolean;
+    createdAt: string;
+    completedAt?: string;
+}
+
+export interface TodoRow {
+    id: string;
+    title: string;
+    description?: string;
+    is_completed: number;
+    priority: string;
+    category: string;
+    due_date?: string;
+    created_at: string;
+    completed_at?: string;
+    tags?: string;
+    notes?: string;
 }

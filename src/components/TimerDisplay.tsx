@@ -1,10 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import Svg, { Circle, Path } from 'react-native-svg';
 import { useThemeStore } from '../store/themeStore';
-
-const { width } = Dimensions.get('window');
 
 interface TimerDisplayProps {
     minutes: number;
@@ -21,7 +18,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
     isRunning,
     pulseAnimation,
 }) => {
-    const { timerStyle, getCurrentTheme } = useThemeStore();
+    const { getCurrentTheme } = useThemeStore();
     const theme = getCurrentTheme();
 
     const formatTime = (minutes: number, seconds: number): string => {
@@ -32,9 +29,9 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
         transform: pulseAnimation ? [{ scale: pulseAnimation.value }] : [],
     }));
 
-    const renderDigitalTimer = () => (
+    return (
         <Animated.View style={[styles.digitalContainer, animatedStyle]}>
-            <View style={[styles.digitalBackground, { backgroundColor: theme.surface }]}>
+            <View style={[styles.digitalBackground]}>
                 <Text style={[styles.digitalTime, { color: theme.text }]}>
                     {formatTime(minutes, seconds)}
                 </Text>
@@ -52,83 +49,9 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
             </View>
         </Animated.View>
     );
-
-    const renderAnalogTimer = () => {
-        const size = width * 0.7; // 80% of screen width
-        const strokeWidth = 8;
-        const radius = (size - strokeWidth) / 2;
-        const circumference = 2 * Math.PI * radius;
-        const strokeDashoffset = circumference - progress * circumference;
-
-        return (
-            <Animated.View style={[styles.analogContainer, animatedStyle]}>
-                <Svg width={size} height={size} style={styles.analogSvg}>
-                    {/* Background circle */}
-                    <Circle
-                        cx={size / 2}
-                        cy={size / 2}
-                        r={radius}
-                        stroke={theme.surface}
-                        strokeWidth={strokeWidth}
-                        fill="transparent"
-                    />
-                    {/* Progress circle */}
-                    <Circle
-                        cx={size / 2}
-                        cy={size / 2}
-                        r={radius}
-                        stroke={theme.accent}
-                        strokeWidth={strokeWidth}
-                        fill="transparent"
-                        strokeDasharray={circumference}
-                        strokeDashoffset={strokeDashoffset}
-                        strokeLinecap="round"
-                        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-                    />
-                </Svg>
-                <View style={styles.analogTimeContainer}>
-                    <Text style={[styles.analogTime, { color: theme.text }]}>
-                        {formatTime(minutes, seconds)}
-                    </Text>
-                </View>
-            </Animated.View>
-        );
-    };
-
-    const renderMinimalTimer = () => (
-        <Animated.View style={[styles.minimalContainer, animatedStyle]}>
-            <Text style={[styles.minimalTime, { color: theme.text }]}>
-                {formatTime(minutes, seconds)}
-            </Text>
-            <View style={styles.minimalDots}>
-                {[...Array(4)].map((_, index) => (
-                    <View
-                        key={index}
-                        style={[
-                            styles.minimalDot,
-                            {
-                                backgroundColor:
-                                    index < progress * 4 ? theme.accent : theme.surface,
-                            },
-                        ]}
-                    />
-                ))}
-            </View>
-        </Animated.View>
-    );
-
-    switch (timerStyle) {
-        case 'analog':
-            return renderAnalogTimer();
-        case 'minimal':
-            return renderMinimalTimer();
-        default:
-            return renderDigitalTimer();
-    }
 };
 
 const styles = StyleSheet.create({
-    // Digital Timer Styles
     digitalContainer: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -139,17 +62,12 @@ const styles = StyleSheet.create({
         paddingVertical: 30,
         borderRadius: 20,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 8,
     },
     digitalTime: {
-        fontSize: 64,
+        fontSize: 100,
         fontWeight: '200',
         letterSpacing: -2,
-        fontFamily: 'monospace',
+        fontFamily: 'SF-Pro-Display-Bold',
     },
     progressBar: {
         width: 200,
@@ -161,47 +79,5 @@ const styles = StyleSheet.create({
     progressFill: {
         height: '100%',
         borderRadius: 2,
-    },
-
-    // Analog Timer Styles
-    analogContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        // marginVertical: 10,
-    },
-    analogSvg: {
-        transform: [{ rotate: '0deg' }],
-    },
-    analogTimeContainer: {
-        position: 'absolute',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    analogTime: {
-        fontSize: 48,
-        fontWeight: '300',
-        letterSpacing: -1,
-    },
-
-    // Minimal Timer Styles
-    minimalContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginVertical: 60,
-    },
-    minimalTime: {
-        fontSize: 72,
-        fontWeight: '100',
-        letterSpacing: -3,
-        marginBottom: 30,
-    },
-    minimalDots: {
-        flexDirection: 'row',
-        gap: 12,
-    },
-    minimalDot: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
     },
 });

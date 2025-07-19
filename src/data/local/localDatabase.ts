@@ -6,10 +6,6 @@ import {
     FlowIntensity,
     FlowMetrics,
     FlowMetricsRow,
-    Goal,
-    GoalCategory,
-    GoalRow,
-    GoalType,
     NotificationStatus,
     Session,
     SessionRow,
@@ -22,17 +18,13 @@ import {
     ThemeMode,
     ThemeRow,
     TimerStyle,
+    Todo,
+    TodoRow,
 } from '../../types/database';
 
 // Database interface
 export interface LocalDataBase {
     initializeDatabase(): Promise<void>;
-
-    // Goals operations
-    saveGoal(goal: Goal): Promise<void>;
-    getGoals(): Promise<Goal[]>;
-    updateGoal(id: string, updates: Partial<Goal>): Promise<void>;
-    deleteGoal(id: string): Promise<void>;
 
     // Statistics operations
     saveStatistics(stats: Statistics): Promise<void>;
@@ -57,6 +49,13 @@ export interface LocalDataBase {
     getSessionById(id: string): Promise<Session | null>;
     updateSession(id: string, updates: Partial<Session>): Promise<void>;
     deleteSession(id: string): Promise<void>;
+
+    // Todo operations
+    initializeTodos(): Promise<void>;
+    saveTodo(todo: Todo): Promise<void>;
+    getTodos(): Promise<Todo[]>;
+    updateTodo(id: string, updates: Partial<Todo>): Promise<void>;
+    deleteTodo(id: string): Promise<void>;
 
     // Export operations
     exportAllData(): Promise<string>;
@@ -93,7 +92,7 @@ class SQLiteService implements LocalDataBase {
         try {
             console.log('Initializing SQLite database...');
             this.db = await SQLite.openDatabaseAsync('flowfocus.db');
-            
+
             if (!this.db) {
                 throw new Error('Failed to open database - null reference');
             }
@@ -122,23 +121,6 @@ class SQLiteService implements LocalDataBase {
         if (!this.db) throw new Error('Database not initialized');
 
         const createTablesSQL = `
-      -- Goals table
-      CREATE TABLE IF NOT EXISTS goals (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        description TEXT,
-        category TEXT NOT NULL,
-        type TEXT NOT NULL,
-        target INTEGER NOT NULL,
-        current INTEGER DEFAULT 0,
-        unit TEXT NOT NULL,
-        is_completed BOOLEAN DEFAULT 0,
-        created_at TEXT NOT NULL,
-        completed_at TEXT,
-        deadline TEXT,
-        reward TEXT
-      );
-
       -- Statistics table
       CREATE TABLE IF NOT EXISTS statistics (
         id TEXT PRIMARY KEY,
@@ -192,7 +174,6 @@ class SQLiteService implements LocalDataBase {
         mode TEXT DEFAULT 'auto',
         accent_color TEXT DEFAULT 'green',
         timer_style TEXT DEFAULT 'digital',
-        custom_themes TEXT DEFAULT '{}',
         active_custom_theme TEXT,
         updated_at TEXT NOT NULL
       );
@@ -210,35 +191,33 @@ class SQLiteService implements LocalDataBase {
         created_at TEXT NOT NULL
       );
 
+      -- Todos table
+      CREATE TABLE IF NOT EXISTS todos (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        is_completed BOOLEAN DEFAULT 0,
+        priority TEXT DEFAULT 'medium',
+        category TEXT DEFAULT 'personal',
+        due_date TEXT,
+        created_at TEXT NOT NULL,
+        completed_at TEXT,
+        tags TEXT,
+        notes TEXT
+      );
+
       -- Create indexes for better performance
       CREATE INDEX IF NOT EXISTS idx_statistics_date ON statistics(date);
       CREATE INDEX IF NOT EXISTS idx_sessions_start_time ON sessions(start_time);
       CREATE INDEX IF NOT EXISTS idx_sessions_type ON sessions(type);
-      CREATE INDEX IF NOT EXISTS idx_goals_category ON goals(category);
-      CREATE INDEX IF NOT EXISTS idx_goals_type ON goals(type);
-      CREATE INDEX IF NOT EXISTS idx_goals_completed ON goals(is_completed);
+      CREATE INDEX IF NOT EXISTS idx_todos_completed ON todos(is_completed);
+      CREATE INDEX IF NOT EXISTS idx_todos_priority ON todos(priority);
+      CREATE INDEX IF NOT EXISTS idx_todos_category ON todos(category);
+      CREATE INDEX IF NOT EXISTS idx_todos_created_at ON todos(created_at);
+      CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos(due_date);
     `;
 
         await this.db.execAsync(createTablesSQL);
-    }
-
-    // Helper method to map GoalRow to Goal
-    private mapGoalRowToGoal(row: GoalRow): Goal {
-        return {
-            id: row.id,
-            title: row.title,
-            description: row.description || undefined,
-            category: row.category as GoalCategory,
-            type: row.type as GoalType,
-            target: row.target,
-            current: row.current,
-            unit: row.unit,
-            isCompleted: Boolean(row.is_completed),
-            createdAt: row.created_at,
-            completedAt: row.completed_at || undefined,
-            deadline: row.deadline || undefined,
-            reward: row.reward || undefined,
-        };
     }
 
     // Helper method to map SessionRow to Session
@@ -256,70 +235,15 @@ class SQLiteService implements LocalDataBase {
         };
     }
 
-    // Goals operations
-    async saveGoal(goal: Goal): Promise<void> {
-        if (!this.db) throw new Error('Database not initialized');
-
-        const sql = `
-            INSERT OR REPLACE INTO goals 
-      (id, title, description, category, type, target, current, unit, is_completed, created_at, completed_at, deadline, reward)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-
-        await this.db.runAsync(sql, [
-            goal.id,
-            goal.title,
-            goal.description || '',
-            goal.category,
-            goal.type,
-            goal.target,
-            goal.current,
-            goal.unit,
-            goal.isCompleted ? 1 : 0,
-            goal.createdAt,
-            goal.completedAt || null,
-            goal.deadline || null,
-            goal.reward || null,
-        ]);
-    }
-
-    async getGoals(): Promise<Goal[]> {
-        if (!this.db) throw new Error('Database not initialized');
-
-        const result = (await this.db.getAllAsync(
-            'SELECT * FROM goals ORDER BY created_at DESC',
-        )) as GoalRow[];
-        return result.map((row) => this.mapGoalRowToGoal(row));
-    }
-
-    async updateGoal(id: string, updates: Partial<Goal>): Promise<void> {
-        if (!this.db) throw new Error('Database not initialized');
-
-        const setClause = Object.keys(updates)
-            .map((key) => {
-                const dbKey =
-                    key === 'isCompleted'
-                        ? 'is_completed'
-                        : key === 'createdAt'
-                          ? 'created_at'
-                          : key === 'completedAt'
-                            ? 'completed_at'
-                            : key;
-                return `${dbKey} = ?`;
-            })
-            .join(', ');
-
-        const values = Object.values(updates).map((value) =>
-            typeof value === 'boolean' ? (value ? 1 : 0) : value,
-        );
-
-        const sql = `UPDATE goals SET ${setClause} WHERE id = ?`;
-        await this.db.runAsync(sql, [...values, id]);
-    }
-
-    async deleteGoal(id: string): Promise<void> {
-        if (!this.db) throw new Error('Database not initialized');
-        await this.db.runAsync('DELETE FROM goals WHERE id = ?', [id]);
+    // Helper method to map TodoRow to Todo
+    private mapTodoRowToTodo(row: TodoRow): Todo {
+        return {
+            id: row.id,
+            title: row.title,
+            isCompleted: Boolean(row.is_completed),
+            createdAt: row.created_at,
+            completedAt: row.completed_at || undefined,
+        };
     }
 
     // Statistics operations
@@ -333,7 +257,7 @@ class SQLiteService implements LocalDataBase {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        await this.db.runAsync(sql, [
+        await this.db!.runAsync(sql, [
             stats.date,
             stats.date,
             stats.totalCount,
@@ -353,11 +277,12 @@ class SQLiteService implements LocalDataBase {
         await this.ensureInitialized();
 
         const targetDate = date || new Date().toISOString().split('T')[0];
-        
+
         try {
-            const result = (await this.db!.getFirstAsync('SELECT * FROM statistics WHERE date = ?', [
-                targetDate,
-            ])) as StatisticsRow | null;
+            const result = (await this.db!.getFirstAsync(
+                'SELECT * FROM statistics WHERE date = ?',
+                [targetDate],
+            )) as StatisticsRow | null;
 
             if (!result) {
                 return {
@@ -400,7 +325,7 @@ class SQLiteService implements LocalDataBase {
     async getStatisticsRange(startDate: string, endDate: string): Promise<Statistics[]> {
         await this.ensureInitialized();
 
-        const result = (await this.db.getAllAsync(
+        const result = (await this.db!.getAllAsync(
             'SELECT * FROM statistics WHERE date BETWEEN ? AND ? ORDER BY date',
             [startDate, endDate],
         )) as StatisticsRow[];
@@ -435,7 +360,7 @@ class SQLiteService implements LocalDataBase {
       VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        await this.db.runAsync(sql, [
+        await this.db!.runAsync(sql, [
             metrics.consecutiveSessions,
             metrics.currentStreak,
             metrics.longestStreak,
@@ -573,18 +498,11 @@ class SQLiteService implements LocalDataBase {
         const now = new Date().toISOString();
         const sql = `
             INSERT OR REPLACE INTO theme 
-      (id, mode, accent_color, timer_style, custom_themes, active_custom_theme, updated_at)
-      VALUES (1, ?, ?, ?, ?, ?, ?)
+      (id, mode, accent_color, updated_at)
+      VALUES (1, ?, ?, ?)
         `;
 
-        await this.db.runAsync(sql, [
-            theme.mode,
-            theme.accentColor,
-            theme.timerStyle,
-            JSON.stringify(theme.customThemes),
-            theme.activeCustomTheme || null,
-            now,
-        ]);
+        await this.db.runAsync(sql, [theme.mode, theme.accentColor, now]);
     }
 
     async getTheme(): Promise<Theme> {
@@ -597,9 +515,8 @@ class SQLiteService implements LocalDataBase {
         if (!result) {
             return {
                 mode: ThemeMode.AUTO,
-                accentColor: AccentColor.GREEN,
+                accentColor: AccentColor.SAGE,
                 timerStyle: TimerStyle.DIGITAL,
-                customThemes: {},
                 activeCustomTheme: undefined,
             };
         }
@@ -608,8 +525,6 @@ class SQLiteService implements LocalDataBase {
             mode: result.mode as ThemeMode,
             accentColor: result.accent_color as AccentColor,
             timerStyle: result.timer_style as TimerStyle,
-            customThemes: JSON.parse(result.custom_themes || '{}'),
-            activeCustomTheme: result.active_custom_theme || undefined,
         };
     }
 
@@ -692,12 +607,74 @@ class SQLiteService implements LocalDataBase {
         await this.db.runAsync('DELETE FROM sessions WHERE id = ?', [id]);
     }
 
+    // Todo operations
+    async initializeTodos(): Promise<void> {
+        await this.ensureInitialized();
+    }
+
+    async saveTodo(todo: Todo): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const sql = `
+            INSERT OR REPLACE INTO todos 
+            (id, title, is_completed, created_at, completed_at)
+            VALUES (?, ?, ?, ?, ?)
+        `;
+
+        await this.db.runAsync(sql, [
+            todo.id,
+            todo.title,
+            todo.isCompleted ? 1 : 0,
+            todo.createdAt,
+            todo.completedAt || null,
+        ]);
+    }
+
+    async getTodos(): Promise<Todo[]> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const result = (await this.db.getAllAsync(
+            'SELECT * FROM todos ORDER BY created_at DESC',
+        )) as TodoRow[];
+        return result.map((row) => this.mapTodoRowToTodo(row));
+    }
+
+    async updateTodo(id: string, updates: Partial<Todo>): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const setClause = Object.keys(updates)
+            .map((key) => {
+                const dbKey =
+                    key === 'isCompleted'
+                        ? 'is_completed'
+                        : key === 'createdAt'
+                          ? 'created_at'
+                          : key === 'completedAt'
+                            ? 'completed_at'
+                            : key;
+                return `${dbKey} = ?`;
+            })
+            .join(', ');
+
+        const values = Object.entries(updates).map(([, value]) => {
+            if (typeof value === 'boolean') return value ? 1 : 0;
+            return value;
+        });
+
+        const sql = `UPDATE todos SET ${setClause} WHERE id = ?`;
+        await this.db.runAsync(sql, [...values, id]);
+    }
+
+    async deleteTodo(id: string): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        await this.db.runAsync('DELETE FROM todos WHERE id = ?', [id]);
+    }
+
     // Export operations
     async exportAllData(): Promise<string> {
         if (!this.db) throw new Error('Database not initialized');
 
-        const [goals, statistics, flowMetrics, settings, theme, sessions] = await Promise.all([
-            this.getGoals(),
+        const [statistics, flowMetrics, settings, theme, sessions] = await Promise.all([
             this.db.getAllAsync('SELECT * FROM statistics ORDER BY date') as Promise<
                 StatisticsRow[]
             >,
@@ -724,7 +701,6 @@ class SQLiteService implements LocalDataBase {
         }));
 
         const exportData: ExportData = {
-            goals,
             statistics: mappedStatistics,
             flowMetrics,
             settings,
@@ -785,40 +761,6 @@ class WebStorageService implements LocalDataBase {
         } catch (error) {
             console.error('Error saving to localStorage:', error);
         }
-    }
-
-    async saveGoal(goal: Goal): Promise<void> {
-        const data = this.getData();
-        const existingIndex = data.goals.findIndex((g: Goal) => g.id === goal.id);
-
-        if (existingIndex >= 0) {
-            data.goals[existingIndex] = goal;
-        } else {
-            data.goals.push(goal);
-        }
-
-        this.saveData(data);
-    }
-
-    async getGoals(): Promise<Goal[]> {
-        const data = this.getData();
-        return data.goals || [];
-    }
-
-    async updateGoal(id: string, updates: Partial<Goal>): Promise<void> {
-        const data = this.getData();
-        const goalIndex = data.goals.findIndex((g: Goal) => g.id === id);
-
-        if (goalIndex >= 0) {
-            data.goals[goalIndex] = { ...data.goals[goalIndex], ...updates };
-            this.saveData(data);
-        }
-    }
-
-    async deleteGoal(id: string): Promise<void> {
-        const data = this.getData();
-        data.goals = data.goals.filter((g: Goal) => g.id !== id);
-        this.saveData(data);
     }
 
     async saveStatistics(stats: Statistics): Promise<void> {
@@ -914,7 +856,7 @@ class WebStorageService implements LocalDataBase {
         return (
             data.theme || {
                 mode: ThemeMode.AUTO,
-                accentColor: AccentColor.GREEN,
+                accentColor: AccentColor.SAGE,
                 timerStyle: TimerStyle.DIGITAL,
                 customThemes: {},
                 activeCustomTheme: undefined,
@@ -973,6 +915,49 @@ class WebStorageService implements LocalDataBase {
         const data = this.getData();
         if (data.sessions) {
             data.sessions = data.sessions.filter((s: Session) => s.id !== id);
+            this.saveData(data);
+        }
+    }
+
+    // Todo operations
+    async initializeTodos(): Promise<void> {
+        // No initialization needed for web storage
+    }
+
+    async saveTodo(todo: Todo): Promise<void> {
+        const data = this.getData();
+        if (!data.todos) data.todos = [];
+
+        const existingIndex = data.todos.findIndex((t: Todo) => t.id === todo.id);
+        if (existingIndex >= 0) {
+            data.todos[existingIndex] = todo;
+        } else {
+            data.todos.push(todo);
+        }
+
+        this.saveData(data);
+    }
+
+    async getTodos(): Promise<Todo[]> {
+        const data = this.getData();
+        return data.todos || [];
+    }
+
+    async updateTodo(id: string, updates: Partial<Todo>): Promise<void> {
+        const data = this.getData();
+        if (!data.todos) data.todos = [];
+
+        const todoIndex = data.todos.findIndex((t: Todo) => t.id === id);
+        if (todoIndex >= 0) {
+            data.todos[todoIndex] = { ...data.todos[todoIndex], ...updates };
+            this.saveData(data);
+        }
+    }
+
+    async deleteTodo(id: string): Promise<void> {
+        const data = this.getData();
+        if (data.todos) {
+            data.todos = data.todos.filter((t: Todo) => t.id !== id);
             this.saveData(data);
         }
     }

@@ -5,18 +5,16 @@ import { Ionicons } from '@expo/vector-icons';
 interface HeaderProps {
     theme: any;
     flowMetrics: any;
-    onToggleQuickActions: () => void;
+    onOpenMusicPlayer: () => void;
     onReset: () => void;
-    showQuickActions: boolean;
     isLoading?: boolean;
 }
 const Header: React.FC<HeaderProps> = React.memo(
     ({
         theme,
         flowMetrics,
-        onToggleQuickActions,
+        onOpenMusicPlayer,
         onReset,
-        showQuickActions,
         isLoading = false,
     }) => {
         return (
@@ -38,18 +36,15 @@ const Header: React.FC<HeaderProps> = React.memo(
                 </TouchableOpacity> */}
 
                 <TouchableOpacity
-                    onPress={onToggleQuickActions}
-                    style={[
-                        styles.menuButton,
-                        { backgroundColor: showQuickActions ? theme.accent + '20' : theme.surface },
-                    ]}
+                    onPress={onOpenMusicPlayer}
+                    style={[styles.musicButton, { backgroundColor: theme.surface }]}
                     disabled={isLoading}
                     accessible={true}
-                    accessibilityLabel="Toggle quick actions"
+                    accessibilityLabel="Open music player"
                     accessibilityRole="button"
                 >
                     <Ionicons
-                        name={showQuickActions ? 'close' : 'ellipsis-horizontal'}
+                        name="musical-notes"
                         size={20}
                         color={theme.accent}
                     />
@@ -110,7 +105,7 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: '700',
     },
-    menuButton: {
+    musicButton: {
         width: 44,
         height: 44,
         borderRadius: 22,
