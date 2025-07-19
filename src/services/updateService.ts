@@ -1,7 +1,7 @@
 import { Platform, Linking, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { errorHandler } from './errorHandler';
-
+import { version } from '../../package.json';
 export interface AppVersion {
     version: string;
     bundleId: string;
@@ -36,7 +36,7 @@ export class UpdateService {
     constructor() {
         // Get from app config
         this.bundleId = Platform.OS === 'ios' ? 'com.focus25.app' : 'com.focus25.app';
-        this.currentVersion = '1.0.0'; // This should match your app.json version
+        this.currentVersion = version; // This should match your app.json version
     }
 
     static getInstance(): UpdateService {
@@ -84,7 +84,7 @@ export class UpdateService {
             console.log('🔍 Checking for app updates...');
 
             const storeInfo = await this.getStoreInfo();
-            
+
             if (!storeInfo) {
                 console.log('❌ Could not fetch store info');
                 return {
@@ -96,10 +96,10 @@ export class UpdateService {
             }
 
             const updateInfo = this.compareVersions(storeInfo);
-            
+
             // Update last check time
             await this.updateLastCheckTime();
-            
+
             if (updateInfo.isUpdateAvailable) {
                 console.log('📱 Update available:', updateInfo.latestVersion);
             } else {
@@ -113,7 +113,7 @@ export class UpdateService {
                 context: 'UpdateService.checkForUpdates',
                 severity: 'low',
             });
-            
+
             return {
                 isUpdateAvailable: false,
                 currentVersion: this.currentVersion,
@@ -185,7 +185,7 @@ export class UpdateService {
     private compareVersions(storeInfo: AppVersion): UpdateInfo {
         const currentVersion = this.currentVersion;
         const latestVersion = storeInfo.version;
-        
+
         const isUpdateAvailable = this.isNewerVersion(latestVersion, currentVersion);
         const isForceUpdate = this.isForceUpdateRequired(latestVersion, currentVersion);
 
@@ -205,7 +205,7 @@ export class UpdateService {
      */
     private isNewerVersion(versionA: string, versionB: string): boolean {
         const parseVersion = (version: string) => {
-            return version.split('.').map(num => parseInt(num, 10));
+            return version.split('.').map((num) => parseInt(num, 10));
         };
 
         const vA = parseVersion(versionA);
@@ -230,7 +230,7 @@ export class UpdateService {
         // Example: Force update if major version is different
         const latestMajor = parseInt(latestVersion.split('.')[0], 10);
         const currentMajor = parseInt(currentVersion.split('.')[0], 10);
-        
+
         return latestMajor > currentMajor;
     }
 
@@ -245,7 +245,7 @@ export class UpdateService {
             const lastCheckTime = parseInt(lastCheck, 10);
             const now = Date.now();
 
-            return (now - lastCheckTime) > UPDATE_CHECK_INTERVAL;
+            return now - lastCheckTime > UPDATE_CHECK_INTERVAL;
         } catch (error) {
             console.error('Failed to check update interval:', error);
             return true;
@@ -270,28 +270,28 @@ export class UpdateService {
         if (!updateInfo.isUpdateAvailable) return;
 
         const title = updateInfo.isForceUpdate ? 'Update Required' : 'Update Available';
-        const message = updateInfo.isForceUpdate 
+        const message = updateInfo.isForceUpdate
             ? `A new version (${updateInfo.latestVersion}) is required to continue using the app.`
             : `A new version (${updateInfo.latestVersion}) is available. Would you like to update now?`;
 
-        const buttons = updateInfo.isForceUpdate 
+        const buttons = updateInfo.isForceUpdate
             ? [
-                {
-                    text: 'Update Now',
-                    onPress: () => this.openStore(updateInfo.storeUrl),
-                },
-            ]
+                  {
+                      text: 'Update Now',
+                      onPress: () => this.openStore(updateInfo.storeUrl),
+                  },
+              ]
             : [
-                {
-                    text: 'Later',
-                    style: 'cancel' as const,
-                    onPress: () => this.skipVersion(updateInfo.latestVersion),
-                },
-                {
-                    text: 'Update',
-                    onPress: () => this.openStore(updateInfo.storeUrl),
-                },
-            ];
+                  {
+                      text: 'Later',
+                      style: 'cancel' as const,
+                      onPress: () => this.skipVersion(updateInfo.latestVersion),
+                  },
+                  {
+                      text: 'Update',
+                      onPress: () => this.openStore(updateInfo.storeUrl),
+                  },
+              ];
 
         Alert.alert(title, message, buttons);
     }
@@ -302,7 +302,7 @@ export class UpdateService {
     private async openStore(storeUrl?: string): Promise<void> {
         try {
             let url = storeUrl;
-            
+
             if (!url) {
                 if (Platform.OS === 'ios') {
                     url = `https://apps.apple.com/app/id${this.bundleId}`;
@@ -374,14 +374,20 @@ export class UpdateService {
     async checkForUpdatesAndShow(forceCheck = false): Promise<void> {
         try {
             const updateInfo = await this.checkForUpdates(forceCheck);
-            
+
             if (updateInfo.isUpdateAvailable) {
                 // Don't show alert if version was skipped (unless it's a force update)
-                if (!updateInfo.isForceUpdate && await this.isVersionSkipped(updateInfo.latestVersion)) {
-                    console.log('Update available but version was skipped:', updateInfo.latestVersion);
+                if (
+                    !updateInfo.isForceUpdate &&
+                    (await this.isVersionSkipped(updateInfo.latestVersion))
+                ) {
+                    console.log(
+                        'Update available but version was skipped:',
+                        updateInfo.latestVersion,
+                    );
                     return;
                 }
-                
+
                 await this.showUpdateAlert(updateInfo);
             }
         } catch (error) {
