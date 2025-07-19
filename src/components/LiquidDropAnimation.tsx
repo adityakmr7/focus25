@@ -56,17 +56,24 @@ export const LiquidDropAnimation: React.FC<LiquidDropAnimationProps> = ({
 
     // Handle merging based on session progression
     useEffect(() => {
-        // After 1st session+break complete (now in session 2), merge drop 1 to 2
-        if (currentSession >= 2) {
-            merge1to2.value = withTiming(1, { duration: 1500 });
-        }
-        // After 2nd session+break complete (now in session 3), merge drop 2 to 3
-        if (currentSession >= 3) {
-            merge2to3.value = withTiming(1, { duration: 1500 });
-        }
-        // After 3rd session+break complete (now in session 4), merge drop 3 to 4
-        if (currentSession >= 4) {
-            merge3to4.value = withTiming(1, { duration: 1500 });
+        // Reset all merges when back to session 1
+        if (currentSession === 1) {
+            merge1to2.value = withTiming(0, { duration: 500 });
+            merge2to3.value = withTiming(0, { duration: 500 });
+            merge3to4.value = withTiming(0, { duration: 500 });
+        } else {
+            // After 1st session+break complete (now in session 2), merge drop 1 to 2
+            if (currentSession >= 2) {
+                merge1to2.value = withTiming(1, { duration: 1500 });
+            }
+            // After 2nd session+break complete (now in session 3), merge drop 2 to 3
+            if (currentSession >= 3) {
+                merge2to3.value = withTiming(1, { duration: 1500 });
+            }
+            // After 3rd session+break complete (now in session 4), merge drop 3 to 4
+            if (currentSession >= 4) {
+                merge3to4.value = withTiming(1, { duration: 1500 });
+            }
         }
     }, [currentSession]);
 

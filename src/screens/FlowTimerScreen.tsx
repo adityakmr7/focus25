@@ -382,8 +382,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
     const handleReset = useCallback(async () => {
         try {
-            resetTimer();
-
+            // First stop everything
             if (backgroundTimerService.isSupported()) {
                 await backgroundTimerService.stopTimer();
                 setBackgroundSessionId(null);
@@ -400,6 +399,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 setIsPlaying(false);
             }
 
+            // Reset timer state
+            resetTimer();
+            
+            // Force sync with settings to ensure correct state
+            updateTimerFromSettings();
+
             // Reset pulse animation
             pulseAnimation.value = withTiming(1, { duration: 300 });
         } catch (error) {
@@ -408,7 +413,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 severity: 'low',
             });
         }
-    }, [resetTimer, isPlaying, player, status?.isLoaded, pulseAnimation, stopLoop]);
+    }, [resetTimer, updateTimerFromSettings, isPlaying, player, status?.isLoaded, pulseAnimation, stopLoop]);
 
     const handleOpenMusicPlayer = useCallback(() => {
         bottomSheetRef.current?.expand();
