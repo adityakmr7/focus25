@@ -288,13 +288,15 @@ const TodoScreen: React.FC = () => {
                 }
             />
 
-            {/* Floating Action Button */}
-            <TouchableOpacity
-                style={[styles.fab, { backgroundColor: theme.accent }]}
-                onPress={handleOpenCreateForm}
-            >
-                <Ionicons name="add" size={24} color="white" />
-            </TouchableOpacity>
+            {/* Floating Action Button - Only show for today */}
+            {isToday(selectedDate) && (
+                <TouchableOpacity
+                    style={[styles.fab, { backgroundColor: theme.accent }]}
+                    onPress={handleOpenCreateForm}
+                >
+                    <Ionicons name="add" size={24} color="white" />
+                </TouchableOpacity>
+            )}
 
             {/* Todo Form Bottom Sheet */}
             <TodoFormBottomSheet
