@@ -12,6 +12,12 @@
       "assets/fonts/*"
     ],
     "ios": {
+      "appleTeamId": "D83FBJT69Y",
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.focus25.app"
+        ]
+      },
       "icon": "./assets/icon_ios.png",
       "supportsTablet": true,
       "buildNumber": "2",
@@ -78,7 +84,8 @@
       ],
       "expo-background-task",
       "expo-font",
-      "expo-sqlite"
+      "expo-sqlite",
+      "@bacons/apple-targets"
     ],
     "experiments": {
       "typedRoutes": true

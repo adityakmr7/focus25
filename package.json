@@ -11,9 +11,11 @@
     "build": "expo build",
     "prebuild": "expo prebuild",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "build-widget": "npx expo prebuild --template node_modules/@bacons/apple-targets/prebuild-blank.tgz --clean"
   },
   "dependencies": {
+    "@bacons/apple-targets": "^3.0.2",
     "@expo/vector-icons": "^14.0.4",
     "@gorhom/bottom-sheet": "^5.0.5",
     "@react-native-async-storage/async-storage": "2.1.2",
@@ -37,6 +39,7 @@
     "expo-splash-screen": "~0.30.10",
     "expo-sqlite": "~15.2.14",
     "expo-status-bar": "~2.2.3",
+    "expo-store-review": "~8.1.5",
     "expo-system-ui": "~5.0.10",
     "expo-task-manager": "~13.1.6",
     "nativewind": "^4.1.23",
@@ -53,8 +56,7 @@
     "react-native-vector-icons": "^10.2.0",
     "tailwind-merge": "^3.3.1",
     "uuid": "^11.1.0",
-    "zustand": "^5.0.5",
-    "expo-store-review": "~8.1.5"
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

@@ -401,7 +401,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
 
             // Reset timer state
             resetTimer();
-            
+
             // Force sync with settings to ensure correct state
             updateTimerFromSettings();
 
@@ -413,7 +413,15 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                 severity: 'low',
             });
         }
-    }, [resetTimer, updateTimerFromSettings, isPlaying, player, status?.isLoaded, pulseAnimation, stopLoop]);
+    }, [
+        resetTimer,
+        updateTimerFromSettings,
+        isPlaying,
+        player,
+        status?.isLoaded,
+        pulseAnimation,
+        stopLoop,
+    ]);
 
     const handleOpenMusicPlayer = useCallback(() => {
         bottomSheetRef.current?.expand();
