@@ -182,8 +182,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         console.log('Opening storage settings...');
     },
 
-    openFeedback: () => {
-        console.log('Opening feedback form...');
+    openFeedback: async () => {
+        await Linking.openURL(APP_CONFIG.FEEDBACK_FORM_URL);
     },
 
     updateNotification: async (status: string) => {
