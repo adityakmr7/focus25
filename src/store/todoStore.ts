@@ -34,17 +34,7 @@ interface TodoState {
     syncWithDatabase: () => Promise<void>;
 }
 
-const defaultTodos: Omit<Todo, 'id' | 'createdAt' | 'isCompleted'>[] = [
-    {
-        title: 'Review daily goals',
-    },
-    {
-        title: 'Complete project documentation',
-    },
-    {
-        title: 'Schedule workout session',
-    },
-];
+const defaultTodos: Omit<Todo, 'id' | 'createdAt' | 'isCompleted'>[] = [];
 
 export const useTodoStore = create<TodoState>((set, get) => ({
     todos: [],
