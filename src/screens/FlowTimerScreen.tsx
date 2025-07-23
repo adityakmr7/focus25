@@ -34,6 +34,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/FlowTimerScreen/Header';
 import TimerContainer from '../components/FlowTimerScreen/TimerContainer';
 import { useTheme } from '../hooks/useTheme';
+import { WidgetService } from '../services/widgetService';
 
 const MUSIC_SETTINGS_KEY = 'music_settings';
 const TIMER_STATE_KEY = 'timer_state';
@@ -672,6 +673,28 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     useEffect(() => {
         volumeAnimation.value = withTiming(settings.volume, { duration: 200 });
     }, [settings.volume, volumeAnimation]);
+
+    // Update widget data whenever timer state changes
+    useEffect(() => {
+        if (timerState.isInitialized) {
+            const timerStateString = WidgetService.formatTimerState(timer);
+            WidgetService.updateTimer(
+                timerStateString,
+                timer.totalSeconds,
+                timer.isBreak,
+                timer.currentSession,
+                flowMetrics.totalFocusTime
+            );
+        }
+    }, [
+        timer.isRunning,
+        timer.isPaused, 
+        timer.totalSeconds,
+        timer.isBreak,
+        timer.currentSession,
+        flowMetrics.totalFocusTime,
+        timerState.isInitialized
+    ]);
 
     // Cleanup
     useEffect(() => {
