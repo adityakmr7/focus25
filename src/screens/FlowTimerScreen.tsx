@@ -11,6 +11,7 @@ import {
     StyleSheet,
     Text,
     View,
+    Vibration,
 } from 'react-native';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { useSettingsStore } from '../store/settingsStore';
@@ -135,7 +136,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
         initializeStore: initializePomodoro,
     } = usePomodoroStore();
 
-    const { timeDuration, breakDuration, initializeStore: initializeSettings } = useSettingsStore();
+    const { timeDuration, breakDuration, soundEffects, initializeStore: initializeSettings } = useSettingsStore();
 
     // Refs
     const bottomSheetRef = useRef<BottomSheetMethods>(null);
@@ -312,20 +313,91 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     // Timer handlers
     const playCompletionSound = useCallback(async () => {
         try {
-            await alertPlayer.play();
+            // Check if sound effects are enabled in settings
+            if (!soundEffects) {
+                console.log('Sound effects disabled in settings, using vibration only');
+                // Use vibration as alternative feedback
+                if (Platform.OS !== 'web') {
+                    Vibration.vibrate([0, 250, 250, 250]);
+                }
+                handleTimerComplete();
+                return;
+            }
+
+            // Validate player availability
+            if (!alertPlayer) {
+                console.warn('Alert player not available, using vibration fallback');
+                // Use vibration as fallback
+                if (Platform.OS !== 'web') {
+                    Vibration.vibrate([0, 250, 250, 250]);
+                }
+                handleTimerComplete();
+                return;
+            }
+
+            // Log current player status for debugging
+            console.log('Alert player status:', {
+                isLoaded: alertPlayer.isLoaded,
+                isBuffering: alertPlayer.isBuffering,
+                playing: alertPlayer.playing,
+                paused: alertPlayer.paused
+            });
+
+            // Check if audio is ready with timeout to prevent infinite waiting
+            const maxWaitTime = 2000; // 2 seconds max wait
+            const startTime = Date.now();
+
+            while (!alertPlayer.isLoaded && Date.now() - startTime < maxWaitTime) {
+                await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+
+            if (!alertPlayer.isLoaded) {
+                console.warn('Alert player not loaded in time, using vibration fallback');
+                // Use vibration as fallback
+                if (Platform.OS !== 'web') {
+                    Vibration.vibrate([0, 250, 250, 250]);
+                }
+                handleTimerComplete();
+                return;
+            }
+
+            console.log('Playing completion sound');
+            // Reset to beginning in case it was played before
+            alertPlayer.seekTo(0);
+            alertPlayer.play();
+
+            // Auto-pause after 2 seconds with safety check
             setTimeout(() => {
-                alertPlayer.pause();
+                if (alertPlayer && alertPlayer.isLoaded) {
+                    try {
+                        alertPlayer.pause();
+                    } catch (pauseError) {
+                        console.warn('Failed to pause alert player:', pauseError);
+                    }
+                }
             }, 2000);
+
             // Don't send notification here - this is for foreground completion only
             handleTimerComplete();
         } catch (error) {
             errorHandler.logError(error as Error, {
                 context: 'Audio Playback',
-                severity: 'low',
+                severity: 'medium', // Increased severity
             });
+            console.warn('Audio playback failed, using vibration fallback:', error);
+
+            // Use vibration as fallback when audio fails
+            if (Platform.OS !== 'web') {
+                try {
+                    Vibration.vibrate([0, 250, 250, 250]);
+                } catch (vibrationError) {
+                    console.warn('Vibration fallback also failed:', vibrationError);
+                }
+            }
+
             handleTimerComplete();
         }
-    }, [alertPlayer, handleTimerComplete]);
+    }, [alertPlayer, handleTimerComplete, soundEffects]);
 
     const handleToggleTimer = async () => {
         try {
@@ -439,6 +511,35 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
                     console.log('🔊 Audio mode configured for silent mode playback');
                 } catch (error) {
                     console.error('⚠️ Failed to configure audio mode:', error);
+                }
+
+                // Preload and validate alert player (will only be used if soundEffects is enabled)
+                try {
+                    if (alertPlayer) {
+                        console.log('🔔 Preloading alert player...');
+                        // Wait for alert player to be ready with timeout
+                        const alertLoadTimeout = 5000; // 5 seconds
+                        const alertStartTime = Date.now();
+
+                        while (
+                            !alertPlayer.isLoaded &&
+                            Date.now() - alertStartTime < alertLoadTimeout
+                        ) {
+                            await new Promise((resolve) => setTimeout(resolve, 200));
+                        }
+
+                        if (alertPlayer.isLoaded) {
+                            console.log('✅ Alert player preloaded successfully');
+                        } else {
+                            console.warn(
+                                '⚠️ Alert player failed to preload, will use vibration fallback',
+                            );
+                        }
+                    } else {
+                        console.warn('⚠️ Alert player not available, will use vibration fallback');
+                    }
+                } catch (error) {
+                    console.error('⚠️ Failed to preload alert player:', error);
                 }
 
                 // Initialize stores
