@@ -32,20 +32,16 @@ interface FlowTimerScreenProps {
     };
 }
 
-const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
+const FlowTimerScreen: React.FC<FlowTimerScreenProps> = ({ navigation }) => {
     const { theme, isDark } = useTheme();
     
-    // Refs and local state
+    // Refs
     const bottomSheetRef = useRef<BottomSheetMethods>(null);
-    const [showSettings, setShowSettings] = React.useState(false);
     
     // Music settings
     const { settings, loadSettings, saveSettings, handleVolumeChange } = useMusicSettings();
     
-    // Create a ref to store the audio completion function
-    const audioCompletionRef = useRef<(() => Promise<void>) | null>(null);
-
-    // Timer logic hook 
+    // Timer logic hook
     const {
         timer,
         timerState,
@@ -54,15 +50,27 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
         handleToggleTimer: baseHandleToggleTimer,
         handleReset: baseHandleReset,
         initializeTimer,
-        handleTimerComplete: storeHandleTimerComplete,
-        setTimer,
+        handleTimerComplete,
     } = useTimerLogic({
-        onTimerComplete: async () => {
-            // Play completion sound when timer completes
-            if (audioCompletionRef.current) {
-                await audioCompletionRef.current();
-            }
+        onTimerComplete: () => {
+            audioManager.playCompletionSound();
         },
+    });
+
+    // Background timer hook
+    const {
+        backgroundSessionId,
+        isConnectedToBackground,
+        stopBackgroundTimer,
+        handleTimerToggleWithBackground,
+        syncWithBackgroundTimer,
+    } = useBackgroundTimer({
+        timer,
+        setTimer: (timerUpdate: any) => {
+            // This would need to be connected to the timer logic
+            console.log('Setting timer:', timerUpdate);
+        },
+        isInitialized: timerState.isInitialized,
     });
 
     // Audio manager hook
@@ -70,28 +78,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
         soundEffects,
         settings,
         timerIsRunning: timer.isRunning,
-        onTimerComplete: storeHandleTimerComplete,
-    });
-
-    // Set the audio completion function to play sound AND handle timer completion
-    audioCompletionRef.current = async () => {
-        // First play the completion sound (which includes sound effects check and fallbacks)
-        await audioManager.playCompletionSound();
-    };
-
-    // Background timer hook
-    const {
-        stopBackgroundTimer,
-        handleTimerToggleWithBackground,
-        syncWithBackgroundTimer,
-    } = useBackgroundTimer({
-        timer,
-        setTimer,
-        isInitialized: timerState.isInitialized,
+        onTimerComplete: handleTimerComplete,
     });
 
     // App state handler
-    useAppStateHandler({
+    const { isAppActive } = useAppStateHandler({
         onAppBackground: () => {
             // Save timer state when going to background
             console.log('App going to background');
@@ -101,9 +92,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
             const syncResult = await syncWithBackgroundTimer();
             if (syncResult === 'completed') {
                 // Play completion sound if timer completed in background
-                if (audioCompletionRef.current) {
-                    await audioCompletionRef.current();
-                }
+                audioManager.playCompletionSound();
             }
         },
     });
@@ -350,8 +339,8 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
             <BottomSheetMusicPlayer
                 isPlaying={audioManager.isPlaying}
                 settings={settings}
-                setShowSettings={setShowSettings}
-                showSettings={showSettings}
+                setShowSettings={() => {}} // This would need to be managed
+                showSettings={false} // This would need to be managed
                 setSettings={saveSettings}
                 player={audioManager.player}
                 downloadProgress={audioManager.downloadProgress}

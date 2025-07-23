@@ -62,11 +62,6 @@ export class NotificationService {
                 if (this.settings.dailyReminders) {
                     await this.scheduleDailyReminder();
                 }
-
-                // Schedule weekly reports if enabled
-                if (this.settings.weeklyReports) {
-                    await this.scheduleWeeklyReport();
-                }
             }
 
             this.isInitialized = true;
@@ -229,8 +224,6 @@ export class NotificationService {
                 seconds: seconds,
             } as Notifications.TimeIntervalTriggerInput,
         });
-
-        console.log(`⏰ Timer completion notification scheduled for ${seconds} seconds (ID: ${notificationId})`);
     }
 
     async cancelTimerNotifications(): Promise<void> {
@@ -262,7 +255,12 @@ export class NotificationService {
     }
 
     async scheduleDailyReminder(): Promise<void> {
-        if (!this.isNotificationsEnabled() || !this.settings.enabled || !this.settings.dailyReminders) return;
+        if (
+            !this.isNotificationsEnabled() ||
+            !this.settings.enabled ||
+            !this.settings.dailyReminders
+        )
+            return;
 
         // Cancel existing daily reminders
         await this.cancelNotificationsByType('daily_reminder');
@@ -285,87 +283,6 @@ export class NotificationService {
                 minute: minutes,
                 repeats: true,
             },
-        });
-    }
-
-    async scheduleWeeklyReport(): Promise<void> {
-        if (!this.isNotificationsEnabled() || !this.settings.enabled || !this.settings.weeklyReports) return;
-
-        // Cancel existing weekly reports
-        await this.cancelNotificationsByType('weekly_report');
-
-        await Notifications.scheduleNotificationAsync({
-            content: {
-                title: 'Weekly Focus Report 📊',
-                body: 'Check out your productivity insights for this week!',
-                sound: this.settings.soundEnabled,
-                data: {
-                    type: 'weekly_report',
-                },
-            },
-            trigger: {
-                channelId: 'scheduleNotificationAsync',
-                weekday: 1, // Monday
-                hour: 9,
-                minute: 0,
-                repeats: true,
-            },
-        });
-    }
-
-    async scheduleGoalAchievement(goalTitle: string): Promise<void> {
-        if (!this.isNotificationsEnabled() || !this.settings.enabled) return;
-
-        const celebrationMessages = [
-            `🏆 Goal achieved! "${goalTitle}" - You're unstoppable!`,
-            `🎉 Congratulations! You've completed "${goalTitle}"!`,
-            `⭐ Amazing! "${goalTitle}" is now complete!`,
-            `🚀 Goal unlocked! "${goalTitle}" - Keep soaring!`,
-        ];
-
-        const randomMessage =
-            celebrationMessages[Math.floor(Math.random() * celebrationMessages.length)];
-
-        await Notifications.scheduleNotificationAsync({
-            content: {
-                title: 'Goal Achieved! 🎯',
-                body: randomMessage,
-                sound: this.settings.soundEnabled,
-                data: {
-                    type: 'goal_achievement',
-                    goalTitle,
-                },
-            },
-            trigger: null,
-        });
-    }
-
-    async scheduleStreakMilestone(streak: number): Promise<void> {
-        if (!this.isNotificationsEnabled() || !this.settings.enabled || !this.settings.motivationalMessages) return;
-
-        const milestoneMessages = {
-            3: "🔥 3-day streak! You're building momentum!",
-            7: '⭐ One week strong! Your consistency is paying off!',
-            14: "🚀 Two weeks of focus! You're developing incredible habits!",
-            30: "🏆 30-day streak! You're a focus champion!",
-            50: '💎 50 days! Your dedication is truly inspiring!',
-            100: "👑 100-day streak! You're a productivity legend!",
-        };
-
-        const message = milestoneMessages[streak as keyof typeof milestoneMessages];
-        if (!message) return;
-
-        await Notifications.scheduleNotificationAsync({
-            content: {
-                title: 'Streak Milestone! 🔥',
-                body: message,
-                sound: this.settings.soundEnabled,
-                data: {
-                    type: 'streak_milestone',
-                    streak,
-                },
-            },
-            trigger: null,
         });
     }
 
@@ -402,12 +319,6 @@ export class NotificationService {
                 await this.scheduleDailyReminder();
             } else {
                 await this.cancelNotificationsByType('daily_reminder');
-            }
-        } else if (type === 'weeklyReports') {
-            if (enabled) {
-                await this.scheduleWeeklyReport();
-            } else {
-                await this.cancelNotificationsByType('weekly_report');
             }
         }
     }
