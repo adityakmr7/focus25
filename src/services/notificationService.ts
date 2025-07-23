@@ -320,12 +320,6 @@ export class NotificationService {
             } else {
                 await this.cancelNotificationsByType('daily_reminder');
             }
-        } else if (type === 'weeklyReports') {
-            if (enabled) {
-                await this.scheduleWeeklyReport();
-            } else {
-                await this.cancelNotificationsByType('weekly_report');
-            }
         }
     }
 
