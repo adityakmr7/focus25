@@ -54,6 +54,12 @@
         "android.permission.VIBRATE",
         "android.permission.USE_FULL_SCREEN_INTENT",
         "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.WAKE_LOCK",
+        "android.permission.VIBRATE",
+        "android.permission.USE_FULL_SCREEN_INTENT",
+        "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "package": "com.focus25.app"
@@ -88,6 +94,12 @@
         "projectId": "04e20c31-e1db-413e-8cff-041e3a116e8a"
       }
     },
-    "owner": "adityakmr7"
+    "owner": "adityakmr7",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/04e20c31-e1db-413e-8cff-041e3a116e8a"
+    }
   }
 }
