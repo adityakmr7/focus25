@@ -14,6 +14,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "focus25-widget-module": "file:./modules/focus25-widget-module",
     "@expo/vector-icons": "^14.0.4",
     "@gorhom/bottom-sheet": "^5.0.5",
     "@react-native-async-storage/async-storage": "2.1.2",

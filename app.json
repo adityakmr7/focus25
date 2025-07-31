@@ -22,6 +22,11 @@
         "resizeMode": "contain",
         "backgroundColor": "#16292b"
       },
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "com.focus25.app.focus25Widget"
+        ]
+      },
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -63,6 +68,7 @@
       "bundler": "metro"
     },
     "plugins": [
+      "./modules/focus25-widget-module",
       "expo-audio",
       "expo-notifications",
       "expo-task-manager",
