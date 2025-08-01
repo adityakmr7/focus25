@@ -3,6 +3,7 @@ import { useSettingsStore } from './settingsStore';
 import { useStatisticsStore } from './statisticsStore';
 import { databaseService } from '../data/database';
 import { getCurrentDateString, isNewDay } from '../utils/dateUtils';
+import { widgetService } from '../services/widgetService';
 
 // Add new interfaces for flow tracking
 interface FlowMetrics {
@@ -399,6 +400,12 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
 
             // Automatically start break
             get().startBreak();
+            
+            // Update widget after starting break
+            setTimeout(async () => {
+                const currentTimer = get().timer;
+                await widgetService.updateFromTimerState(currentTimer);
+            }, 100);
         } else {
             // Break completed
             if (settings.notifications) {
@@ -415,6 +422,12 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                 console.log('Notification would be sent:', notificationContent);
             }
             get().endBreak();
+            
+            // Update widget after ending break
+            setTimeout(async () => {
+                const currentTimer = get().timer;
+                await widgetService.updateFromTimerState(currentTimer);
+            }, 100);
         }
 
         // Handle session progression (simplified and fixed)
@@ -434,6 +447,12 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                         seconds: 0,
                     },
                 }));
+                
+                // Update widget after session transition
+                setTimeout(async () => {
+                    const currentTimer = get().timer;
+                    await widgetService.updateFromTimerState(currentTimer);
+                }, 100);
             } else {
                 // Work session completed, start break
                 console.log('Work session completed, starting break');
@@ -450,6 +469,12 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                         seconds: 0,
                     },
                 }));
+                
+                // Update widget after break start
+                setTimeout(async () => {
+                    const currentTimer = get().timer;
+                    await widgetService.updateFromTimerState(currentTimer);
+                }, 100);
             }
         } else {
             // All sessions completed, reset to first session
@@ -467,6 +492,12 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                     seconds: 0,
                 },
             }));
+            
+            // Update widget after session reset
+            setTimeout(async () => {
+                const currentTimer = get().timer;
+                await widgetService.updateFromTimerState(currentTimer);
+            }, 100);
         }
     },
 

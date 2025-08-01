@@ -5,7 +5,7 @@ import { TimerData, WidgetConfiguration } from './Focus25WidgetModule.types';
  * Updates the widget with new timer data
  */
 export async function updateWidget(data: TimerData): Promise<void> {
-    return Focus25WidgetModuleModule.updateWidget(data);
+    return Focus25WidgetModuleModule.updateWidget(data as unknown as Record<string, unknown>);
 }
 
 /**
@@ -19,7 +19,7 @@ export async function reloadWidgets(): Promise<void> {
  * Configures the widget with app group and other settings
  */
 export async function configureWidget(config: WidgetConfiguration): Promise<void> {
-    return Focus25WidgetModuleModule.configureWidget(config);
+    return Focus25WidgetModuleModule.configureWidget(config as unknown as Record<string, unknown>);
 }
 
 /**
@@ -37,12 +37,12 @@ export async function getWidgetData(): Promise<TimerData | null> {
     if (!data) return null;
 
     return {
-        sessionName: data.sessionName,
-        timeRemaining: data.timeRemaining,
-        isActive: data.isActive,
-        progress: data.progress,
-        totalDuration: data.totalDuration,
-        elapsedTime: data.elapsedTime,
+        sessionName: data.sessionName as string,
+        timeRemaining: data.timeRemaining as string,
+        isActive: data.isActive as boolean,
+        progress: data.progress as number,
+        totalDuration: data.totalDuration as number,
+        elapsedTime: data.elapsedTime as number,
     };
 }
 

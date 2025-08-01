@@ -1,0 +1,40 @@
+{
+  "name": "focus25-widget-module",
+  "version": "1.0.0",
+  "description": "iOS Widget module for Focus25 app",
+  "main": "app.plugin.js",
+  "scripts": {
+    "build": "expo-module build",
+    "clean": "expo-module clean"
+  },
+  "keywords": [
+    "expo",
+    "expo-module",
+    "ios",
+    "widget",
+    "focus25"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adityakmr7/focus25",
+    "directory": "modules/focus25-widget-module"
+  },
+  "author": "adityakmr7",
+  "license": "MIT",
+  "dependencies": {
+    "expo": "~53.0.0"
+  },
+  "devDependencies": {
+    "expo-modules-core": "~2.4.2"
+  },
+  "expo": {
+    "module": {
+      "ios": {
+        "modules": ["Focus25WidgetModule"]
+      },
+      "android": {
+        "modules": ["expo.modules.focus25widgetmodule.Focus25WidgetModule"]
+      }
+    }
+  }
+}

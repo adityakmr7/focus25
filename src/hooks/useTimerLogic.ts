@@ -4,6 +4,7 @@ import { usePomodoroStore } from '../store/pomodoroStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { notificationService } from '../services/notificationService';
 import { errorHandler } from '../services/errorHandler';
+import { widgetService } from '../services/widgetService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TIMER_STATE_KEY = 'timer_state';
@@ -72,6 +73,12 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
             const wasPaused = timer.isPaused;
             toggleTimer();
 
+            // Update widget after timer state change
+            setTimeout(async () => {
+                const currentTimer = usePomodoroStore.getState().timer;
+                await widgetService.updateFromTimerState(currentTimer);
+            }, 100); // Small delay to ensure state is updated
+
             // Auto-play music logic would be handled in the parent component
             // since it depends on audio manager
             
@@ -95,6 +102,12 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
 
             // Force sync with settings to ensure correct state
             updateTimerFromSettings();
+
+            // Update widget after reset
+            setTimeout(async () => {
+                const currentTimer = usePomodoroStore.getState().timer;
+                await widgetService.updateFromTimerState(currentTimer);
+            }, 100);
         } catch (error) {
             errorHandler.logError(error as Error, {
                 context: 'Timer Reset',
@@ -147,6 +160,14 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
                 const seconds = newTotalSeconds % 60;
 
                 setTimer({
+                    minutes,
+                    seconds,
+                    totalSeconds: newTotalSeconds,
+                });
+
+                // Update widget with current timer state
+                await widgetService.updateFromTimerState({
+                    ...timer,
                     minutes,
                     seconds,
                     totalSeconds: newTotalSeconds,

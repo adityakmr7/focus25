@@ -3,11 +3,11 @@ import { Focus25WidgetModuleEvents } from './Focus25WidgetModule.types';
 
 // Define the native module interface
 declare class Focus25WidgetModule extends NativeModule<Focus25WidgetModuleEvents> {
-    updateWidget(data: Record<string, any>): Promise<void>;
+    updateWidget(data: Record<string, unknown>): Promise<void>;
     reloadWidgets(): Promise<void>;
-    configureWidget(config: Record<string, any>): Promise<void>;
+    configureWidget(config: Record<string, unknown>): Promise<void>;
     clearWidgetData(): Promise<void>;
-    getWidgetData(): Promise<Record<string, any> | null>;
+    getWidgetData(): Promise<Record<string, unknown> | null>;
 }
 
-export default requireNativeModule<Focus25WidgetModule>('ExpoWidgets');
+export default requireNativeModule<Focus25WidgetModule>('Focus25WidgetModule');
