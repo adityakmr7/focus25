@@ -1,8 +1,8 @@
 {
   "name": "focus25-widget-module",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "description": "iOS Widget module for Focus25 app",
-  "main": "app.plugin.js",
+  "main": "index.ts",
   "scripts": {
     "build": "expo-module build",
     "clean": "expo-module clean"

@@ -2,7 +2,7 @@ import ExpoModulesCore
 import WidgetKit
 import Foundation
 
-public class Focus25WidgetModuleModule: Module {
+public class Focus25WidgetModule: Module {
   // Default app group identifier - should be configured by the app
   private var appGroupId = "com.focus25.app.focus25Widget"
   private let widgetKind = "focus25Widget"

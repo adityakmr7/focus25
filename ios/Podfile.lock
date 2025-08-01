@@ -7,7 +7,7 @@ PODS:
     - ExpoModulesCore
   - EXNotifications (0.31.4):
     - ExpoModulesCore
-  - Expo (53.0.19):
+  - Expo (53.0.20):
     - DoubleConversion
     - ExpoModulesCore
     - glog
@@ -89,6 +89,8 @@ PODS:
   - fast_float (6.1.4)
   - FBLazyVector (0.79.5)
   - fmt (11.0.2)
+  - Focus25WidgetModule (1.0.0):
+    - ExpoModulesCore
   - glog (0.3.5)
   - hermes-engine (0.79.5):
     - hermes-engine/Pre-built (= 0.79.5)
@@ -2140,6 +2142,7 @@ DEPENDENCIES:
   - fast_float (from `../node_modules/react-native/third-party-podspecs/fast_float.podspec`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - fmt (from `../node_modules/react-native/third-party-podspecs/fmt.podspec`)
+  - Focus25WidgetModule (from `../modules/focus25-widget-module/ios`)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - RCT-Folly (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
@@ -2268,6 +2271,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/Libraries/FBLazyVector"
   fmt:
     :podspec: "../node_modules/react-native/third-party-podspecs/fmt.podspec"
+  Focus25WidgetModule:
+    :path: "../modules/focus25-widget-module/ios"
   glog:
     :podspec: "../node_modules/react-native/third-party-podspecs/glog.podspec"
   hermes-engine:
@@ -2424,7 +2429,7 @@ SPEC CHECKSUMS:
   EXApplication: 50cc8ea58c138da6e3f25cd789634219c86b90d5
   EXConstants: 9d62a46a36eae6d28cb978efcbc68aef354d1704
   EXNotifications: d0a50a5490845c702f2c605e94533ae5ddf1aadb
-  Expo: 6e2b482fa24909b52b80ba00271e6d7742c1ef9f
+  Expo: 666a397fcb608d72b019e16ba139b74e93e0b7d7
   ExpoAsset: 7bdbbacf4e6752ae6e3cf70555cee076f6229e6e
   ExpoAudio: b538eb1b6f9c0bd06494a2ec1892befbb276aaeb
   ExpoBackgroundTask: 9a714431a3510646bdd3317bac6d894f9b560318
@@ -2442,6 +2447,7 @@ SPEC CHECKSUMS:
   fast_float: 06eeec4fe712a76acc9376682e4808b05ce978b6
   FBLazyVector: d2a9cd223302b6c9aa4aa34c1a775e9db609eb52
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
+  Focus25WidgetModule: 47f5155b3f49b8cbe19a6a9f2e0c2098a11bd1b8
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: f03b0e06d3882d71e67e45b073bb827da1a21aae
   RCT-Folly: 36fe2295e44b10d831836cc0d1daec5f8abcf809

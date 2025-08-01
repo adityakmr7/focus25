@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
-import { updateWidget, configureWidget, clearWidgetData } from 'focus25-widget-module';
+// Temporarily disabled to fix import issues
+// import { updateWidget, configureWidget, clearWidgetData } from 'focus25-widget-module';
 import { errorHandler } from './errorHandler';
 
 class WidgetService {
@@ -14,13 +15,14 @@ class WidgetService {
         }
 
         try {
-            await configureWidget({
-                appGroupId: 'com.focus25.app.focus25Widget',
-                widgetKind: 'focus25Widget',
-            });
+            // Temporarily disabled to fix import issues
+            // await configureWidget({
+            //     appGroupId: 'com.focus25.app.focus25Widget',
+            //     widgetKind: 'focus25Widget',
+            // });
             
             this.isInitialized = true;
-            console.log('✅ Widget service initialized');
+            console.log('✅ Widget service initialized (mock)');
         } catch (error) {
             errorHandler.logError(error as Error, {
                 context: 'Widget Service Initialization',
@@ -46,7 +48,8 @@ class WidgetService {
         }
 
         try {
-            await updateWidget(data);
+            // Temporarily disabled to fix import issues
+            // await updateWidget(data);
         } catch (error) {
             errorHandler.logError(error as Error, {
                 context: 'Widget Update',
@@ -65,7 +68,8 @@ class WidgetService {
         }
 
         try {
-            await clearWidgetData();
+            // Temporarily disabled to fix import issues
+            // await clearWidgetData();
         } catch (error) {
             errorHandler.logError(error as Error, {
                 context: 'Widget Clear Data',
