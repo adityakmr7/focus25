@@ -52,6 +52,8 @@
 	</dict>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app uses the microphone for focus session audio feedback.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>This app sends notifications to remind you about focus sessions and breaks.</string>
 	<key>UIBackgroundModes</key>
