@@ -45,16 +45,22 @@ struct Focus25Provider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
         let entry = getWidgetData()
         
-        // Update every 30 seconds when timer is active, every 5 minutes when inactive
-        let updateInterval: TimeInterval = entry.isActive ? 30 : 300
+        // More aggressive refresh when timer is active, less when inactive
+        let updateInterval: TimeInterval = entry.isActive ? 5 : 300 // 5 seconds when active
         let nextUpdate = Date().addingTimeInterval(updateInterval)
+        
+        print("🔄 [Widget] Timeline updated, next refresh in \(updateInterval)s")
+        print("🔄 [Widget] Entry data: \(entry.timeRemaining) - \(entry.isActive)")
         
         let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
         completion(timeline)
     }
     
     private func getWidgetData() -> Focus25Entry {
-        let sharedDefaults = UserDefaults(suiteName: "group.com.yourcompany.yourapp.widgets")
+        let sharedDefaults = UserDefaults(suiteName: "group.com.focus25.app.focus25Widget")
+        
+        print("🔍 [Widget] Reading widget data...")
+        print("🔍 [Widget] Shared defaults available: \(sharedDefaults != nil)")
         
         let sessionName = sharedDefaults?.string(forKey: "sessionName") ?? "Focus Session"
         let timeRemaining = sharedDefaults?.string(forKey: "timeRemaining") ?? "25:00"
@@ -62,6 +68,10 @@ struct Focus25Provider: TimelineProvider {
         let progress = sharedDefaults?.double(forKey: "progress") ?? 0.0
         let totalDuration = sharedDefaults?.integer(forKey: "totalDuration") ?? 1500
         let elapsedTime = sharedDefaults?.integer(forKey: "elapsedTime") ?? 0
+        let lastUpdate = sharedDefaults?.double(forKey: "lastUpdate") ?? 0
+        
+        print("🔍 [Widget] Read values - Session: \(sessionName), Time: \(timeRemaining), Active: \(isActive), Progress: \(progress)")
+        print("🔍 [Widget] LastUpdate: \(Date(timeIntervalSince1970: lastUpdate))")
         
         return Focus25Entry(
             date: Date(),

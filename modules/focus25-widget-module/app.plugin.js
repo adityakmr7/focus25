@@ -19,7 +19,7 @@ module.exports = function withFocus25Widget(config) {
       
       if (!config.ios.entitlements['com.apple.security.application-groups']) {
         config.ios.entitlements['com.apple.security.application-groups'] = [
-          'com.focus25.app.focus25Widget'
+          'group.com.focus25.app.focus25Widget'
         ];
       }
       

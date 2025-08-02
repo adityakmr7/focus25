@@ -1,10 +1,25 @@
 import { Platform } from 'react-native';
-// Temporarily disabled to fix import issues
-// import { updateWidget, configureWidget, clearWidgetData } from 'focus25-widget-module';
-import { errorHandler } from './errorHandler';
+
+// Dynamically import widget module to avoid loading issues
+let widgetModule: any = null;
+
+const getWidgetModule = async () => {
+    if (widgetModule) return widgetModule;
+
+    try {
+        console.log('🔄 Loading widget module...');
+        widgetModule = await import('focus25-widget-module');
+        console.log('✅ Widget module loaded successfully');
+        return widgetModule;
+    } catch (error) {
+        console.warn('❌ Widget module not available:', error);
+        return null;
+    }
+};
 
 class WidgetService {
     private isInitialized = false;
+    private liveActivityActive = false;
 
     /**
      * Initialize the widget service
@@ -15,20 +30,25 @@ class WidgetService {
         }
 
         try {
-            // Temporarily disabled to fix import issues
-            // await configureWidget({
-            //     appGroupId: 'com.focus25.app.focus25Widget',
-            //     widgetKind: 'focus25Widget',
-            // });
-            
-            this.isInitialized = true;
-            console.log('✅ Widget service initialized (mock)');
-        } catch (error) {
-            errorHandler.logError(error as Error, {
-                context: 'Widget Service Initialization',
-                severity: 'low',
+            console.log('🔄 Initializing widget service...');
+            const module = await getWidgetModule();
+            if (!module) {
+                console.warn('❌ Widget module not available, skipping initialization');
+                this.isInitialized = true;
+                return;
+            }
+
+            console.log('🔧 Configuring widget...');
+            await module.configureWidget({
+                appGroupId: 'group.com.focus25.app.focus25Widget',
+                widgetKind: 'focus25Widget',
             });
-            console.warn('Widget service initialization failed:', error);
+
+            this.isInitialized = true;
+            console.log('✅ Widget service initialized successfully');
+        } catch (error) {
+            console.warn('❌ Widget service initialization failed:', error);
+            this.isInitialized = true;
         }
     }
 
@@ -48,13 +68,16 @@ class WidgetService {
         }
 
         try {
-            // Temporarily disabled to fix import issues
-            // await updateWidget(data);
+            const module = await getWidgetModule();
+            if (!module) return;
+
+            await module.updateWidget(data);
+
+            // Also update Live Activity if it's active
+            if (this.liveActivityActive) {
+                await module.updateLiveActivity(data);
+            }
         } catch (error) {
-            errorHandler.logError(error as Error, {
-                context: 'Widget Update',
-                severity: 'low',
-            });
             console.warn('Failed to update widget:', error);
         }
     }
@@ -68,13 +91,11 @@ class WidgetService {
         }
 
         try {
-            // Temporarily disabled to fix import issues
-            // await clearWidgetData();
+            const module = await getWidgetModule();
+            if (!module) return;
+
+            await module.clearWidgetData();
         } catch (error) {
-            errorHandler.logError(error as Error, {
-                context: 'Widget Clear Data',
-                severity: 'low',
-            });
             console.warn('Failed to clear widget data:', error);
         }
     }
@@ -109,6 +130,12 @@ class WidgetService {
         isBreak: boolean;
     }): Promise<void> {
         if (Platform.OS !== 'ios' || !this.isInitialized) {
+            console.log(
+                '📱 Skipping widget update - iOS:',
+                Platform.OS === 'ios',
+                'Initialized:',
+                this.isInitialized,
+            );
             return;
         }
 
@@ -119,6 +146,13 @@ class WidgetService {
         const totalDuration = Math.floor(timer.initialSeconds / 60);
         const elapsedTime = Math.floor((timer.initialSeconds - timer.totalSeconds) / 60);
 
+        console.log('📱 Updating widget with:', {
+            sessionName,
+            timeRemaining,
+            isActive,
+            progress: Math.round(progress * 100) + '%',
+        });
+
         await this.updateTimerData({
             sessionName,
             timeRemaining,
@@ -127,6 +161,79 @@ class WidgetService {
             totalDuration,
             elapsedTime,
         });
+    }
+
+    /**
+     * Start Live Activity for Dynamic Island
+     */
+    async startLiveActivityForTimer(timer: {
+        minutes: number;
+        seconds: number;
+        isRunning: boolean;
+        isPaused: boolean;
+        totalSeconds: number;
+        initialSeconds: number;
+        isBreak: boolean;
+    }): Promise<void> {
+        if (Platform.OS !== 'ios' || !this.isInitialized) {
+            return;
+        }
+
+        try {
+            const sessionName = timer.isBreak ? 'Break Time' : 'Focus Session';
+            const timeRemaining = this.formatTime(timer.minutes, timer.seconds);
+            const isActive = timer.isRunning && !timer.isPaused;
+            const progress = this.calculateProgress(timer.totalSeconds, timer.initialSeconds);
+            const totalDuration = Math.floor(timer.initialSeconds / 60);
+
+            const module = await getWidgetModule();
+            if (!module) {
+                console.warn('❌ Widget module not available for Live Activity');
+                return;
+            }
+
+            console.log('🚀 Starting Live Activity with data:', {
+                sessionName,
+                timeRemaining,
+                isActive,
+                progress,
+                totalDuration,
+            });
+
+            await module.startLiveActivity({
+                sessionName,
+                timeRemaining,
+                isActive,
+                progress,
+                totalDuration,
+                elapsedTime: Math.floor((timer.initialSeconds - timer.totalSeconds) / 60),
+            });
+
+            this.liveActivityActive = true;
+            console.log('✅ Live Activity started');
+        } catch (error) {
+            console.warn('Failed to start Live Activity:', error);
+        }
+    }
+
+    /**
+     * Stop Live Activity
+     */
+    async stopLiveActivityForTimer(): Promise<void> {
+        if (Platform.OS !== 'ios' || !this.isInitialized || !this.liveActivityActive) {
+            return;
+        }
+
+        try {
+            const module = await getWidgetModule();
+            if (!module) return;
+
+            await module.stopLiveActivity();
+            this.liveActivityActive = false;
+            console.log('✅ Live Activity stopped');
+        } catch (error) {
+            console.warn('Failed to stop Live Activity:', error);
+        }
     }
 }
 

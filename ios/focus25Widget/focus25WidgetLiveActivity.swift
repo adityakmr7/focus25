@@ -2,17 +2,17 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
+// Live Activity Attributes for iOS 16.1+
+@available(iOS 16.1, *)
 struct focus25WidgetAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
-        // Dynamic stateful properties about your activity go here!
-        var timeRemaining: String
-        var progress: Double
-        var isActive: Bool
+        let timeRemaining: String
+        let progress: Double
+        let isActive: Bool
     }
-
-    // Fixed non-changing properties about your activity go here!
-    var sessionName: String
-    var totalDuration: Int
+    
+    let sessionName: String
+    let totalDuration: Int
 }
 
 struct focus25WidgetLiveActivity: Widget {

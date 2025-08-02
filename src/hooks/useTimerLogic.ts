@@ -41,11 +41,11 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
         initializeStore: initializePomodoro,
     } = usePomodoroStore();
 
-    const { 
-        timeDuration, 
-        breakDuration, 
-        soundEffects, 
-        initializeStore: initializeSettings 
+    const {
+        timeDuration,
+        breakDuration,
+        soundEffects,
+        initializeStore: initializeSettings,
     } = useSettingsStore();
 
     // Save timer state to storage
@@ -72,16 +72,27 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
             const wasRunning = timer.isRunning;
             const wasPaused = timer.isPaused;
             toggleTimer();
-
             // Update widget after timer state change
             setTimeout(async () => {
                 const currentTimer = usePomodoroStore.getState().timer;
                 await widgetService.updateFromTimerState(currentTimer);
+
+                console.log('🔍 Timer toggle debug:', {
+                    wasRunning,
+                    wasPaused,
+                    currentIsRunning: currentTimer.isRunning,
+                    shouldStartLiveActivity: !wasRunning && currentTimer.isRunning
+                });
+
+                // Start Live Activity when timer starts (from stopped or first start)
+                if (!wasRunning && currentTimer.isRunning) {
+                    console.log('🚀 Triggering Live Activity start...');
+                    await widgetService.startLiveActivityForTimer(currentTimer);
+                }
             }, 100); // Small delay to ensure state is updated
 
             // Auto-play music logic would be handled in the parent component
             // since it depends on audio manager
-            
         } catch (error) {
             errorHandler.logError(error as Error, {
                 context: 'Timer Toggle',
@@ -103,10 +114,11 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
             // Force sync with settings to ensure correct state
             updateTimerFromSettings();
 
-            // Update widget after reset
+            // Update widget after reset and stop Live Activity
             setTimeout(async () => {
                 const currentTimer = usePomodoroStore.getState().timer;
                 await widgetService.updateFromTimerState(currentTimer);
+                await widgetService.stopLiveActivityForTimer();
             }, 100);
         } catch (error) {
             errorHandler.logError(error as Error, {
@@ -217,14 +229,14 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
         timeDuration,
         breakDuration,
         soundEffects,
-        
+
         // Actions
         handleToggleTimer,
         handleReset,
         initializeTimer,
         saveTimerState,
         setTimer,
-        
+
         // Store actions
         updateTimerFromSettings,
         handleTimerComplete: storeHandleTimerComplete,

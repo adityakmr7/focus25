@@ -1,10 +1,35 @@
 import ExpoModulesCore
 import WidgetKit
+import ActivityKit
 import Foundation
+
+// Live Activity Attributes for iOS 16.1+
+@available(iOS 16.1, *)
+public struct focus25WidgetAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public let timeRemaining: String
+        public let progress: Double
+        public let isActive: Bool
+        
+        public init(timeRemaining: String, progress: Double, isActive: Bool) {
+            self.timeRemaining = timeRemaining
+            self.progress = progress
+            self.isActive = isActive
+        }
+    }
+    
+    public let sessionName: String
+    public let totalDuration: Int
+    
+    public init(sessionName: String, totalDuration: Int) {
+        self.sessionName = sessionName
+        self.totalDuration = totalDuration
+    }
+}
 
 public class Focus25WidgetModule: Module {
   // Default app group identifier - should be configured by the app
-  private var appGroupId = "com.focus25.app.focus25Widget"
+  private var appGroupId = "group.com.focus25.app.focus25Widget"
   private let widgetKind = "focus25Widget"
 
   public func definition() -> ModuleDefinition {
@@ -12,23 +37,42 @@ public class Focus25WidgetModule: Module {
 
     AsyncFunction("updateWidget") { (data: [String: Any]) -> Void in
       let sharedDefaults = UserDefaults(suiteName: self.appGroupId)
+      
+      print("📱 [Swift] Updating widget with data: \(data)")
+      print("📱 [Swift] App Group ID: \(self.appGroupId)")
+      print("📱 [Swift] Shared defaults available: \(sharedDefaults != nil)")
 
       // Store timer data
-      sharedDefaults?.set(data["sessionName"] as? String ?? "Focus Session", forKey: "sessionName")
-      sharedDefaults?.set(data["timeRemaining"] as? String ?? "25:00", forKey: "timeRemaining")
-      sharedDefaults?.set(data["isActive"] as? Bool ?? false, forKey: "isActive")
-      sharedDefaults?.set(data["progress"] as? Double ?? 0.0, forKey: "progress")
-      sharedDefaults?.set(data["totalDuration"] as? Int ?? 1500, forKey: "totalDuration") // 25 minutes default
-      sharedDefaults?.set(data["elapsedTime"] as? Int ?? 0, forKey: "elapsedTime")
+      let sessionName = data["sessionName"] as? String ?? "Focus Session"
+      let timeRemaining = data["timeRemaining"] as? String ?? "25:00"
+      let isActive = data["isActive"] as? Bool ?? false
+      let progress = data["progress"] as? Double ?? 0.0
+      let totalDuration = data["totalDuration"] as? Int ?? 1500
+      let elapsedTime = data["elapsedTime"] as? Int ?? 0
+      
+      sharedDefaults?.set(sessionName, forKey: "sessionName")
+      sharedDefaults?.set(timeRemaining, forKey: "timeRemaining")
+      sharedDefaults?.set(isActive, forKey: "isActive")
+      sharedDefaults?.set(progress, forKey: "progress")
+      sharedDefaults?.set(totalDuration, forKey: "totalDuration")
+      sharedDefaults?.set(elapsedTime, forKey: "elapsedTime")
 
       // Store last update timestamp
       sharedDefaults?.set(Date().timeIntervalSince1970, forKey: "lastUpdate")
 
       // Force synchronize
-      sharedDefaults?.synchronize()
+      let syncResult = sharedDefaults?.synchronize() ?? false
+      print("📱 [Swift] UserDefaults sync result: \(syncResult)")
+      
+      print("📱 [Swift] Stored values - Session: \(sessionName), Time: \(timeRemaining), Active: \(isActive), Progress: \(progress)")
 
-      // Reload all widget timelines
+      // Reload all widget timelines immediately and aggressively
       WidgetCenter.shared.reloadAllTimelines()
+      
+      // Also reload specific widget kind for good measure
+      WidgetCenter.shared.reloadTimelines(ofKind: self.widgetKind)
+      
+      print("📱 [Swift] Widget timeline reloaded for kind: \(self.widgetKind)")
     }
 
     AsyncFunction("reloadWidgets") { () -> Void in
@@ -73,6 +117,57 @@ public class Focus25WidgetModule: Module {
         "elapsedTime": sharedDefaults?.integer(forKey: "elapsedTime") ?? 0,
         "lastUpdate": sharedDefaults?.double(forKey: "lastUpdate") ?? 0
       ]
+    }
+
+    AsyncFunction("startLiveActivity") { (data: [String: Any]) -> Void in
+      if #available(iOS 16.1, *) {
+        let attributes = focus25WidgetAttributes(
+          sessionName: data["sessionName"] as? String ?? "Focus Session",
+          totalDuration: data["totalDuration"] as? Int ?? 1500
+        )
+        
+        let contentState = focus25WidgetAttributes.ContentState(
+          timeRemaining: data["timeRemaining"] as? String ?? "25:00",
+          progress: data["progress"] as? Double ?? 0.0,
+          isActive: data["isActive"] as? Bool ?? false
+        )
+        
+        do {
+          let activity = try Activity<focus25WidgetAttributes>.request(
+            attributes: attributes,
+            contentState: contentState
+          )
+          print("Live Activity started: \(activity.id)")
+        } catch {
+          print("Failed to start Live Activity: \(error)")
+        }
+      }
+    }
+
+    AsyncFunction("updateLiveActivity") { (data: [String: Any]) -> Void in
+      if #available(iOS 16.1, *) {
+        let contentState = focus25WidgetAttributes.ContentState(
+          timeRemaining: data["timeRemaining"] as? String ?? "25:00",
+          progress: data["progress"] as? Double ?? 0.0,
+          isActive: data["isActive"] as? Bool ?? false
+        )
+        
+        Task {
+          for activity in Activity<focus25WidgetAttributes>.activities {
+            await activity.update(using: contentState)
+          }
+        }
+      }
+    }
+
+    AsyncFunction("stopLiveActivity") { () -> Void in
+      if #available(iOS 16.1, *) {
+        Task {
+          for activity in Activity<focus25WidgetAttributes>.activities {
+            await activity.end(dismissalPolicy: .immediate)
+          }
+        }
+      }
     }
   }
 }
