@@ -24,6 +24,7 @@ import { useAudioManager } from '../hooks/useAudioManager';
 import { useBackgroundTimer } from '../hooks/useBackgroundTimer';
 import { useAppStateHandler } from '../hooks/useAppStateHandler';
 import { useMusicSettings } from '../hooks/useMusicSettings';
+import { useDeviceOrientation } from '../hooks/useDeviceOrientation';
 
 interface FlowTimerScreenProps {
     navigation?: {
@@ -34,6 +35,7 @@ interface FlowTimerScreenProps {
 
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
     const { theme, isDark } = useTheme();
+    const { isLandscape, isTablet } = useDeviceOrientation();
     
     // Refs and local state
     const bottomSheetRef = useRef<BottomSheetMethods>(null);
@@ -308,7 +310,11 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
 
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    isTablet && styles.tabletScrollContent,
+                    isLandscape && !isTablet && styles.phoneScrollContentLandscape
+                ]}
                 showsVerticalScrollIndicator={false}
                 bounces={true}
                 keyboardShouldPersistTaps="handled"
@@ -383,6 +389,13 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         flex: 1,
+    },
+    tabletScrollContent: {
+        paddingHorizontal: 40,
+    },
+    phoneScrollContentLandscape: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
     },
     content: {
         flex: 1,

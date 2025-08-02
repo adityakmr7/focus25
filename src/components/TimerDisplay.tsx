@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useThemeStore } from '../store/themeStore';
 
@@ -9,6 +9,7 @@ interface TimerDisplayProps {
     progress: number;
     isRunning: boolean;
     pulseAnimation?: Animated.SharedValue<number>;
+    onToggleTimer?: () => void;
 }
 
 export const TimerDisplay: React.FC<TimerDisplayProps> = ({
@@ -17,6 +18,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
     progress,
     isRunning,
     pulseAnimation,
+    onToggleTimer,
 }) => {
     const { getCurrentTheme } = useThemeStore();
     const theme = getCurrentTheme();

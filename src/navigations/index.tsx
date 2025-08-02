@@ -11,6 +11,7 @@ import { useThemeStore } from '../store/themeStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useColorScheme } from 'react-native';
 import { View, Text } from 'react-native';
+import { useDeviceOrientation } from '../hooks/useDeviceOrientation';
 
 type AppTabParamList = {
     Statistics: undefined;
@@ -34,6 +35,7 @@ const AppTabNavigation = () => {
     const systemColorScheme = useColorScheme();
     const theme = getCurrentTheme();
     const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
+    const { isTablet, isLandscape } = useDeviceOrientation();
 
     return (
         <Tab.Navigator
@@ -86,7 +88,8 @@ const AppTabNavigation = () => {
                     borderTopWidth: 1,
                     paddingBottom: 8,
                     paddingTop: 8,
-                    height: 80,
+                    height: isTablet ? (isLandscape ? 100 : 90) : 80,
+                    paddingHorizontal: isTablet ? (isLandscape ? 60 : 40) : 0,
                 },
                 tabBarLabelStyle: {
                     display: 'none',
