@@ -1,6 +1,6 @@
 import React from 'react';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { TimerDisplay } from '../TimerDisplay';
 import { PlayPauseButton } from '../PlayPauseButton';
 import { MusicSettings } from '../BottomSheetMusicPlayer';
@@ -76,46 +76,51 @@ const TimerContainer: React.FC<TimerContainerProps> = React.memo(
         if (isLandscape && !isTablet) {
             // Horizontal layout for phone landscape
             return (
-                <Animated.View style={[getContainerStyle(), containerAnimatedStyle]}>
-                    <View style={[styles.landscapeLayout, getLayoutStyle()]}>
-                        <View style={styles.landscapeLeft}>
-                            <TimerDisplay
-                                minutes={timer.minutes}
-                                seconds={timer.seconds}
-                                progress={1 - timer.totalSeconds / timer.initialSeconds}
-                                isRunning={timer.isRunning}
-                                pulseAnimation={pulseAnimation}
-                                onToggleTimer={onToggleTimer}
-                            />
-                            <Text style={[styles.flowLabel, { color: theme.text }]}>
-                                {timer.isBreak ? 'Break' : 'Focus'}
-                            </Text>
+                <ScrollView>
+                    <Animated.View style={[getContainerStyle(), containerAnimatedStyle]}>
+                        <View style={[styles.landscapeLayout, getLayoutStyle()]}>
+                            <View style={styles.landscapeLeft}>
+                                <TimerDisplay
+                                    minutes={timer.minutes}
+                                    seconds={timer.seconds}
+                                    progress={1 - timer.totalSeconds / timer.initialSeconds}
+                                    isRunning={timer.isRunning}
+                                    pulseAnimation={pulseAnimation}
+                                    onToggleTimer={onToggleTimer}
+                                />
+                                <Text style={[styles.flowLabel, { color: theme.text }]}>
+                                    {timer.isBreak ? 'Break' : 'Focus'}
+                                </Text>
+                            </View>
+                            <View style={styles.landscapeRight}>
+                                <LiquidDropAnimation
+                                    currentSession={timer.currentSession}
+                                    totalSessions={timer.totalSessions}
+                                    isRunning={timer.isRunning}
+                                    isBreak={timer.isBreak}
+                                />
+                                <PlayPauseButton
+                                    isRunning={timer.isRunning}
+                                    isPaused={timer.isPaused}
+                                    onPress={onToggleTimer}
+                                    disabled={isLoading}
+                                />
+                                {timer.isRunning && isPlaying && selectedTrackData && (
+                                    <View style={styles.musicIconWrapper}>
+                                        <Text
+                                            style={[
+                                                styles.musicIcon,
+                                                { color: theme.textSecondary },
+                                            ]}
+                                        >
+                                            ♪
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
                         </View>
-                        <View style={styles.landscapeRight}>
-                            <LiquidDropAnimation
-                                currentSession={timer.currentSession}
-                                totalSessions={timer.totalSessions}
-                                isRunning={timer.isRunning}
-                                isBreak={timer.isBreak}
-                            />
-                            <PlayPauseButton
-                                isRunning={timer.isRunning}
-                                isPaused={timer.isPaused}
-                                onPress={onToggleTimer}
-                                disabled={isLoading}
-                            />
-                            {timer.isRunning && isPlaying && selectedTrackData && (
-                                <View style={styles.musicIconWrapper}>
-                                    <Text
-                                        style={[styles.musicIcon, { color: theme.textSecondary }]}
-                                    >
-                                        ♪
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
-                    </View>
-                </Animated.View>
+                    </Animated.View>
+                </ScrollView>
             );
         }
 
