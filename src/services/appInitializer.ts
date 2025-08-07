@@ -11,7 +11,7 @@ import { hybridDatabaseService } from '../data/hybridDatabase';
 import { localDatabaseService } from '../data/local/localDatabase';
 import { seedDatabase } from '../utils/seedData';
 
-import { backgroundTimerService } from './backgroundTimer';
+import { manualTimerService } from './backgroundTimer';
 import { notificationService } from './notificationService';
 import { errorHandler } from './errorHandler';
 import { updateService } from './updateService';
@@ -199,7 +199,7 @@ export class AppInitializer {
         console.log('🔧 Initializing background services...');
         
         await Promise.all([
-            backgroundTimerService.initialize(),
+            manualTimerService.initialize(),
             notificationService.initialize(),
             updateService.initialize(),
         ]);

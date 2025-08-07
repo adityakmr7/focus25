@@ -12,14 +12,7 @@ export function useAppStateHandling(): void {
                 console.log('📱 App backgrounded - background timer active');
                 // Background timer will handle timing
             } else if (nextAppState === 'active') {
-                console.log('📱 App foregrounded - syncing with background timer');
-                // Sync timer state with background timer
-                try {
-                    // You might want to sync your pomodoro store here
-                    // pomodoroStore.syncWithBackgroundTimer();
-                } catch (error) {
-                    console.error('Failed to sync with background timer:', error);
-                }
+                console.log('📱 App foregrounded - timer sync handled by useBackgroundTimer hook');
             }
         };
 
