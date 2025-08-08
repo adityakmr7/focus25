@@ -1,6 +1,7 @@
 import React from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useDeviceOrientation } from '../../hooks/useDeviceOrientation';
 
 interface HeaderProps {
     theme: any;
@@ -17,8 +18,17 @@ const Header: React.FC<HeaderProps> = React.memo(
         onReset,
         isLoading = false,
     }) => {
+        const { isLandscape, isTablet } = useDeviceOrientation();
+        
+        const getHeaderStyle = () => {
+            if (isTablet) {
+                return isLandscape ? [styles.header, styles.tabletLandscapeHeader] : [styles.header, styles.tabletPortraitHeader];
+            }
+            return isLandscape ? [styles.header, styles.phoneLandscapeHeader] : styles.header;
+        };
+
         return (
-            <View style={styles.header}>
+            <View style={getHeaderStyle()}>
                 {/* <TouchableOpacity
                     onPress={onShowAchievements}
                     style={[styles.headerButton, { backgroundColor: theme.surface }]}
@@ -68,6 +78,7 @@ const Header: React.FC<HeaderProps> = React.memo(
 Header.displayName = 'Header';
 
 const styles = StyleSheet.create({
+    // Base header styles
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -76,6 +87,24 @@ const styles = StyleSheet.create({
         paddingTop: Platform.OS === 'ios' ? 0 : 20,
         paddingBottom: 10,
     },
+    
+    // Responsive header styles
+    phoneLandscapeHeader: {
+        paddingHorizontal: 20,
+        paddingTop: Platform.OS === 'ios' ? 0 : 10,
+        paddingBottom: 5,
+    },
+    tabletPortraitHeader: {
+        paddingHorizontal: 40,
+        paddingTop: Platform.OS === 'ios' ? 10 : 30,
+        paddingBottom: 15,
+    },
+    tabletLandscapeHeader: {
+        paddingHorizontal: 60,
+        paddingTop: Platform.OS === 'ios' ? 5 : 15,
+        paddingBottom: 10,
+    },
+    
     headerButton: {
         width: 44,
         height: 44,

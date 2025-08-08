@@ -18,6 +18,7 @@ import { usePomodoroStore } from '../store/pomodoroStore';
 import { Ionicons } from '@expo/vector-icons';
 import { version } from '../../package.json';
 import { updateService } from '../services/updateService';
+import { useDeviceOrientation } from '../hooks/useDeviceOrientation';
 
 interface SettingsScreenProps {
     navigation?: {
@@ -40,6 +41,7 @@ interface StorageInfo {
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const { setMode } = useThemeStore();
     const { theme, isDark } = useTheme();
+    const { isLandscape, isTablet } = useDeviceOrientation();
     const {
         timeDuration,
         soundEffects,
@@ -381,6 +383,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
             <Animated.ScrollView
                 style={[styles.scrollView, sectionsAnimatedStyle]}
+                contentContainerStyle={[
+                    isTablet && styles.tabletScrollContent,
+                    isLandscape && isTablet && styles.tabletLandscapeContent
+                ]}
                 showsVerticalScrollIndicator={false}
             >
                 <AnimatedSection delay={100}>
@@ -666,6 +672,16 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         flex: 1,
+    },
+    tabletScrollContent: {
+        maxWidth: 600,
+        alignSelf: 'center',
+        width: '100%',
+        paddingHorizontal: 40,
+    },
+    tabletLandscapeContent: {
+        maxWidth: 800,
+        paddingHorizontal: 60,
     },
     section: {
         marginHorizontal: 16,
