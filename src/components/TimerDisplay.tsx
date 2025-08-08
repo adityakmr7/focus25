@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useThemeStore } from '../store/themeStore';
+import { useDeviceOrientation } from '../hooks/useDeviceOrientation';
 
 interface TimerDisplayProps {
     minutes: number;
@@ -22,6 +23,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
 }) => {
     const { getCurrentTheme } = useThemeStore();
     const theme = getCurrentTheme();
+    const { isLandscape, isTablet } = useDeviceOrientation();
 
     const formatTime = (minutes: number, seconds: number): string => {
         return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
@@ -31,13 +33,34 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
         transform: pulseAnimation ? [{ scale: pulseAnimation.value }] : [],
     }));
 
+    const getTimerStyle = () => {
+        if (isTablet) {
+            return isLandscape ? styles.tabletLandscapeTime : styles.tabletPortraitTime;
+        }
+        return isLandscape ? styles.phoneLandscapeTime : styles.digitalTime;
+    };
+
+    const getContainerStyle = () => {
+        if (isTablet) {
+            return isLandscape ? styles.tabletLandscapeContainer : styles.tabletPortraitContainer;
+        }
+        return isLandscape ? styles.phoneLandscapeContainer : styles.digitalContainer;
+    };
+
+    const getProgressBarStyle = () => {
+        if (isTablet) {
+            return isLandscape ? styles.tabletLandscapeProgressBar : styles.tabletProgressBar;
+        }
+        return isLandscape ? styles.phoneLandscapeProgressBar : styles.progressBar;
+    };
+
     return (
-        <Animated.View style={[styles.digitalContainer, animatedStyle]}>
+        <Animated.View style={[getContainerStyle(), animatedStyle]}>
             <View style={[styles.digitalBackground]}>
-                <Text style={[styles.digitalTime, { color: theme.text }]}>
+                <Text style={[getTimerStyle(), { color: theme.text }]}>
                     {formatTime(minutes, seconds)}
                 </Text>
-                <View style={[styles.progressBar, { backgroundColor: theme.surface }]}>
+                <View style={[getProgressBarStyle(), { backgroundColor: theme.surface }]}>
                     <View
                         style={[
                             styles.progressFill,
@@ -54,6 +77,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
 };
 
 const styles = StyleSheet.create({
+    // Base styles
     digitalContainer: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -81,5 +105,65 @@ const styles = StyleSheet.create({
     progressFill: {
         height: '100%',
         borderRadius: 2,
+    },
+    
+    // Phone landscape styles
+    phoneLandscapeContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginVertical: 20,
+    },
+    phoneLandscapeTime: {
+        fontSize: 70,
+        fontWeight: '200',
+        letterSpacing: -1,
+        fontFamily: 'SF-Pro-Display-Bold',
+    },
+    phoneLandscapeProgressBar: {
+        width: 160,
+        height: 3,
+        borderRadius: 2,
+        marginTop: 15,
+        overflow: 'hidden',
+    },
+    
+    // Tablet portrait styles
+    tabletPortraitContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginVertical: 50,
+    },
+    tabletPortraitTime: {
+        fontSize: 130,
+        fontWeight: '200',
+        letterSpacing: -3,
+        fontFamily: 'SF-Pro-Display-Bold',
+    },
+    tabletProgressBar: {
+        width: 300,
+        height: 6,
+        borderRadius: 3,
+        marginTop: 25,
+        overflow: 'hidden',
+    },
+    
+    // Tablet landscape styles  
+    tabletLandscapeContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginVertical: 30,
+    },
+    tabletLandscapeTime: {
+        fontSize: 110,
+        fontWeight: '200',
+        letterSpacing: -2,
+        fontFamily: 'SF-Pro-Display-Bold',
+    },
+    tabletLandscapeProgressBar: {
+        width: 250,
+        height: 5,
+        borderRadius: 3,
+        marginTop: 20,
+        overflow: 'hidden',
     },
 });

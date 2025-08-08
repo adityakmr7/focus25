@@ -312,8 +312,9 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
                 style={styles.scrollView}
                 contentContainerStyle={[
                     styles.scrollContent,
-                    isTablet && styles.tabletScrollContent,
-                    isLandscape && !isTablet && styles.phoneScrollContentLandscape
+                    isTablet && isLandscape && styles.tabletLandscapeScrollContent,
+                    isTablet && !isLandscape && styles.tabletPortraitScrollContent,
+                    !isTablet && isLandscape && styles.phoneScrollContentLandscape
                 ]}
                 showsVerticalScrollIndicator={false}
                 bounces={true}
@@ -390,12 +391,17 @@ const styles = StyleSheet.create({
     scrollContent: {
         flex: 1,
     },
-    tabletScrollContent: {
-        paddingHorizontal: 40,
+    tabletPortraitScrollContent: {
+        paddingHorizontal: 60,
+        paddingVertical: 20,
+    },
+    tabletLandscapeScrollContent: {
+        paddingHorizontal: 80,
+        paddingVertical: 15,
     },
     phoneScrollContentLandscape: {
         paddingHorizontal: 20,
-        paddingVertical: 10,
+        paddingVertical: 5,
     },
     content: {
         flex: 1,

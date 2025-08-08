@@ -73,10 +73,10 @@ const TimerContainer: React.FC<TimerContainerProps> = React.memo(
             return null;
         };
 
-        if (isLandscape && !isTablet) {
-            // Horizontal layout for phone landscape
+        if (isLandscape) {
+            // Horizontal layout for landscape (both phone and tablet)
             return (
-                <ScrollView>
+                <ScrollView contentContainerStyle={styles.landscapeScrollContainer}>
                     <Animated.View style={[getContainerStyle(), containerAnimatedStyle]}>
                         <View style={[styles.landscapeLayout, getLayoutStyle()]}>
                             <View style={styles.landscapeLeft}>
@@ -93,30 +93,32 @@ const TimerContainer: React.FC<TimerContainerProps> = React.memo(
                                 </Text>
                             </View>
                             <View style={styles.landscapeRight}>
-                                <LiquidDropAnimation
-                                    currentSession={timer.currentSession}
-                                    totalSessions={timer.totalSessions}
-                                    isRunning={timer.isRunning}
-                                    isBreak={timer.isBreak}
-                                />
-                                <PlayPauseButton
-                                    isRunning={timer.isRunning}
-                                    isPaused={timer.isPaused}
-                                    onPress={onToggleTimer}
-                                    disabled={isLoading}
-                                />
-                                {timer.isRunning && isPlaying && selectedTrackData && (
-                                    <View style={styles.musicIconWrapper}>
-                                        <Text
-                                            style={[
-                                                styles.musicIcon,
-                                                { color: theme.textSecondary },
-                                            ]}
-                                        >
-                                            ♪
-                                        </Text>
-                                    </View>
-                                )}
+                                <View style={styles.landscapeControls}>
+                                    <LiquidDropAnimation
+                                        currentSession={timer.currentSession}
+                                        totalSessions={timer.totalSessions}
+                                        isRunning={timer.isRunning}
+                                        isBreak={timer.isBreak}
+                                    />
+                                    <PlayPauseButton
+                                        isRunning={timer.isRunning}
+                                        isPaused={timer.isPaused}
+                                        onPress={onToggleTimer}
+                                        disabled={isLoading}
+                                    />
+                                    {timer.isRunning && isPlaying && selectedTrackData && (
+                                        <View style={styles.musicIconWrapper}>
+                                            <Text
+                                                style={[
+                                                    styles.musicIcon,
+                                                    { color: theme.textSecondary },
+                                                ]}
+                                            >
+                                                ♪
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
                             </View>
                         </View>
                     </Animated.View>
@@ -183,8 +185,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 80,
     },
     tabletLandscape: {
-        paddingHorizontal: 120,
-        flexDirection: 'column',
+        paddingHorizontal: 60,
+        paddingVertical: 40,
     },
     tabletTimerWrapper: {
         marginBottom: 80,
@@ -197,23 +199,33 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 10,
     },
+    landscapeScrollContainer: {
+        flexGrow: 1,
+        justifyContent: 'center',
+    },
     landscapeLayout: {
-        flexDirection: 'column',
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
         flex: 1,
     },
     landscapeLeft: {
-        // flex: 1,
+        flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        // backgroundColor: 'red',
+        paddingRight: 20,
     },
     landscapeRight: {
-        // flex: 1,
+        flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        paddingLeft: 20,
+    },
+    landscapeControls: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 30,
     },
     // Standard styles
     timerDisplayWrapper: {
