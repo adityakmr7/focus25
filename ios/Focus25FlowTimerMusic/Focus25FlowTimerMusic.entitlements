@@ -8,5 +8,7 @@
 	<array>
 		<string>group.com.focus25.app.focus25Widget</string>
 	</array>
+	<key>com.apple.developer.usernotifications.live-activities</key>
+	<true/>
 </dict>
 </plist>

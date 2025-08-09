@@ -133,13 +133,18 @@ public class Focus25WidgetModule: Module {
         )
         
         do {
+          print("🚀 [Swift] Attempting to start Live Activity with attributes: \(attributes)")
+          print("🚀 [Swift] Content state: \(contentState)")
+          
           let activity = try Activity<focus25WidgetAttributes>.request(
             attributes: attributes,
             contentState: contentState
           )
-          print("Live Activity started: \(activity.id)")
+          print("✅ [Swift] Live Activity started successfully: \(activity.id)")
         } catch {
-          print("Failed to start Live Activity: \(error)")
+          print("❌ [Swift] Failed to start Live Activity: \(error)")
+          print("❌ [Swift] Error details: \(error.localizedDescription)")
+          print("❌ [Swift] Error type: \(type(of: error))")
         }
       }
     }
@@ -153,8 +158,16 @@ public class Focus25WidgetModule: Module {
         )
         
         Task {
-          for activity in Activity<focus25WidgetAttributes>.activities {
+          let activities = Activity<focus25WidgetAttributes>.activities
+          print("🔄 [Swift] Updating \(activities.count) Live Activities")
+          
+          for activity in activities {
+            print("🔄 [Swift] Updating activity: \(activity.id)")
             await activity.update(using: contentState)
+          }
+          
+          if activities.isEmpty {
+            print("⚠️ [Swift] No active Live Activities to update")
           }
         }
       }

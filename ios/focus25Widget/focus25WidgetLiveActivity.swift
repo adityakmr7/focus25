@@ -6,13 +6,24 @@ import SwiftUI
 @available(iOS 16.1, *)
 struct focus25WidgetAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
-        let timeRemaining: String
-        let progress: Double
-        let isActive: Bool
+        public let timeRemaining: String
+        public let progress: Double
+        public let isActive: Bool
+        
+        public init(timeRemaining: String, progress: Double, isActive: Bool) {
+            self.timeRemaining = timeRemaining
+            self.progress = progress
+            self.isActive = isActive
+        }
     }
     
-    let sessionName: String
-    let totalDuration: Int
+    public let sessionName: String
+    public let totalDuration: Int
+    
+    public init(sessionName: String, totalDuration: Int) {
+        self.sessionName = sessionName
+        self.totalDuration = totalDuration
+    }
 }
 
 struct focus25WidgetLiveActivity: Widget {
