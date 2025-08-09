@@ -22,6 +22,8 @@ struct Focus25Entry: TimelineEntry {
     let progress: Double
     let totalDuration: Int
     let elapsedTime: Int
+    let todayCompletedTodos: Int
+    let todayTotalTodos: Int
 }
 
 struct Focus25Provider: TimelineProvider {
@@ -33,7 +35,9 @@ struct Focus25Provider: TimelineProvider {
             isActive: false,
             progress: 0.0,
             totalDuration: 1500,
-            elapsedTime: 0
+            elapsedTime: 0,
+            todayCompletedTodos: 3,
+            todayTotalTodos: 5
         )
     }
 
@@ -49,9 +53,6 @@ struct Focus25Provider: TimelineProvider {
         let updateInterval: TimeInterval = entry.isActive ? 5 : 300 // 5 seconds when active
         let nextUpdate = Date().addingTimeInterval(updateInterval)
         
-        print("🔄 [Widget] Timeline updated, next refresh in \(updateInterval)s")
-        print("🔄 [Widget] Entry data: \(entry.timeRemaining) - \(entry.isActive)")
-        
         let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
         completion(timeline)
     }
@@ -59,19 +60,15 @@ struct Focus25Provider: TimelineProvider {
     private func getWidgetData() -> Focus25Entry {
         let sharedDefaults = UserDefaults(suiteName: "group.com.focus25.app.focus25Widget")
         
-        print("🔍 [Widget] Reading widget data...")
-        print("🔍 [Widget] Shared defaults available: \(sharedDefaults != nil)")
-        
         let sessionName = sharedDefaults?.string(forKey: "sessionName") ?? "Focus Session"
         let timeRemaining = sharedDefaults?.string(forKey: "timeRemaining") ?? "25:00"
         let isActive = sharedDefaults?.bool(forKey: "isActive") ?? false
         let progress = sharedDefaults?.double(forKey: "progress") ?? 0.0
         let totalDuration = sharedDefaults?.integer(forKey: "totalDuration") ?? 1500
         let elapsedTime = sharedDefaults?.integer(forKey: "elapsedTime") ?? 0
+        let todayCompletedTodos = sharedDefaults?.integer(forKey: "todayCompletedTodos") ?? 0
+        let todayTotalTodos = sharedDefaults?.integer(forKey: "todayTotalTodos") ?? 0
         let lastUpdate = sharedDefaults?.double(forKey: "lastUpdate") ?? 0
-        
-        print("🔍 [Widget] Read values - Session: \(sessionName), Time: \(timeRemaining), Active: \(isActive), Progress: \(progress)")
-        print("🔍 [Widget] LastUpdate: \(Date(timeIntervalSince1970: lastUpdate))")
         
         return Focus25Entry(
             date: Date(),
@@ -80,7 +77,9 @@ struct Focus25Provider: TimelineProvider {
             isActive: isActive,
             progress: progress,
             totalDuration: totalDuration,
-            elapsedTime: elapsedTime
+            elapsedTime: elapsedTime,
+            todayCompletedTodos: todayCompletedTodos,
+            todayTotalTodos: todayTotalTodos
         )
     }
 }
@@ -103,6 +102,13 @@ struct focus25WidgetEntryView: View {
 
 struct SmallWidgetView: View {
     let entry: Focus25Entry
+    
+    private var todosText: String {
+        if entry.todayTotalTodos == 0 {
+            return "No todos today"
+        }
+        return "\(entry.todayCompletedTodos)/\(entry.todayTotalTodos) todos"
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -132,6 +138,11 @@ struct SmallWidgetView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
+                
+                Text(todosText)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
             }
             
             // Progress bar
@@ -157,10 +168,24 @@ struct MediumWidgetView: View {
         return String(format: "%.0f%%", entry.progress * 100)
     }
     
+    private var todosText: String {
+        if entry.todayTotalTodos == 0 {
+            return "No todos today"
+        }
+        return "\(entry.todayCompletedTodos)/\(entry.todayTotalTodos) todos"
+    }
+    
+    private var todoProgress: Double {
+        if entry.todayTotalTodos == 0 {
+            return 0.0
+        }
+        return Double(entry.todayCompletedTodos) / Double(entry.todayTotalTodos)
+    }
+    
     var body: some View {
         HStack(spacing: 16) {
             // Left side - Timer info
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Circle()
                         .fill(entry.isActive ? Color.green : Color.gray)
@@ -182,14 +207,27 @@ struct MediumWidgetView: View {
                 Text(entry.sessionName)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
-                    .lineLimit(2)
+                    .lineLimit(1)
+                
+                // Todos section
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(todosText)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    if entry.todayTotalTodos > 0 {
+                        ProgressView(value: todoProgress)
+                            .progressViewStyle(LinearProgressViewStyle(tint: .green))
+                            .scaleEffect(x: 1, y: 0.8, anchor: .center)
+                    }
+                }
                 
                 Spacer()
                 
-                // Progress bar
+                // Timer Progress bar
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("Progress")
+                        Text("Session Progress")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                         Spacer()
@@ -206,7 +244,7 @@ struct MediumWidgetView: View {
             }
             
             // Right side - Circular progress
-            VStack {
+            VStack(spacing: 8) {
                 Spacer()
                 
                 ZStack {
@@ -250,7 +288,9 @@ struct focus25Widget_Previews: PreviewProvider {
                 isActive: true,
                 progress: 0.35,
                 totalDuration: 1500,
-                elapsedTime: 525
+                elapsedTime: 525,
+                todayCompletedTodos: 3,
+                todayTotalTodos: 7
             ))
             .previewContext(WidgetPreviewContext(family: .systemSmall))
             .previewDisplayName("Small - Active")
@@ -262,7 +302,9 @@ struct focus25Widget_Previews: PreviewProvider {
                 isActive: true,
                 progress: 0.35,
                 totalDuration: 1500,
-                elapsedTime: 525
+                elapsedTime: 525,
+                todayCompletedTodos: 3,
+                todayTotalTodos: 7
             ))
             .previewContext(WidgetPreviewContext(family: .systemMedium))
             .previewDisplayName("Medium - Active")
@@ -274,7 +316,9 @@ struct focus25Widget_Previews: PreviewProvider {
                 isActive: false,
                 progress: 0.0,
                 totalDuration: 1500,
-                elapsedTime: 0
+                elapsedTime: 0,
+                todayCompletedTodos: 0,
+                todayTotalTodos: 2
             ))
             .previewContext(WidgetPreviewContext(family: .systemSmall))
             .previewDisplayName("Small - Inactive")
