@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { useTodoStore } from '../store/todoStore';
 
 // Dynamically import widget module to avoid loading issues
 let widgetModule: any = null;
@@ -53,6 +54,26 @@ class WidgetService {
     }
 
     /**
+     * Get today's todo statistics
+     */
+    private getTodayTodoStats() {
+        const today = new Date().toISOString().split('T')[0];
+        const todos = useTodoStore.getState().todos;
+        
+        const todayTodos = todos.filter(todo => {
+            const todoDate = todo.createdAt.split('T')[0];
+            return todoDate === today;
+        });
+
+        const completedTodos = todayTodos.filter(todo => todo.isCompleted);
+        
+        return {
+            completedCount: completedTodos.length,
+            totalCount: todayTodos.length
+        };
+    }
+
+    /**
      * Update widget with current timer data
      */
     async updateTimerData(data: {
@@ -71,7 +92,17 @@ class WidgetService {
             const module = await getWidgetModule();
             if (!module) return;
 
-            await module.updateWidget(data);
+            // Get today's todo statistics
+            const todoStats = this.getTodayTodoStats();
+
+            // Include todo data with timer data
+            const widgetData = {
+                ...data,
+                todayCompletedTodos: todoStats.completedCount,
+                todayTotalTodos: todoStats.totalCount
+            };
+
+            await module.updateWidget(widgetData);
 
             // Also update Live Activity if it's active
             if (this.liveActivityActive) {
@@ -115,6 +146,38 @@ class WidgetService {
     private calculateProgress(totalSeconds: number, initialSeconds: number): number {
         if (initialSeconds === 0) return 0;
         return Math.max(0, Math.min(1, (initialSeconds - totalSeconds) / initialSeconds));
+    }
+
+    /**
+     * Update widget with just todo data (called when todos change)
+     */
+    async updateTodoData(): Promise<void> {
+        if (Platform.OS !== 'ios' || !this.isInitialized) {
+            return;
+        }
+
+        try {
+            const module = await getWidgetModule();
+            if (!module) return;
+
+            // Get current widget data first
+            const currentData = await module.getWidgetData();
+            if (!currentData) return;
+
+            // Get today's todo statistics
+            const todoStats = this.getTodayTodoStats();
+
+            // Update only todo data while preserving timer data
+            const widgetData = {
+                ...currentData,
+                todayCompletedTodos: todoStats.completedCount,
+                todayTotalTodos: todoStats.totalCount
+            };
+
+            await module.updateWidget(widgetData);
+        } catch (error) {
+            console.warn('Failed to update todo data in widget:', error);
+        }
     }
 
     /**

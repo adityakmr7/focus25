@@ -46,12 +46,18 @@ public class Focus25WidgetModule: Module {
       let totalDuration = data["totalDuration"] as? Int ?? 1500
       let elapsedTime = data["elapsedTime"] as? Int ?? 0
       
+      // Store todo data
+      let todayCompletedTodos = data["todayCompletedTodos"] as? Int ?? 0
+      let todayTotalTodos = data["todayTotalTodos"] as? Int ?? 0
+      
       sharedDefaults?.set(sessionName, forKey: "sessionName")
       sharedDefaults?.set(timeRemaining, forKey: "timeRemaining")
       sharedDefaults?.set(isActive, forKey: "isActive")
       sharedDefaults?.set(progress, forKey: "progress")
       sharedDefaults?.set(totalDuration, forKey: "totalDuration")
       sharedDefaults?.set(elapsedTime, forKey: "elapsedTime")
+      sharedDefaults?.set(todayCompletedTodos, forKey: "todayCompletedTodos")
+      sharedDefaults?.set(todayTotalTodos, forKey: "todayTotalTodos")
 
       // Store last update timestamp
       sharedDefaults?.set(Date().timeIntervalSince1970, forKey: "lastUpdate")
@@ -83,6 +89,8 @@ public class Focus25WidgetModule: Module {
       sharedDefaults?.removeObject(forKey: "progress")
       sharedDefaults?.removeObject(forKey: "totalDuration")
       sharedDefaults?.removeObject(forKey: "elapsedTime")
+      sharedDefaults?.removeObject(forKey: "todayCompletedTodos")
+      sharedDefaults?.removeObject(forKey: "todayTotalTodos")
       sharedDefaults?.removeObject(forKey: "lastUpdate")
 
       sharedDefaults?.synchronize()
@@ -104,6 +112,8 @@ public class Focus25WidgetModule: Module {
         "progress": sharedDefaults?.double(forKey: "progress") ?? 0.0,
         "totalDuration": sharedDefaults?.integer(forKey: "totalDuration") ?? 1500,
         "elapsedTime": sharedDefaults?.integer(forKey: "elapsedTime") ?? 0,
+        "todayCompletedTodos": sharedDefaults?.integer(forKey: "todayCompletedTodos") ?? 0,
+        "todayTotalTodos": sharedDefaults?.integer(forKey: "todayTotalTodos") ?? 0,
         "lastUpdate": sharedDefaults?.double(forKey: "lastUpdate") ?? 0
       ]
     }
