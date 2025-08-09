@@ -58,14 +58,14 @@ struct focus25WidgetLiveActivity: Widget {
                 }
             } compactLeading: {
                 Image(systemName: context.state.isActive ? "timer" : "pause.circle")
-                    .foregroundColor(context.state.isActive ? .blue : .gray)
+                    .foregroundColor(context.state.isActive ? .green : .gray)
             } compactTrailing: {
                 Text(context.state.timeRemaining)
                     .font(.caption2)
                     .fontWeight(.semibold)
             } minimal: {
                 Image(systemName: "timer")
-                    .foregroundColor(context.state.isActive ? .blue : .gray)
+                    .foregroundColor(context.state.isActive ? .green : .gray)
             }
             .widgetURL(URL(string: "focus25://timer"))
             .keylineTint(context.state.isActive ? .blue : .gray)
