@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { databaseService } from '../data/database';
 import { Todo } from '../types/database';
 import { v4 as uuidv4 } from 'uuid';
+import { widgetService } from '../services/widgetService';
 
 interface TodoState {
     todos: Todo[];
@@ -100,6 +101,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
                 todos: [...state.todos, newTodo],
                 isLoading: false,
             }));
+
+            // Update widget with new todo data
+            widgetService.updateTodoData();
         } catch (error) {
             console.error('Failed to create todo:', error);
             set({ error: 'Failed to create todo', isLoading: false });
@@ -124,6 +128,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
             updatedTodos[todoIndex] = updatedTodo;
 
             set({ todos: updatedTodos, isLoading: false });
+
+            // Update widget with updated todo data
+            widgetService.updateTodoData();
         } catch (error) {
             console.error('Failed to update todo:', error);
             set({ error: 'Failed to update todo', isLoading: false });
@@ -152,6 +159,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
                 todos: state.todos.filter((t) => t.id !== id),
                 isLoading: false,
             }));
+
+            // Update widget with updated todo data
+            widgetService.updateTodoData();
         } catch (error) {
             console.error('Failed to delete todo:', error);
             set({ error: 'Failed to delete todo', isLoading: false });
@@ -167,6 +177,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
             set((state) => ({
                 todos: state.todos.filter((t) => !t.isCompleted),
             }));
+
+            // Update widget with updated todo data
+            widgetService.updateTodoData();
         } catch (error) {
             console.error('Failed to delete completed todos:', error);
             set({ error: 'Failed to delete completed todos' });
