@@ -37,10 +37,6 @@ public class Focus25WidgetModule: Module {
 
     AsyncFunction("updateWidget") { (data: [String: Any]) -> Void in
       let sharedDefaults = UserDefaults(suiteName: self.appGroupId)
-      
-      print("📱 [Swift] Updating widget with data: \(data)")
-      print("📱 [Swift] App Group ID: \(self.appGroupId)")
-      print("📱 [Swift] Shared defaults available: \(sharedDefaults != nil)")
 
       // Store timer data
       let sessionName = data["sessionName"] as? String ?? "Focus Session"
@@ -61,18 +57,11 @@ public class Focus25WidgetModule: Module {
       sharedDefaults?.set(Date().timeIntervalSince1970, forKey: "lastUpdate")
 
       // Force synchronize
-      let syncResult = sharedDefaults?.synchronize() ?? false
-      print("📱 [Swift] UserDefaults sync result: \(syncResult)")
-      
-      print("📱 [Swift] Stored values - Session: \(sessionName), Time: \(timeRemaining), Active: \(isActive), Progress: \(progress)")
+      sharedDefaults?.synchronize()
 
-      // Reload all widget timelines immediately and aggressively
+      // Reload all widget timelines
       WidgetCenter.shared.reloadAllTimelines()
-      
-      // Also reload specific widget kind for good measure
       WidgetCenter.shared.reloadTimelines(ofKind: self.widgetKind)
-      
-      print("📱 [Swift] Widget timeline reloaded for kind: \(self.widgetKind)")
     }
 
     AsyncFunction("reloadWidgets") { () -> Void in
@@ -133,18 +122,12 @@ public class Focus25WidgetModule: Module {
         )
         
         do {
-          print("🚀 [Swift] Attempting to start Live Activity with attributes: \(attributes)")
-          print("🚀 [Swift] Content state: \(contentState)")
-          
           let activity = try Activity<focus25WidgetAttributes>.request(
             attributes: attributes,
             contentState: contentState
           )
-          print("✅ [Swift] Live Activity started successfully: \(activity.id)")
         } catch {
-          print("❌ [Swift] Failed to start Live Activity: \(error)")
-          print("❌ [Swift] Error details: \(error.localizedDescription)")
-          print("❌ [Swift] Error type: \(type(of: error))")
+          // Live Activity failed to start
         }
       }
     }
@@ -158,16 +141,8 @@ public class Focus25WidgetModule: Module {
         )
         
         Task {
-          let activities = Activity<focus25WidgetAttributes>.activities
-          print("🔄 [Swift] Updating \(activities.count) Live Activities")
-          
-          for activity in activities {
-            print("🔄 [Swift] Updating activity: \(activity.id)")
+          for activity in Activity<focus25WidgetAttributes>.activities {
             await activity.update(using: contentState)
-          }
-          
-          if activities.isEmpty {
-            print("⚠️ [Swift] No active Live Activities to update")
           }
         }
       }
