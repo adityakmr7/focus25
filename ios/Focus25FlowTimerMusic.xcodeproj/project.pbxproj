@@ -73,7 +73,18 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		228685742E3B716C00625003 /* focus25Widget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (228685852E3B716E00625003 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = focus25Widget; sourceTree = "<group>"; };
+		228685742E3B716C00625003 /* focus25Widget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				228685852E3B716E00625003 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = focus25Widget;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -512,7 +523,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.focus25.app;
-				PRODUCT_NAME = Focus25FlowTimerMusic;
+				PRODUCT_NAME = "Focus25FlowTimerMusic";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Focus25FlowTimerMusic/Focus25FlowTimerMusic-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -548,7 +559,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.focus25.app;
-				PRODUCT_NAME = Focus25FlowTimerMusic;
+				PRODUCT_NAME = "Focus25FlowTimerMusic";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Focus25FlowTimerMusic/Focus25FlowTimerMusic-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;

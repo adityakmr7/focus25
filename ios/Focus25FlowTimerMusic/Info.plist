@@ -5,6 +5,7 @@
     <key>BGTaskSchedulerPermittedIdentifiers</key>
     <array>
       <string>com.expo.modules.backgroundtask.processing</string>
+      <string>com.focus25.app.liveactivity-update</string>
     </array>
     <key>CADisableMinimumFrameDurationOnPhone</key>
     <true/>

@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import { useTodoStore } from '../store/todoStore';
 
 // Dynamically import widget module to avoid loading issues
-let widgetModule: any = null;
+let widgetModule: typeof import('focus25-widget-module') | null = null;
 
 const getWidgetModule = async () => {
     if (widgetModule) return widgetModule;
@@ -247,7 +247,7 @@ class WidgetService {
             const timeRemaining = this.formatTime(timer.minutes, timer.seconds);
             const isActive = timer.isRunning && !timer.isPaused;
             const progress = this.calculateProgress(timer.totalSeconds, timer.initialSeconds);
-            const totalDuration = Math.floor(timer.initialSeconds / 60);
+            const totalDuration = timer.initialSeconds; // Pass in seconds for native calculation
 
             const module = await getWidgetModule();
             if (!module) {
@@ -273,9 +273,47 @@ class WidgetService {
             });
 
             this.liveActivityActive = true;
-            console.log('✅ Live Activity started');
+            console.log('✅ Live Activity started with background timer');
         } catch (error) {
             console.warn('Failed to start Live Activity:', error);
+        }
+    }
+
+    /**
+     * Pause Live Activity
+     */
+    async pauseLiveActivityForTimer(): Promise<void> {
+        if (Platform.OS !== 'ios' || !this.isInitialized || !this.liveActivityActive) {
+            return;
+        }
+
+        try {
+            const module = await getWidgetModule();
+            if (!module) return;
+
+            await module.pauseLiveActivity();
+            console.log('⏸️ Live Activity paused');
+        } catch (error) {
+            console.warn('Failed to pause Live Activity:', error);
+        }
+    }
+
+    /**
+     * Resume Live Activity
+     */
+    async resumeLiveActivityForTimer(): Promise<void> {
+        if (Platform.OS !== 'ios' || !this.isInitialized || !this.liveActivityActive) {
+            return;
+        }
+
+        try {
+            const module = await getWidgetModule();
+            if (!module) return;
+
+            await module.resumeLiveActivity();
+            console.log('▶️ Live Activity resumed');
+        } catch (error) {
+            console.warn('Failed to resume Live Activity:', error);
         }
     }
 

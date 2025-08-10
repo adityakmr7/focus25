@@ -2,6 +2,7 @@ import ExpoModulesCore
 import WidgetKit
 import ActivityKit
 import Foundation
+import BackgroundTasks
 
 // Live Activity Attributes for iOS 16.1+
 @available(iOS 16.1, *)
@@ -27,10 +28,14 @@ public struct focus25WidgetAttributes: ActivityAttributes {
     }
 }
 
+@available(iOS 16.1, *)
 public class Focus25WidgetModule: Module {
   // Default app group identifier - should be configured by the app
   private var appGroupId = "group.com.focus25.app.focus25Widget"
   private let widgetKind = "focus25Widget"
+  private let backgroundTaskIdentifier = "com.focus25.app.liveactivity-update"
+  private var backgroundTimer: Timer?
+  private var currentActivity: Activity<focus25WidgetAttributes>?
 
   public func definition() -> ModuleDefinition {
     Name("Focus25WidgetModule")
@@ -132,12 +137,23 @@ public class Focus25WidgetModule: Module {
         )
         
         do {
-          let activity = try Activity<focus25WidgetAttributes>.request(
+          self.currentActivity = try Activity<focus25WidgetAttributes>.request(
             attributes: attributes,
             contentState: contentState
           )
+          
+          // Store timer start data for background updates
+          let sharedDefaults = UserDefaults(suiteName: self.appGroupId)
+          sharedDefaults?.set(Date().timeIntervalSince1970, forKey: "timerStartTime")
+          sharedDefaults?.set(data["totalDuration"] as? Int ?? 1500, forKey: "timerDuration")
+          sharedDefaults?.set(true, forKey: "timerIsActive")
+          sharedDefaults?.synchronize()
+          
+          // Start background timer for updates
+          self.startBackgroundTimer()
+          
         } catch {
-          // Live Activity failed to start
+          print("Live Activity failed to start: \(error)")
         }
       }
     }
@@ -160,11 +176,126 @@ public class Focus25WidgetModule: Module {
 
     AsyncFunction("stopLiveActivity") { () -> Void in
       if #available(iOS 16.1, *) {
+        // Stop background timer
+        self.stopBackgroundTimer()
+        
+        // Mark timer as inactive
+        let sharedDefaults = UserDefaults(suiteName: self.appGroupId)
+        sharedDefaults?.set(false, forKey: "timerIsActive")
+        sharedDefaults?.synchronize()
+        
         Task {
           for activity in Activity<focus25WidgetAttributes>.activities {
             await activity.end(dismissalPolicy: .immediate)
           }
+          self.currentActivity = nil
         }
+      }
+    }
+    
+    AsyncFunction("pauseLiveActivity") { () -> Void in
+      if #available(iOS 16.1, *) {
+        let sharedDefaults = UserDefaults(suiteName: self.appGroupId)
+        sharedDefaults?.set(Date().timeIntervalSince1970, forKey: "pausedAt")
+        sharedDefaults?.set(false, forKey: "timerIsRunning")
+        sharedDefaults?.synchronize()
+        
+        // Stop background updates while paused
+        self.stopBackgroundTimer()
+      }
+    }
+    
+    AsyncFunction("resumeLiveActivity") { () -> Void in
+      if #available(iOS 16.1, *) {
+        let sharedDefaults = UserDefaults(suiteName: self.appGroupId)
+        
+        // Calculate total paused time
+        if let pausedAt = sharedDefaults?.double(forKey: "pausedAt") {
+          let pauseDuration = Date().timeIntervalSince1970 - pausedAt
+          let totalPausedTime = (sharedDefaults?.double(forKey: "totalPausedTime") ?? 0) + pauseDuration
+          sharedDefaults?.set(totalPausedTime, forKey: "totalPausedTime")
+          sharedDefaults?.removeObject(forKey: "pausedAt")
+        }
+        
+        sharedDefaults?.set(true, forKey: "timerIsRunning")
+        sharedDefaults?.synchronize()
+        
+        // Resume background updates
+        self.startBackgroundTimer()
+      }
+    }
+  }
+  
+  // MARK: - Background Timer Methods
+  
+  private func startBackgroundTimer() {
+    stopBackgroundTimer() // Stop any existing timer
+    
+    backgroundTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+      self.updateLiveActivityFromBackground()
+    }
+    
+    // Keep timer running in background
+    if let timer = backgroundTimer {
+      RunLoop.current.add(timer, forMode: .common)
+    }
+    
+    print("Background timer started for Live Activity updates")
+  }
+  
+  private func stopBackgroundTimer() {
+    backgroundTimer?.invalidate()
+    backgroundTimer = nil
+    print("Background timer stopped")
+  }
+  
+  @available(iOS 16.1, *)
+  private func updateLiveActivityFromBackground() {
+    guard let sharedDefaults = UserDefaults(suiteName: appGroupId),
+          sharedDefaults.bool(forKey: "timerIsActive") else {
+      return
+    }
+    
+    let startTime = sharedDefaults.double(forKey: "timerStartTime")
+    let duration = sharedDefaults.integer(forKey: "timerDuration")
+    let isRunning = sharedDefaults.bool(forKey: "timerIsRunning")
+    let totalPausedTime = sharedDefaults.double(forKey: "totalPausedTime")
+    
+    let now = Date().timeIntervalSince1970
+    let elapsed = now - startTime - totalPausedTime
+    let remaining = max(0, Double(duration) - elapsed)
+    
+    // Check if timer completed
+    if remaining <= 0 {
+      stopBackgroundTimer()
+      sharedDefaults.set(false, forKey: "timerIsActive")
+      sharedDefaults.synchronize()
+      
+      Task {
+        for activity in Activity<focus25WidgetAttributes>.activities {
+          await activity.end(dismissalPolicy: .immediate)
+        }
+      }
+      return
+    }
+    
+    // Format time remaining
+    let minutes = Int(remaining) / 60
+    let seconds = Int(remaining) % 60
+    let timeString = String(format: "%02d:%02d", minutes, seconds)
+    
+    // Calculate progress
+    let progress = (Double(duration) - remaining) / Double(duration)
+    
+    let contentState = focus25WidgetAttributes.ContentState(
+      timeRemaining: timeString,
+      progress: progress,
+      isActive: isRunning
+    )
+    
+    Task {
+      for activity in Activity<focus25WidgetAttributes>.activities {
+        await activity.update(using: contentState)
       }
     }
   }

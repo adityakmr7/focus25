@@ -81,6 +81,7 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
                     wasRunning,
                     wasPaused,
                     currentIsRunning: currentTimer.isRunning,
+                    currentIsPaused: currentTimer.isPaused,
                     shouldStartLiveActivity: !wasRunning && currentTimer.isRunning
                 });
 
@@ -88,6 +89,15 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
                 if (!wasRunning && currentTimer.isRunning) {
                     console.log('🚀 Triggering Live Activity start...');
                     await widgetService.startLiveActivityForTimer(currentTimer);
+                }
+                // Handle pause/resume for existing Live Activity
+                else if (wasRunning && !wasPaused && currentTimer.isPaused) {
+                    console.log('⏸️ Pausing Live Activity...');
+                    await widgetService.pauseLiveActivityForTimer();
+                }
+                else if (wasRunning && wasPaused && !currentTimer.isPaused) {
+                    console.log('▶️ Resuming Live Activity...');
+                    await widgetService.resumeLiveActivityForTimer();
                 }
             }, 100); // Small delay to ensure state is updated
 
