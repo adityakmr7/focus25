@@ -82,7 +82,7 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
                     wasPaused,
                     currentIsRunning: currentTimer.isRunning,
                     currentIsPaused: currentTimer.isPaused,
-                    shouldStartLiveActivity: !wasRunning && currentTimer.isRunning
+                    shouldStartLiveActivity: !wasRunning && currentTimer.isRunning,
                 });
 
                 // Start Live Activity when timer starts (from stopped or first start)
@@ -94,8 +94,7 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
                 else if (wasRunning && !wasPaused && currentTimer.isPaused) {
                     console.log('⏸️ Pausing Live Activity...');
                     await widgetService.pauseLiveActivityForTimer();
-                }
-                else if (wasRunning && wasPaused && !currentTimer.isPaused) {
+                } else if (wasRunning && wasPaused && !currentTimer.isPaused) {
                     console.log('▶️ Resuming Live Activity...');
                     await widgetService.resumeLiveActivityForTimer();
                 }
@@ -165,40 +164,84 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
         }
     }, [initializeSettings, initializePomodoro, updateTimerFromSettings]);
 
-    // Timer countdown logic
+    // Timer countdown logic - with stable references to avoid interference
     useEffect(() => {
-        if (!timerState.isInitialized) return;
+        if (!timerState.isInitialized) {
+            console.log('⚠️ Timer not initialized, skipping countdown setup');
+            return;
+        }
 
-        if (timer.isRunning && !timer.isPaused) {
-            intervalRef.current = setInterval(async () => {
-                if (timer.totalSeconds <= 0) {
-                    // Timer completed - call the completion callback
-                    await onTimerComplete();
-                    return;
-                }
+        const isTimerActive = timer.isRunning && !timer.isPaused;
 
-                const newTotalSeconds = timer.totalSeconds - 1;
-                const minutes = Math.floor(newTotalSeconds / 60);
-                const seconds = newTotalSeconds % 60;
+        if (isTimerActive) {
+            // Only create interval if we don't already have one
+            if (!intervalRef.current) {
+                console.log('🆕 Creating new timer countdown interval');
+                intervalRef.current = setInterval(() => {
+                    // Get the current timer state from the store to avoid stale closures
+                    const currentTimer = usePomodoroStore.getState().timer;
 
-                setTimer({
-                    minutes,
-                    seconds,
-                    totalSeconds: newTotalSeconds,
-                });
+                    if (currentTimer.totalSeconds <= 0) {
+                        // Timer completed - call the completion callback
+                        console.log('⏰ Timer completed, calling completion callback');
+                        if (intervalRef.current) {
+                            clearInterval(intervalRef.current);
+                            intervalRef.current = null;
+                        }
+                        // Call completion callback asynchronously to not block
+                        onTimerComplete().catch(console.error);
+                        return;
+                    }
 
-                // Update widget with current timer state
-                await widgetService.updateFromTimerState({
-                    ...timer,
-                    minutes,
-                    seconds,
-                    totalSeconds: newTotalSeconds,
-                });
+                    // Only update if timer is still running (avoid race conditions)
+                    if (!currentTimer.isRunning || currentTimer.isPaused) {
+                        console.log('⏸️ Timer stopped or paused during tick, clearing interval');
+                        if (intervalRef.current) {
+                            clearInterval(intervalRef.current);
+                            intervalRef.current = null;
+                        }
+                        return;
+                    }
 
-                // Save timer state periodically
-                await saveTimerState();
-            }, 1000);
+                    const newTotalSeconds = currentTimer.totalSeconds - 1;
+                    const minutes = Math.floor(newTotalSeconds / 60);
+                    const seconds = newTotalSeconds % 60;
+
+                    console.log('⏱️ Timer tick - Updating to:', {
+                        minutes,
+                        seconds,
+                        totalSeconds: newTotalSeconds,
+                    });
+
+                    // Update timer state synchronously first
+                    setTimer({
+                        minutes,
+                        seconds,
+                        totalSeconds: newTotalSeconds,
+                    });
+
+                    // Do async operations without blocking the timer update
+                    Promise.all([
+                        widgetService.updateFromTimerState({
+                            ...currentTimer,
+                            minutes,
+                            seconds,
+                            totalSeconds: newTotalSeconds,
+                            isRunning: currentTimer.isRunning,
+                            isPaused: currentTimer.isPaused,
+                            initialSeconds: currentTimer.initialSeconds,
+                            isBreak: currentTimer.isBreak,
+                        }),
+                        saveTimerState(),
+                    ]).catch((error) => {
+                        console.warn('Timer update async operations failed:', error);
+                    });
+                }, 1000);
+            } else {
+                console.log('✅ Timer interval already exists, not creating new one');
+            }
         } else {
+            console.log('⏸️ Timer not active, clearing interval if exists');
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);
                 intervalRef.current = null;
@@ -214,12 +257,8 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
     }, [
         timer.isRunning,
         timer.isPaused,
-        timer.totalSeconds,
-        timer.isBreak,
         timerState.isInitialized,
-        setTimer,
-        saveTimerState,
-        onTimerComplete,
+        // Removed setTimer, saveTimerState, and onTimerComplete to prevent recreating interval
     ]);
 
     // Cleanup

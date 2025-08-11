@@ -291,8 +291,18 @@ class WidgetService {
             const module = await getWidgetModule();
             if (!module) return;
 
-            await module.pauseLiveActivity();
-            console.log('⏸️ Live Activity paused');
+            // Check if pauseLiveActivity function exists before calling
+            if (typeof module.pauseLiveActivity === 'function') {
+                await module.pauseLiveActivity();
+                console.log('⏸️ Live Activity paused');
+            } else {
+                console.warn('⚠️ pauseLiveActivity not implemented in native module');
+                // For now, just update the activity with paused state
+                if (typeof module.updateLiveActivity === 'function') {
+                    await module.updateLiveActivity({ isActive: false });
+                    console.log('⏸️ Live Activity updated with paused state');
+                }
+            }
         } catch (error) {
             console.warn('Failed to pause Live Activity:', error);
         }
@@ -310,8 +320,18 @@ class WidgetService {
             const module = await getWidgetModule();
             if (!module) return;
 
-            await module.resumeLiveActivity();
-            console.log('▶️ Live Activity resumed');
+            // Check if resumeLiveActivity function exists before calling
+            if (typeof module.resumeLiveActivity === 'function') {
+                await module.resumeLiveActivity();
+                console.log('▶️ Live Activity resumed');
+            } else {
+                console.warn('⚠️ resumeLiveActivity not implemented in native module');
+                // For now, just update the activity with active state
+                if (typeof module.updateLiveActivity === 'function') {
+                    await module.updateLiveActivity({ isActive: true });
+                    console.log('▶️ Live Activity updated with active state');
+                }
+            }
         } catch (error) {
             console.warn('Failed to resume Live Activity:', error);
         }

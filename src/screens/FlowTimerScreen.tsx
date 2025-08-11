@@ -1,12 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import {
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import Animated, {
     interpolate,
     useAnimatedStyle,
@@ -24,6 +17,7 @@ import { useAudioManager } from '../hooks/useAudioManager';
 import { useBackgroundTimer } from '../hooks/useBackgroundTimer';
 import { useAppStateHandler } from '../hooks/useAppStateHandler';
 import { useMusicSettings } from '../hooks/useMusicSettings';
+import { usePomodoroStore } from '../store/pomodoroStore';
 
 interface FlowTimerScreenProps {
     navigation?: {
@@ -34,18 +28,18 @@ interface FlowTimerScreenProps {
 
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
     const { theme, isDark } = useTheme();
-    
+
     // Refs and local state
     const bottomSheetRef = useRef<BottomSheetMethods>(null);
     const [showSettings, setShowSettings] = React.useState(false);
-    
+
     // Music settings
     const { settings, loadSettings, saveSettings, handleVolumeChange } = useMusicSettings();
-    
+
     // Create a ref to store the audio completion function
     const audioCompletionRef = useRef<(() => Promise<void>) | null>(null);
 
-    // Timer logic hook 
+    // Timer logic hook
     const {
         timer,
         timerState,
@@ -80,15 +74,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
     };
 
     // Background timer hook
-    const {
-        stopBackgroundTimer,
-        handleTimerToggleWithBackground,
-        syncWithBackgroundTimer,
-    } = useBackgroundTimer({
-        timer,
-        setTimer,
-        isInitialized: timerState.isInitialized,
-    });
+    const { stopBackgroundTimer, handleTimerToggleWithBackground, syncWithBackgroundTimer } =
+        useBackgroundTimer({
+            timer,
+            setTimer,
+            isInitialized: timerState.isInitialized,
+        });
 
     // App state handler
     useAppStateHandler({
@@ -122,9 +113,36 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
         // Handle timer toggle with background support
         await handleTimerToggleWithBackground(wasRunning, wasPaused, baseHandleToggleTimer);
 
-        // Auto-play music if enabled and track is ready
-        if (!wasRunning && settings.autoPlay && audioManager.player && audioManager.status?.isLoaded && !audioManager.isPlaying) {
-            await audioManager.handlePlayPause();
+        // Auto-play music if enabled and track is ready - delay to avoid conflicts
+        if (
+            !wasRunning &&
+            settings.autoPlay &&
+            audioManager.player &&
+            audioManager.status?.isLoaded &&
+            !audioManager.isPlaying
+        ) {
+            setTimeout(async () => {
+                try {
+                    console.log(
+                        '🎵 Auto-playing music after timer start - checking timer state before starting music',
+                    );
+                    const currentTimerState = usePomodoroStore.getState().timer;
+                    console.log('🔍 Timer state before music auto-play:', {
+                        isRunning: currentTimerState.isRunning,
+                        isPaused: currentTimerState.isPaused,
+                    });
+
+                    // Only auto-play if timer is still running
+                    if (currentTimerState.isRunning && !currentTimerState.isPaused) {
+                        await audioManager.handlePlayPause();
+                        console.log('✅ Music auto-played successfully');
+                    } else {
+                        console.warn('⚠️ Timer not running, skipping auto-play');
+                    }
+                } catch (error) {
+                    console.warn('Failed to auto-play music:', error);
+                }
+            }, 500); // Small delay to ensure timer state is stable
         }
 
         // Trigger pulse animation
@@ -151,7 +169,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
     const handleReset = useCallback(async () => {
         // Stop background timer
         await stopBackgroundTimer();
-        
+
         // Pause music on reset
         if (audioManager.isPlaying && audioManager.player && audioManager.status?.isLoaded) {
             audioManager.player.pause();
@@ -195,7 +213,13 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
                 }
             }
         },
-        [handleVolumeChange, audioManager.player, audioManager.isReady, audioManager.status?.isLoaded, volumeAnimation],
+        [
+            handleVolumeChange,
+            audioManager.player,
+            audioManager.isReady,
+            audioManager.status?.isLoaded,
+            volumeAnimation,
+        ],
     );
 
     // Handle track selection with settings save
@@ -224,7 +248,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
 
                 // Load music settings
                 const loadedSettings = await loadSettings();
-                
+
                 // Set last played track if available
                 if (loadedSettings.lastPlayedTrack) {
                     audioManager.setSelectedTrack(loadedSettings.lastPlayedTrack);

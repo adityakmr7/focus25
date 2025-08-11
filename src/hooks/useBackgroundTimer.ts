@@ -19,11 +19,7 @@ interface UseBackgroundTimerProps {
     isInitialized: boolean;
 }
 
-export const useBackgroundTimer = ({ 
-    timer, 
-    setTimer, 
-    isInitialized 
-}: UseBackgroundTimerProps) => {
+export const useBackgroundTimer = ({ timer, setTimer, isInitialized }: UseBackgroundTimerProps) => {
     const [timerState, setTimerState] = useState<ManualTimerState>({
         timerSessionId: null,
         isConnected: false,
@@ -144,34 +140,40 @@ export const useBackgroundTimer = ({
     }, [timerState.isConnected, setTimer]);
 
     // Handle timer toggle with manual timer support
-    const handleTimerToggleWithBackground = useCallback(async (
-        wasRunning: boolean,
-        wasPaused: boolean,
-        toggleTimerFn: () => void
-    ) => {
-        try {
-            toggleTimerFn();
+    const handleTimerToggleWithBackground = useCallback(
+        async (wasRunning: boolean, wasPaused: boolean, toggleTimerFn: () => void) => {
+            try {
+                // Execute the timer toggle function FIRST
+                toggleTimerFn();
 
-            // Manual timer handling
-            if (manualTimerService.isSupported()) {
-                if (!wasRunning && !wasPaused) {
-                    // Starting timer from stopped state
-                    await startBackgroundTimer();
-                } else if (wasRunning && !wasPaused) {
-                    // Timer was running, so user is pausing it
-                    await pauseBackgroundTimer();
-                } else if (!wasRunning && wasPaused) {
-                    // Timer was paused, so user is resuming it
-                    await resumeBackgroundTimer();
+                // Wait a brief moment to ensure the timer state is properly updated
+                await new Promise((resolve) => setTimeout(resolve, 50));
+
+                // Manual timer handling - only if supported and conditions are clear
+                if (manualTimerService.isSupported()) {
+                    if (!wasRunning && !wasPaused) {
+                        // Starting timer from stopped state
+                        await startBackgroundTimer();
+                    } else if (wasRunning && !wasPaused) {
+                        // Timer was running, so user is pausing it
+                        await pauseBackgroundTimer();
+                    } else if (!wasRunning && wasPaused) {
+                        // Timer was paused, so user is resuming it
+                        await resumeBackgroundTimer();
+                    }
                 }
+
+                console.log('✅ Background timer: toggle completed');
+            } catch (error) {
+                console.error('❌ Background timer toggle failed:', error);
+                errorHandler.logError(error as Error, {
+                    context: 'Timer Toggle with Manual Timer',
+                    severity: 'medium',
+                });
             }
-        } catch (error) {
-            errorHandler.logError(error as Error, {
-                context: 'Timer Toggle with Manual Timer',
-                severity: 'medium',
-            });
-        }
-    }, [startBackgroundTimer, pauseBackgroundTimer, resumeBackgroundTimer]);
+        },
+        [startBackgroundTimer, pauseBackgroundTimer, resumeBackgroundTimer],
+    );
 
     // Initialize manual timer sync
     useEffect(() => {
@@ -217,7 +219,7 @@ export const useBackgroundTimer = ({
         // State
         backgroundSessionId: timerState.timerSessionId,
         isConnectedToBackground: timerState.isConnected,
-        
+
         // Actions
         startBackgroundTimer,
         stopBackgroundTimer,
@@ -225,7 +227,7 @@ export const useBackgroundTimer = ({
         resumeBackgroundTimer,
         syncWithBackgroundTimer,
         handleTimerToggleWithBackground,
-        
+
         // Utils
         isBackgroundSupported: manualTimerService.isSupported(),
     };
