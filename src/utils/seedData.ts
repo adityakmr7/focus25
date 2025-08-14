@@ -2,9 +2,6 @@ import {
     AccentColor,
     FlowIntensity,
     FlowMetrics,
-    Goal,
-    GoalCategory,
-    GoalType,
     NotificationStatus,
     Session,
     SessionType,
@@ -50,105 +47,6 @@ export class DatabaseSeeder {
         console.log('🧹 Clearing database and reseeding...');
         await this.db.clearAllData();
         await this.seedAll();
-    }
-
-    private async seedGoals(): Promise<void> {
-        console.log('📝 Seeding goals...');
-
-        const goals: Goal[] = [
-            {
-                id: generateUUID(),
-                title: 'Complete Daily Focus Sessions',
-                description: 'Maintain a consistent daily focus routine to improve productivity',
-                category: GoalCategory.PRODUCTIVITY,
-                type: GoalType.DAILY,
-                target: 4,
-                current: 2,
-                unit: 'sessions',
-                isCompleted: false,
-                createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-                deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // tomorrow
-                reward: 'Watch a movie',
-            },
-            {
-                id: generateUUID(),
-                title: 'Weekly Deep Work Goal',
-                description:
-                    'Dedicate focused time blocks for deep work and complex problem solving',
-                category: GoalCategory.WORK,
-                type: GoalType.WEEKLY,
-                target: 20,
-                current: 12,
-                unit: 'hours',
-                isCompleted: false,
-                createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-                deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // day after tomorrow
-                reward: 'Weekend hiking trip',
-            },
-            {
-                id: generateUUID(),
-                title: 'Learn TypeScript Fundamentals',
-                description:
-                    'Master TypeScript basics and advanced features for better code quality',
-                category: GoalCategory.LEARNING,
-                type: GoalType.MONTHLY,
-                target: 30,
-                current: 18,
-                unit: 'hours',
-                isCompleted: false,
-                createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
-                deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days from now
-                reward: 'New coding course',
-            },
-            {
-                id: generateUUID(),
-                title: 'Morning Meditation Streak',
-                description: 'Build a consistent meditation practice to improve mental clarity',
-                category: GoalCategory.HEALTH,
-                type: GoalType.DAILY,
-                target: 1,
-                current: 1,
-                unit: 'session',
-                isCompleted: true,
-                createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // yesterday
-                completedAt: new Date().toISOString(),
-                reward: 'Healthy breakfast',
-            },
-            {
-                id: generateUUID(),
-                title: 'Creative Writing Project',
-                description: 'Complete a short story collection with diverse themes and characters',
-                category: GoalCategory.CREATIVITY,
-                type: GoalType.YEARLY,
-                target: 100,
-                current: 23,
-                unit: 'pages',
-                isCompleted: false,
-                createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), // 45 days ago
-                deadline: new Date(Date.now() + 320 * 24 * 60 * 60 * 1000).toISOString(), // ~11 months from now
-                reward: 'Publishing consultation',
-            },
-            {
-                id: generateUUID(),
-                title: 'Fitness Challenge',
-                description: 'Complete a comprehensive fitness routine to improve overall health',
-                category: GoalCategory.FITNESS,
-                type: GoalType.WEEKLY,
-                target: 5,
-                current: 3,
-                unit: 'workouts',
-                isCompleted: false,
-                createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-                deadline: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days from now
-                reward: 'New workout gear',
-            },
-        ];
-
-        for (const goal of goals) {
-            await this.db.saveGoal(goal);
-        }
-
-        console.log(`✅ Seeded ${goals.length} goals`);
     }
 
     private async seedStatistics(): Promise<void> {
@@ -239,7 +137,7 @@ export class DatabaseSeeder {
 
         const theme: Theme = {
             mode: ThemeMode.AUTO,
-            accentColor: AccentColor.BLUE,
+            accentColor: AccentColor.CREAM,
             timerStyle: TimerStyle.DIGITAL,
             activeCustomTheme: 'ocean',
         };
@@ -332,7 +230,6 @@ export class DatabaseSeeder {
     // Helper method to seed specific data types individually
     async seedGoalsOnly(): Promise<void> {
         await this.db.initializeDatabase();
-        await this.seedGoals();
     }
 
     async seedStatisticsOnly(): Promise<void> {
