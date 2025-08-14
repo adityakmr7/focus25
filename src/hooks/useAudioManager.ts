@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, Vibration, Alert } from 'react-native';
+import { Alert, Platform, Vibration } from 'react-native';
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import { audioSource, musicTracks } from '../utils/constants';
 import { errorHandler } from '../services/errorHandler';
@@ -22,25 +22,25 @@ interface UseAudioManagerProps {
     onTimerComplete: () => void;
 }
 
-export const useAudioManager = ({ 
-    soundEffects, 
-    settings, 
-    timerIsRunning, 
-    onTimerComplete 
+export const useAudioManager = ({
+    soundEffects,
+    settings,
+    timerIsRunning,
+    onTimerComplete,
 }: UseAudioManagerProps) => {
     // Alert player for completion sounds
     const alertPlayer = useAudioPlayer(audioSource);
-    
+
     // Music player state
     const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoadingTrack, setIsLoadingTrack] = useState(false);
 
     // Current track data
-    const currentTrackUrl = selectedTrack 
-        ? musicTracks.find((t) => t.id === selectedTrack)?.source || null 
+    const currentTrackUrl = selectedTrack
+        ? musicTracks.find((t) => t.id === selectedTrack)?.source || null
         : null;
-    
+
     const selectedTrackData = musicTracks.find((track) => track.id === selectedTrack);
 
     const {
@@ -66,10 +66,9 @@ export const useAudioManager = ({
                 playsInSilentMode: true,
                 allowsRecording: false,
                 shouldPlayInBackground: true,
-                shouldRouteThroughEarpiece: true,
-                interruptionMode: 'doNotMix',
+                shouldRouteThroughEarpiece: false,
+                interruptionMode: 'duckOthers', // Changed from 'mixWithOthers' to prevent timer conflicts
             });
-            console.log('🔊 Audio mode configured for silent mode playback');
         } catch (error) {
             console.error('⚠️ Failed to configure audio mode:', error);
         }
@@ -82,14 +81,11 @@ export const useAudioManager = ({
                 console.log('🔔 Preloading alert player...');
                 const alertLoadTimeout = 5000; // 5 seconds
                 const alertStartTime = Date.now();
-                
-                while (
-                    !alertPlayer.isLoaded &&
-                    Date.now() - alertStartTime < alertLoadTimeout
-                ) {
+
+                while (!alertPlayer.isLoaded && Date.now() - alertStartTime < alertLoadTimeout) {
                     await new Promise((resolve) => setTimeout(resolve, 200));
                 }
-                
+
                 if (alertPlayer.isLoaded) {
                     console.log('✅ Alert player preloaded successfully');
                 } else {
@@ -133,7 +129,7 @@ export const useAudioManager = ({
                 isLoaded: alertPlayer.isLoaded,
                 isBuffering: alertPlayer.isBuffering,
                 playing: alertPlayer.playing,
-                paused: alertPlayer.paused
+                paused: alertPlayer.paused,
             });
 
             // Check if audio is ready with timeout to prevent infinite waiting
@@ -212,19 +208,37 @@ export const useAudioManager = ({
             }
 
             if (isPlaying) {
-                player.pause();
+                await player.pause();
                 stopLoop();
                 setIsPlaying(false);
+                console.log('🎵 Music paused - timer state should remain unchanged', {
+                    timestamp: Date.now(),
+                });
             } else {
-                player.play();
+                console.log('🎵 About to start music - checking timer state before:', {
+                    timerIsRunning,
+                    timestamp: Date.now(),
+                });
+                await player.play();
                 startLoop();
                 setIsPlaying(true);
+                console.log('🎵 Music started playing - timer state should remain unchanged', {
+                    timestamp: Date.now(),
+                });
             }
+
+            // Add a small delay then verify timer state hasn't changed
+            setTimeout(() => {
+                console.log('🔍 Post-music action timer state check (delayed):', {
+                    timerIsRunning,
+                    timestamp: Date.now(),
+                });
+            }, 100);
         } catch (error) {
             console.error('Failed to toggle playback:', error);
             Alert.alert(
                 'Playback Error',
-                'Failed to control playback. The track may still be loading.',
+                'Failed to control playbook. The track may still be loading.',
             );
         }
     }, [
@@ -237,6 +251,7 @@ export const useAudioManager = ({
         isPlaying,
         startLoop,
         stopLoop,
+        timerIsRunning,
     ]);
 
     // Handle track selection
@@ -273,7 +288,7 @@ export const useAudioManager = ({
         [selectedTrack, isPlaying, player, handlePlayPause, stopLoop],
     );
 
-    // Auto-play when track is ready
+    // Auto-play when track is ready - only trigger from track selection, not timer state
     useEffect(() => {
         if (
             player &&
@@ -282,12 +297,16 @@ export const useAudioManager = ({
             selectedTrack &&
             settings.autoPlay &&
             !isPlaying &&
-            isLoadingTrack &&
-            timerIsRunning
+            isLoadingTrack
         ) {
             setIsLoadingTrack(false);
-            player.volume = settings.volume;
-            handlePlayPause();
+            // Small delay to avoid conflicts with timer state changes
+            setTimeout(() => {
+                if (player && isReady && status?.isLoaded) {
+                    player.volume = settings.volume;
+                    handlePlayPause();
+                }
+            }, 300);
         } else if (isReady && isLoadingTrack) {
             setIsLoadingTrack(false);
         }
@@ -300,7 +319,6 @@ export const useAudioManager = ({
         settings.volume,
         isPlaying,
         isLoadingTrack,
-        timerIsRunning,
         handlePlayPause,
     ]);
 
@@ -309,7 +327,7 @@ export const useAudioManager = ({
         playCompletionSound,
         initializeAudioMode,
         preloadAlertPlayer,
-        
+
         // Music player
         selectedTrack,
         selectedTrackData,

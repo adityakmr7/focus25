@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { AppState, AppStateStatus, Platform } from 'react-native';
+import { widgetService } from '../services/widgetService';
+import { usePomodoroStore } from '../store/pomodoroStore';
 
 export function useAppStateHandling(): void {
     useEffect(() => {
@@ -7,19 +9,23 @@ export function useAppStateHandling(): void {
             return;
         }
 
-        const handleAppStateChange = (nextAppState: AppStateStatus) => {
+        const handleAppStateChange = async (nextAppState: AppStateStatus) => {
             if (nextAppState === 'background') {
-                console.log('📱 App backgrounded - background timer active');
-                // Background timer will handle timing
-            } else if (nextAppState === 'active') {
-                console.log('📱 App foregrounded - syncing with background timer');
-                // Sync timer state with background timer
-                try {
-                    // You might want to sync your pomodoro store here
-                    // pomodoroStore.syncWithBackgroundTimer();
-                } catch (error) {
-                    console.error('Failed to sync with background timer:', error);
+                console.log('📱 App backgrounded - Live Activity background updates enabled');
+                
+                // Get current timer state
+                const timer = usePomodoroStore.getState().timer;
+                
+                // If timer is running and Live Activity is active, the native background timer will handle updates
+                if (timer.isRunning && !timer.isPaused) {
+                    console.log('⏰ Timer is active - native background updates will continue');
                 }
+                
+            } else if (nextAppState === 'active') {
+                console.log('📱 App foregrounded - synchronizing with native timer state');
+                
+                // The useBackgroundTimer hook will handle state synchronization
+                // Live Activity updates will continue seamlessly
             }
         };
 

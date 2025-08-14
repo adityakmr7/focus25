@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { backgroundTimerService } from '../services/backgroundTimer';
+import { manualTimerService } from '../services/backgroundTimer';
 import { notificationService } from '../services/notificationService';
 import { errorHandler } from '../services/errorHandler';
 
-interface BackgroundTimerState {
-    backgroundSessionId: string | null;
-    isConnectedToBackground: boolean;
+interface ManualTimerState {
+    timerSessionId: string | null;
+    isConnected: boolean;
 }
 
 interface UseBackgroundTimerProps {
@@ -19,94 +19,90 @@ interface UseBackgroundTimerProps {
     isInitialized: boolean;
 }
 
-export const useBackgroundTimer = ({ 
-    timer, 
-    setTimer, 
-    isInitialized 
-}: UseBackgroundTimerProps) => {
-    const [backgroundState, setBackgroundState] = useState<BackgroundTimerState>({
-        backgroundSessionId: null,
-        isConnectedToBackground: false,
+export const useBackgroundTimer = ({ timer, setTimer, isInitialized }: UseBackgroundTimerProps) => {
+    const [timerState, setTimerState] = useState<ManualTimerState>({
+        timerSessionId: null,
+        isConnected: false,
     });
 
-    // Start background timer
+    // Start manual timer
     const startBackgroundTimer = useCallback(async () => {
         try {
-            if (backgroundTimerService.isSupported()) {
-                const sessionId = await backgroundTimerService.startTimer(
+            if (manualTimerService.isSupported()) {
+                const sessionId = await manualTimerService.startTimer(
                     Math.floor(timer.totalSeconds / 60),
                     timer.isBreak,
                 );
-                setBackgroundState({
-                    backgroundSessionId: sessionId,
-                    isConnectedToBackground: true,
+                setTimerState({
+                    timerSessionId: sessionId,
+                    isConnected: true,
                 });
                 return sessionId;
             }
         } catch (error) {
             errorHandler.logError(error as Error, {
-                context: 'Background Timer Start',
+                context: 'Manual Timer Start',
                 severity: 'medium',
             });
         }
         return null;
     }, [timer.totalSeconds, timer.isBreak]);
 
-    // Stop background timer
+    // Stop manual timer
     const stopBackgroundTimer = useCallback(async () => {
         try {
-            if (backgroundTimerService.isSupported()) {
-                await backgroundTimerService.stopTimer();
-                setBackgroundState({
-                    backgroundSessionId: null,
-                    isConnectedToBackground: false,
+            if (manualTimerService.isSupported()) {
+                await manualTimerService.stopTimer();
+                setTimerState({
+                    timerSessionId: null,
+                    isConnected: false,
                 });
             }
         } catch (error) {
             errorHandler.logError(error as Error, {
-                context: 'Background Timer Stop',
+                context: 'Manual Timer Stop',
                 severity: 'low',
             });
         }
     }, []);
 
-    // Pause background timer
+    // Pause manual timer
     const pauseBackgroundTimer = useCallback(async () => {
         try {
-            if (backgroundTimerService.isSupported()) {
-                await backgroundTimerService.pauseTimer();
+            if (manualTimerService.isSupported()) {
+                await manualTimerService.pauseTimer();
             }
         } catch (error) {
             errorHandler.logError(error as Error, {
-                context: 'Background Timer Pause',
+                context: 'Manual Timer Pause',
                 severity: 'low',
             });
         }
     }, []);
 
-    // Resume background timer
+    // Resume manual timer
     const resumeBackgroundTimer = useCallback(async () => {
         try {
-            if (backgroundTimerService.isSupported()) {
-                await backgroundTimerService.resumeTimer();
+            if (manualTimerService.isSupported()) {
+                await manualTimerService.resumeTimer();
             }
         } catch (error) {
             errorHandler.logError(error as Error, {
-                context: 'Background Timer Resume',
+                context: 'Manual Timer Resume',
                 severity: 'low',
             });
         }
     }, []);
 
-    // Sync with background timer on app resume
+    // Sync with manual timer on app resume
     const syncWithBackgroundTimer = useCallback(async () => {
         try {
-            if (backgroundTimerService.isSupported() && backgroundState.isConnectedToBackground) {
-                const backgroundTimerState = await backgroundTimerService.getTimerState();
-                const remainingTime = await backgroundTimerService.getRemainingTime();
+            if (manualTimerService.isSupported() && timerState.isConnected) {
+                const savedTimerState = await manualTimerService.getTimerState();
+                const remainingTime = await manualTimerService.getRemainingTime();
 
-                if (backgroundTimerState && backgroundTimerState.isRunning && remainingTime > 0) {
-                    // Timer is still running - sync with current state
+                if (savedTimerState && remainingTime > 0) {
+                    // Timer is still active - sync with current state
                     const minutes = Math.floor(remainingTime / 60);
                     const seconds = remainingTime % 60;
 
@@ -114,18 +110,18 @@ export const useBackgroundTimer = ({
                         minutes,
                         seconds,
                         totalSeconds: remainingTime,
-                        isRunning: true,
-                        isPaused: false,
-                        isBreak: backgroundTimerState.isBreak,
+                        isRunning: savedTimerState.isRunning,
+                        isPaused: !savedTimerState.isRunning,
+                        isBreak: savedTimerState.isBreak,
                     });
-                    console.log('⏰ Timer synced with background state');
+                    console.log('⏰ Timer synced with saved state');
                     return 'synced';
-                } else if (!backgroundTimerState || remainingTime <= 0) {
-                    // Timer completed while in background
-                    console.log('⏰ Timer completed in background');
-                    setBackgroundState({
-                        backgroundSessionId: null,
-                        isConnectedToBackground: false,
+                } else if (!savedTimerState || remainingTime <= 0) {
+                    // Timer completed while app was closed/backgrounded
+                    console.log('⏰ Timer completed while app was backgrounded');
+                    setTimerState({
+                        timerSessionId: null,
+                        isConnected: false,
                     });
 
                     // Cancel any remaining timer notifications
@@ -134,57 +130,63 @@ export const useBackgroundTimer = ({
                 }
             }
         } catch (error) {
-            console.error('Failed to sync with background timer:', error);
+            console.error('Failed to sync with manual timer:', error);
             errorHandler.logError(error as Error, {
-                context: 'Background Timer Sync',
+                context: 'Manual Timer Sync',
                 severity: 'medium',
             });
         }
         return 'no-sync';
-    }, [backgroundState.isConnectedToBackground, setTimer]);
+    }, [timerState.isConnected, setTimer]);
 
-    // Handle timer toggle with background support
-    const handleTimerToggleWithBackground = useCallback(async (
-        wasRunning: boolean,
-        wasPaused: boolean,
-        toggleTimerFn: () => void
-    ) => {
-        try {
-            toggleTimerFn();
-
-            // Background timer handling
-            if (backgroundTimerService.isSupported()) {
-                if (!wasRunning && !wasPaused) {
-                    // Starting timer from stopped state
-                    await startBackgroundTimer();
-                } else if (wasRunning && !wasPaused) {
-                    // Timer was running, so user is pausing it
-                    await pauseBackgroundTimer();
-                } else if (!wasRunning && wasPaused) {
-                    // Timer was paused, so user is resuming it
-                    await resumeBackgroundTimer();
-                }
-            }
-        } catch (error) {
-            errorHandler.logError(error as Error, {
-                context: 'Timer Toggle with Background',
-                severity: 'medium',
-            });
-        }
-    }, [startBackgroundTimer, pauseBackgroundTimer, resumeBackgroundTimer]);
-
-    // Initialize background timer sync
-    useEffect(() => {
-        const initializeBackgroundSync = async () => {
+    // Handle timer toggle with manual timer support
+    const handleTimerToggleWithBackground = useCallback(
+        async (wasRunning: boolean, wasPaused: boolean, toggleTimerFn: () => void) => {
             try {
-                if (backgroundTimerService.isSupported()) {
-                    const backgroundTimerState = await backgroundTimerService.getTimerState();
-                    const remainingTime = await backgroundTimerService.getRemainingTime();
+                // Execute the timer toggle function FIRST
+                toggleTimerFn();
 
-                    if (backgroundTimerState && remainingTime > 0) {
-                        setBackgroundState({
-                            isConnectedToBackground: true,
-                            backgroundSessionId: backgroundTimerState.sessionId,
+                // Wait a brief moment to ensure the timer state is properly updated
+                await new Promise((resolve) => setTimeout(resolve, 50));
+
+                // Manual timer handling - only if supported and conditions are clear
+                if (manualTimerService.isSupported()) {
+                    if (!wasRunning && !wasPaused) {
+                        // Starting timer from stopped state
+                        await startBackgroundTimer();
+                    } else if (wasRunning && !wasPaused) {
+                        // Timer was running, so user is pausing it
+                        await pauseBackgroundTimer();
+                    } else if (!wasRunning && wasPaused) {
+                        // Timer was paused, so user is resuming it
+                        await resumeBackgroundTimer();
+                    }
+                }
+
+                console.log('✅ Background timer: toggle completed');
+            } catch (error) {
+                console.error('❌ Background timer toggle failed:', error);
+                errorHandler.logError(error as Error, {
+                    context: 'Timer Toggle with Manual Timer',
+                    severity: 'medium',
+                });
+            }
+        },
+        [startBackgroundTimer, pauseBackgroundTimer, resumeBackgroundTimer],
+    );
+
+    // Initialize manual timer sync
+    useEffect(() => {
+        const initializeTimerSync = async () => {
+            try {
+                if (manualTimerService.isSupported()) {
+                    const savedTimerState = await manualTimerService.getTimerState();
+                    const remainingTime = await manualTimerService.getRemainingTime();
+
+                    if (savedTimerState && remainingTime > 0) {
+                        setTimerState({
+                            isConnected: true,
+                            timerSessionId: savedTimerState.sessionId,
                         });
 
                         const minutes = Math.floor(remainingTime / 60);
@@ -194,29 +196,30 @@ export const useBackgroundTimer = ({
                             minutes,
                             seconds,
                             totalSeconds: remainingTime,
-                            isRunning: backgroundTimerState.isRunning,
-                            isBreak: backgroundTimerState.isBreak,
+                            isRunning: savedTimerState.isRunning,
+                            isPaused: !savedTimerState.isRunning,
+                            isBreak: savedTimerState.isBreak,
                         });
                     }
                 }
             } catch (error) {
                 errorHandler.logError(error as Error, {
-                    context: 'Background Timer Sync',
+                    context: 'Manual Timer Sync',
                     severity: 'medium',
                 });
             }
         };
 
         if (isInitialized) {
-            initializeBackgroundSync();
+            initializeTimerSync();
         }
     }, [isInitialized, setTimer]);
 
     return {
         // State
-        backgroundSessionId: backgroundState.backgroundSessionId,
-        isConnectedToBackground: backgroundState.isConnectedToBackground,
-        
+        backgroundSessionId: timerState.timerSessionId,
+        isConnectedToBackground: timerState.isConnected,
+
         // Actions
         startBackgroundTimer,
         stopBackgroundTimer,
@@ -224,8 +227,8 @@ export const useBackgroundTimer = ({
         resumeBackgroundTimer,
         syncWithBackgroundTimer,
         handleTimerToggleWithBackground,
-        
+
         // Utils
-        isBackgroundSupported: backgroundTimerService.isSupported(),
+        isBackgroundSupported: manualTimerService.isSupported(),
     };
 };

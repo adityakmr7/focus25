@@ -11,10 +11,11 @@ import { hybridDatabaseService } from '../data/hybridDatabase';
 import { localDatabaseService } from '../data/local/localDatabase';
 import { seedDatabase } from '../utils/seedData';
 
-import { backgroundTimerService } from './backgroundTimer';
+import { manualTimerService } from './backgroundTimer';
 import { notificationService } from './notificationService';
 import { errorHandler } from './errorHandler';
 import { updateService } from './updateService';
+import { widgetService } from './widgetService';
 import { AudioCacheManager } from '../utils/audioCache';
 import { musicTracks } from '../utils/constants';
 
@@ -66,6 +67,7 @@ export class AppInitializer {
         if (Platform.OS !== 'web') {
             backgroundTasks.push(
                 this.initializeBackgroundServices(),
+                this.initializeWidgetService(),
                 this.preDownloadAudio(),
                 this.checkForUpdates()
             );
@@ -199,12 +201,23 @@ export class AppInitializer {
         console.log('🔧 Initializing background services...');
         
         await Promise.all([
-            backgroundTimerService.initialize(),
+            manualTimerService.initialize(),
             notificationService.initialize(),
             updateService.initialize(),
         ]);
 
         console.log('✅ Background services initialized');
+    }
+
+    private async initializeWidgetService(): Promise<void> {
+        try {
+            console.log('📱 Initializing widget service...');
+            await widgetService.initialize();
+            console.log('✅ Widget service initialized');
+        } catch (error) {
+            console.warn('Widget service initialization failed:', error);
+            // Non-critical, don't throw
+        }
     }
 
     private async preDownloadAudio(): Promise<void> {
