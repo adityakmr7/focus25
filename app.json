@@ -15,7 +15,7 @@
       "icon": "./assets/icon_ios.png",
       "supportsTablet": true,
       "buildNumber": "3",
-      "requireFullScreen": true,
+      "requireFullScreen": false,
       "userInterfaceStyle": "automatic",
       "splash": {
         "image": "./assets/splash-ios.png",

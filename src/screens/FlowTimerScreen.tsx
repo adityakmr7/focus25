@@ -18,6 +18,7 @@ import { useBackgroundTimer } from '../hooks/useBackgroundTimer';
 import { useAppStateHandler } from '../hooks/useAppStateHandler';
 import { useMusicSettings } from '../hooks/useMusicSettings';
 import { usePomodoroStore } from '../store/pomodoroStore';
+import { useDeviceOrientation } from '../hooks/useDeviceOrientation';
 
 interface FlowTimerScreenProps {
     navigation?: {
@@ -29,6 +30,8 @@ interface FlowTimerScreenProps {
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
     const { theme, isDark } = useTheme();
 
+    const { isLandscape, isTablet } = useDeviceOrientation();
+    
     // Refs and local state
     const bottomSheetRef = useRef<BottomSheetMethods>(null);
     const [showSettings, setShowSettings] = React.useState(false);
@@ -332,7 +335,12 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
 
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    isTablet && isLandscape && styles.tabletLandscapeScrollContent,
+                    isTablet && !isLandscape && styles.tabletPortraitScrollContent,
+                    !isTablet && isLandscape && styles.phoneScrollContentLandscape
+                ]}
                 showsVerticalScrollIndicator={false}
                 bounces={true}
                 keyboardShouldPersistTaps="handled"
@@ -407,6 +415,18 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         flex: 1,
+    },
+    tabletPortraitScrollContent: {
+        paddingHorizontal: 60,
+        paddingVertical: 20,
+    },
+    tabletLandscapeScrollContent: {
+        paddingHorizontal: 80,
+        paddingVertical: 15,
+    },
+    phoneScrollContentLandscape: {
+        paddingHorizontal: 20,
+        paddingVertical: 5,
     },
     content: {
         flex: 1,
