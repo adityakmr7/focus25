@@ -18,6 +18,7 @@ interface Settings {
     weeklyReports: boolean;
     dataSync: boolean;
     showStatistics: boolean;
+    musicEnabled: boolean;
     notificationStatus: string | null;
 }
 
@@ -55,6 +56,7 @@ const initialSettings: Settings = {
     weeklyReports: true,
     dataSync: false,
     showStatistics: false,
+    musicEnabled: true,
     notificationStatus: null,
 };
 
@@ -210,6 +212,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
                 weeklyReports: state.weeklyReports,
                 dataSync: state.dataSync,
                 showStatistics: state.showStatistics,
+                musicEnabled: state.musicEnabled,
                 notificationStatus: state.notificationStatus,
             };
 

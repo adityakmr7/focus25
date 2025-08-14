@@ -49,6 +49,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         weeklyReports,
         dataSync,
         showStatistics,
+        musicEnabled,
         toggleSetting,
         setTimeDuration,
         exportData,
@@ -485,6 +486,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             onSwitchToggle={() => toggleSetting('soundEffects')}
                         />
                         <SettingItem
+                            title="Music"
+                            subtitle="Enable background music during sessions"
+                            icon="musical-notes-outline"
+                            hasSwitch={true}
+                            switchValue={musicEnabled}
+                            onSwitchToggle={() => toggleSetting('musicEnabled')}
+                        />
+                        <SettingItem
                             title="Show Statistics"
                             subtitle="Show statistics tab in navigation"
                             icon="bar-chart-outline"
@@ -507,7 +516,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                     <SectionHeader title="DATA & SYNC" />
                     <View style={[styles.section, { backgroundColor: theme.surface }]}>
                         <SettingItem
-                            disabled={true}
                             title="Cloud Sync"
                             subtitle="Sync your data across devices"
                             icon="cloud-outline"

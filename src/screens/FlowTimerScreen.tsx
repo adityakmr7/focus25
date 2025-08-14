@@ -18,6 +18,7 @@ import { useBackgroundTimer } from '../hooks/useBackgroundTimer';
 import { useAppStateHandler } from '../hooks/useAppStateHandler';
 import { useMusicSettings } from '../hooks/useMusicSettings';
 import { usePomodoroStore } from '../store/pomodoroStore';
+import { useSettingsStore } from '../store/settingsStore';
 
 interface FlowTimerScreenProps {
     navigation?: {
@@ -28,6 +29,7 @@ interface FlowTimerScreenProps {
 
 const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
     const { theme, isDark } = useTheme();
+    const { musicEnabled } = useSettingsStore();
 
     // Refs and local state
     const bottomSheetRef = useRef<BottomSheetMethods>(null);
@@ -346,6 +348,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
                         onOpenMusicPlayer={handleOpenMusicPlayer}
                         onReset={handleReset}
                         isLoading={timerState.isLoading}
+                        musicEnabled={musicEnabled}
                     />
 
                     <TimerContainer
@@ -366,25 +369,28 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
                         currentTime={audioManager.currentTime}
                         totalPlayTime={audioManager.totalPlayTime}
                         isLooping={audioManager.isLooping}
+                        musicEnabled={musicEnabled}
                     />
                 </Animated.View>
             </ScrollView>
 
             {/* Bottom Sheet Music Player */}
-            <BottomSheetMusicPlayer
-                isPlaying={audioManager.isPlaying}
-                settings={settings}
-                setShowSettings={setShowSettings}
-                showSettings={showSettings}
-                setSettings={saveSettings}
-                player={audioManager.player}
-                downloadProgress={audioManager.downloadProgress}
-                handleTrackSelection={handleTrackSelection}
-                bottomSheetRef={bottomSheetRef}
-                autoStartTrack={timer.isRunning ? 'deep-focus' : undefined}
-                selectedTrack={audioManager.selectedTrack}
-                downloadError={audioManager.downloadError}
-            />
+            {musicEnabled && (
+                <BottomSheetMusicPlayer
+                    isPlaying={audioManager.isPlaying}
+                    settings={settings}
+                    setShowSettings={setShowSettings}
+                    showSettings={showSettings}
+                    setSettings={saveSettings}
+                    player={audioManager.player}
+                    downloadProgress={audioManager.downloadProgress}
+                    handleTrackSelection={handleTrackSelection}
+                    bottomSheetRef={bottomSheetRef}
+                    autoStartTrack={timer.isRunning ? 'deep-focus' : undefined}
+                    selectedTrack={audioManager.selectedTrack}
+                    downloadError={audioManager.downloadError}
+                />
+            )}
         </SafeAreaView>
     );
 };

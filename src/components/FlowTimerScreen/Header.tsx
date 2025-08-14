@@ -8,6 +8,7 @@ interface HeaderProps {
     onOpenMusicPlayer: () => void;
     onReset: () => void;
     isLoading?: boolean;
+    musicEnabled?: boolean;
 }
 const Header: React.FC<HeaderProps> = React.memo(
     ({
@@ -16,6 +17,7 @@ const Header: React.FC<HeaderProps> = React.memo(
         onOpenMusicPlayer,
         onReset,
         isLoading = false,
+        musicEnabled = true,
     }) => {
         return (
             <View style={styles.header}>
@@ -35,20 +37,22 @@ const Header: React.FC<HeaderProps> = React.memo(
                     )}
                 </TouchableOpacity> */}
 
-                <TouchableOpacity
-                    onPress={onOpenMusicPlayer}
-                    style={[styles.musicButton, { backgroundColor: theme.surface }]}
-                    disabled={isLoading}
-                    accessible={true}
-                    accessibilityLabel="Open music player"
-                    accessibilityRole="button"
-                >
-                    <Ionicons
-                        name="musical-notes"
-                        size={20}
-                        color={theme.accent}
-                    />
-                </TouchableOpacity>
+                {musicEnabled && (
+                    <TouchableOpacity
+                        onPress={onOpenMusicPlayer}
+                        style={[styles.musicButton, { backgroundColor: theme.surface }]}
+                        disabled={isLoading}
+                        accessible={true}
+                        accessibilityLabel="Open music player"
+                        accessibilityRole="button"
+                    >
+                        <Ionicons
+                            name="musical-notes"
+                            size={20}
+                            color={theme.accent}
+                        />
+                    </TouchableOpacity>
+                )}
 
                 <TouchableOpacity
                     onPress={onReset}

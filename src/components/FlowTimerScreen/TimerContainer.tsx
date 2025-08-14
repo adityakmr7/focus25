@@ -25,6 +25,7 @@ interface TimerContainerProps {
     currentTime?: number;
     totalPlayTime?: number;
     isLooping?: boolean;
+    musicEnabled?: boolean;
 }
 const TimerContainer: React.FC<TimerContainerProps> = React.memo(
     ({
@@ -45,6 +46,7 @@ const TimerContainer: React.FC<TimerContainerProps> = React.memo(
         currentTime = 0,
         totalPlayTime = 0,
         isLooping = false,
+        musicEnabled = true,
     }) => {
         const containerAnimatedStyle = useAnimatedStyle(() => {
             return {
@@ -94,7 +96,7 @@ const TimerContainer: React.FC<TimerContainerProps> = React.memo(
                 </View>
 
                 {/* Minimalist music controls - only show when timer is running and music is playing */}
-                {timer.isRunning && isPlaying && selectedTrackData && (
+                {musicEnabled && timer.isRunning && isPlaying && selectedTrackData && (
                     <View style={styles.musicIconWrapper}>
                         <Text style={[styles.musicIcon, { color: theme.textSecondary }]}>♪</Text>
                     </View>
