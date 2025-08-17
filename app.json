@@ -1,98 +1,96 @@
 {
-  "expo": {
-    "name": "Focus25 - Flow Timer & Music",
-    "slug": "focus25-flow-timer-and-music",
-    "version": "1.5.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon_ios.png",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "assetBundlePatterns": [
-      "**/*",
-      "assets/fonts/*"
-    ],
-    "ios": {
-      "icon": "./assets/icon_ios.png",
-      "supportsTablet": true,
-      "buildNumber": "3",
-      "requireFullScreen": false,
-      "userInterfaceStyle": "automatic",
-      "splash": {
-        "image": "./assets/splash-ios.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#16292b"
-      },
-      "entitlements": {
-        "com.apple.security.application-groups": [
-          "group.com.focus25.app.focus25Widget"
-        ]
-      },
-      "config": {
-        "usesNonExemptEncryption": false
-      },
-      "infoPlist": {
-        "UIBackgroundModes": [
-          "audio",
-          "processing"
+    "expo": {
+        "name": "Focus25 - Flow Timer & Music",
+        "slug": "focus25-flow-timer-and-music",
+        "version": "1.5.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon_ios.png",
+        "userInterfaceStyle": "automatic",
+        "newArchEnabled": true,
+        "assetBundlePatterns": ["**/*", "assets/fonts/*"],
+        "ios": {
+            "icon": "./assets/icon_ios.png",
+            "supportsTablet": true,
+            "buildNumber": "3",
+            "requireFullScreen": false,
+            "userInterfaceStyle": "automatic",
+            "splash": {
+                "image": "./assets/splash-ios.png",
+                "resizeMode": "contain",
+                "backgroundColor": "#16292b"
+            },
+            "entitlements": {
+                "com.apple.security.application-groups": ["group.com.focus25.app.focus25Widget"]
+            },
+            "config": {
+                "usesNonExemptEncryption": false
+            },
+            "infoPlist": {
+                "UIBackgroundModes": ["audio", "processing"],
+                "NSMicrophoneUsageDescription": "This app uses the microphone for focus session audio feedback.",
+                "NSUserNotificationsUsageDescription": "This app sends notifications to remind you about focus sessions and breaks.",
+                "UILaunchStoryboardName": "SplashScreen"
+            },
+            "bundleIdentifier": "com.focus25.app"
+        },
+        "android": {
+            "icon": "./assets/icon_android.png",
+            "splash": {
+                "image": "./assets/splash-icon.png",
+                "resizeMode": "contain",
+                "backgroundColor": "#16292b"
+            },
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#16292b"
+            },
+            "edgeToEdgeEnabled": true,
+            "permissions": [
+                "android.permission.RECEIVE_BOOT_COMPLETED",
+                "android.permission.WAKE_LOCK",
+                "android.permission.VIBRATE",
+                "android.permission.USE_FULL_SCREEN_INTENT",
+                "android.permission.RECORD_AUDIO",
+                "android.permission.MODIFY_AUDIO_SETTINGS"
+            ],
+            "package": "com.focus25.app"
+        },
+        "web": {
+            "favicon": "./assets/favicon.png",
+            "bundler": "metro"
+        },
+        "plugins": [
+            "./modules/focus25-widget-module/app.plugin.js",
+            "expo-audio",
+            "expo-notifications",
+            "expo-task-manager",
+            [
+                "expo-build-properties",
+                {
+                    "android": {
+                        "compileSdkVersion": 35,
+                        "targetSdkVersion": 35,
+                        "buildToolsVersion": "35.0.0",
+                        "enableHermes": true,
+                        "enableProguardInReleaseBuilds": true,
+                        "enableSeparateBuildPerCPUArchitecture": true,
+                        "packagerOpts": {
+                            "config": "metro.config.js"
+                        }
+                    }
+                }
+            ],
+            "expo-font",
+            "expo-sqlite"
         ],
-        "NSMicrophoneUsageDescription": "This app uses the microphone for focus session audio feedback.",
-        "NSUserNotificationsUsageDescription": "This app sends notifications to remind you about focus sessions and breaks.",
-        "UILaunchStoryboardName": "SplashScreen"
-      },
-      "bundleIdentifier": "com.focus25.app"
-    },
-    "android": {
-      "icon": "./assets/icon_android.png",
-      "splash": {
-        "image": "./assets/splash-icon.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#16292b"
-      },
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#16292b"
-      },
-      "edgeToEdgeEnabled": true,
-      "permissions": [
-        "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.WAKE_LOCK",
-        "android.permission.VIBRATE",
-        "android.permission.USE_FULL_SCREEN_INTENT",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
-      ],
-      "package": "com.focus25.app"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
-    },
-    "plugins": [
-      "./modules/focus25-widget-module/app.plugin.js",
-      "expo-audio",
-      "expo-notifications",
-      "expo-task-manager",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
-            "buildToolsVersion": "35.0.0"
-          }
-        }
-      ],
-      "expo-font",
-      "expo-sqlite"
-    ],
-    "experiments": {
-      "typedRoutes": true
-    },
-    "extra": {
-      "eas": {
-        "projectId": "04e20c31-e1db-413e-8cff-041e3a116e8a"
-      }
-    },
-    "owner": "adityakmr7"
-  }
+        "experiments": {
+            "typedRoutes": true
+        },
+        "extra": {
+            "eas": {
+                "projectId": "04e20c31-e1db-413e-8cff-041e3a116e8a"
+            }
+        },
+        "owner": "adityakmr7"
+    }
 }

@@ -72,10 +72,12 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
             const wasRunning = timer.isRunning;
             const wasPaused = timer.isPaused;
             toggleTimer();
-            // Update widget after timer state change
-            setTimeout(async () => {
+            // Update widget after timer state change - use non-blocking approach
+            Promise.resolve().then(async () => {
                 const currentTimer = usePomodoroStore.getState().timer;
-                await widgetService.updateFromTimerState(currentTimer);
+
+                // Run widget updates in parallel to avoid blocking
+                const widgetUpdatePromise = widgetService.updateFromTimerState(currentTimer);
 
                 console.log('🔍 Timer toggle debug:', {
                     wasRunning,
@@ -85,20 +87,23 @@ export const useTimerLogic = ({ onTimerComplete }: UseTimerLogicProps) => {
                     shouldStartLiveActivity: !wasRunning && currentTimer.isRunning,
                 });
 
-                // Start Live Activity when timer starts (from stopped or first start)
+                // Handle Live Activity operations
+                let liveActivityPromise: Promise<void> = Promise.resolve();
+
                 if (!wasRunning && currentTimer.isRunning) {
                     console.log('🚀 Triggering Live Activity start...');
-                    await widgetService.startLiveActivityForTimer(currentTimer);
-                }
-                // Handle pause/resume for existing Live Activity
-                else if (wasRunning && !wasPaused && currentTimer.isPaused) {
+                    liveActivityPromise = widgetService.startLiveActivityForTimer(currentTimer);
+                } else if (wasRunning && !wasPaused && currentTimer.isPaused) {
                     console.log('⏸️ Pausing Live Activity...');
-                    await widgetService.pauseLiveActivityForTimer();
+                    liveActivityPromise = widgetService.pauseLiveActivityForTimer();
                 } else if (wasRunning && wasPaused && !currentTimer.isPaused) {
                     console.log('▶️ Resuming Live Activity...');
-                    await widgetService.resumeLiveActivityForTimer();
+                    liveActivityPromise = widgetService.resumeLiveActivityForTimer();
                 }
-            }, 100); // Small delay to ensure state is updated
+
+                // Wait for both operations to complete
+                await Promise.all([widgetUpdatePromise, liveActivityPromise]);
+            });
 
             // Auto-play music logic would be handled in the parent component
             // since it depends on audio manager

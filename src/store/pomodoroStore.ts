@@ -220,7 +220,8 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
         set({ isUpdating: true });
 
         try {
-            get().checkAndResetDailyMetrics();
+            // Make daily metrics check non-blocking for better Android performance
+            Promise.resolve().then(() => get().checkAndResetDailyMetrics());
             const currentState = get();
             const statistics = useStatisticsStore.getState();
 
@@ -229,7 +230,8 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
             if (!currentState.timer.isRunning && !currentState.timer.isPaused) {
                 // Starting a new session
                 console.log('Starting timer', currentState.timer);
-                await statistics.incrementFlowStarted();
+                // Make statistics update non-blocking for better Android performance
+                Promise.resolve().then(() => statistics.incrementFlowStarted());
                 set((state) => ({
                     timer: {
                         ...state.timer,
@@ -244,7 +246,8 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
             } else if (currentState.timer.isPaused) {
                 // Resuming from pause - this is a potential distraction
                 console.log('Resuming timer from pause');
-                await get().trackDistraction();
+                // Make distraction tracking non-blocking for better Android performance
+                Promise.resolve().then(() => get().trackDistraction());
                 set((state) => ({
                     timer: {
                         ...state.timer,
@@ -255,7 +258,8 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
             } else if (currentState.timer.isRunning) {
                 // Pausing - this is a distraction
                 console.log('Pausing timer');
-                await get().trackDistraction();
+                // Make distraction tracking non-blocking for better Android performance
+                Promise.resolve().then(() => get().trackDistraction());
                 set((state) => ({
                     timer: {
                         ...state.timer,

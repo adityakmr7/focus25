@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 24,
-        paddingTop: 20,
+        paddingTop: Platform.OS === 'ios' ? 20 : 60,
         paddingBottom: 16,
     },
     headerDate: {
