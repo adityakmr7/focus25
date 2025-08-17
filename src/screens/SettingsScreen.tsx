@@ -385,7 +385,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 style={[styles.scrollView, sectionsAnimatedStyle]}
                 contentContainerStyle={[
                     isTablet && styles.tabletScrollContent,
-                    isLandscape && isTablet && styles.tabletLandscapeContent
+                    isLandscape && isTablet && styles.tabletLandscapeContent,
                 ]}
                 showsVerticalScrollIndicator={false}
             >
@@ -644,6 +644,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 24,
         paddingVertical: 20,
+        paddingTop: Platform.OS === 'ios' ? 20 : 60,
         borderBottomWidth: 1,
     },
     backButton: {
@@ -696,7 +697,7 @@ const styles = StyleSheet.create({
                 shadowRadius: 8,
             },
             android: {
-                elevation: 4,
+                elevation: 0,
             },
         }),
     },

@@ -29,7 +29,8 @@ export const PlayPauseButton: React.FC<PlayPauseButtonProps> = ({
             disabled={disabled}
             style={styles.playButton}
             onPress={onPress}
-            activeOpacity={0.8}
+            activeOpacity={0.7}
+            delayPressIn={0}
         >
             <View
                 style={[

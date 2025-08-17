@@ -11,18 +11,14 @@ interface HeaderProps {
     isLoading?: boolean;
 }
 const Header: React.FC<HeaderProps> = React.memo(
-    ({
-        theme,
-        flowMetrics,
-        onOpenMusicPlayer,
-        onReset,
-        isLoading = false,
-    }) => {
+    ({ theme, flowMetrics, onOpenMusicPlayer, onReset, isLoading = false }) => {
         const { isLandscape, isTablet } = useDeviceOrientation();
-        
+
         const getHeaderStyle = () => {
             if (isTablet) {
-                return isLandscape ? [styles.header, styles.tabletLandscapeHeader] : [styles.header, styles.tabletPortraitHeader];
+                return isLandscape
+                    ? [styles.header, styles.tabletLandscapeHeader]
+                    : [styles.header, styles.tabletPortraitHeader];
             }
             return isLandscape ? [styles.header, styles.phoneLandscapeHeader] : styles.header;
         };
@@ -53,11 +49,7 @@ const Header: React.FC<HeaderProps> = React.memo(
                     accessibilityLabel="Open music player"
                     accessibilityRole="button"
                 >
-                    <Ionicons
-                        name="musical-notes"
-                        size={20}
-                        color={theme.accent}
-                    />
+                    <Ionicons name="musical-notes" size={20} color={theme.accent} />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -87,7 +79,7 @@ const styles = StyleSheet.create({
         paddingTop: Platform.OS === 'ios' ? 0 : 20,
         paddingBottom: 10,
     },
-    
+
     // Responsive header styles
     phoneLandscapeHeader: {
         paddingHorizontal: 20,
@@ -104,7 +96,7 @@ const styles = StyleSheet.create({
         paddingTop: Platform.OS === 'ios' ? 5 : 15,
         paddingBottom: 10,
     },
-    
+
     headerButton: {
         width: 44,
         height: 44,

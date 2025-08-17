@@ -146,8 +146,8 @@ export const useBackgroundTimer = ({ timer, setTimer, isInitialized }: UseBackgr
                 // Execute the timer toggle function FIRST
                 toggleTimerFn();
 
-                // Wait a brief moment to ensure the timer state is properly updated
-                await new Promise((resolve) => setTimeout(resolve, 50));
+                // Minimal wait to ensure state consistency
+                await new Promise((resolve) => setTimeout(resolve, 10));
 
                 // Manual timer handling - only if supported and conditions are clear
                 if (manualTimerService.isSupported()) {

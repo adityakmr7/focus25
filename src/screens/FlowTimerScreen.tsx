@@ -1,5 +1,13 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import {
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    View,
+} from 'react-native';
 import Animated, {
     interpolate,
     useAnimatedStyle,
@@ -31,7 +39,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
     const { theme, isDark } = useTheme();
 
     const { isLandscape, isTablet } = useDeviceOrientation();
-    
+
     // Refs and local state
     const bottomSheetRef = useRef<BottomSheetMethods>(null);
     const [showSettings, setShowSettings] = React.useState(false);
@@ -108,52 +116,60 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
     const containerAnimation = useSharedValue(0);
     const volumeAnimation = useSharedValue(settings.volume);
 
+    // Debounced timer toggle to prevent rapid tapping issues on Android
+    const lastToggleTime = useRef<number>(0);
+    const isToggling = useRef<boolean>(false);
+
     // Enhanced timer toggle with background support
     const handleToggleTimer = useCallback(async () => {
-        const wasRunning = timer.isRunning;
-        const wasPaused = timer.isPaused;
-
-        // Handle timer toggle with background support
-        await handleTimerToggleWithBackground(wasRunning, wasPaused, baseHandleToggleTimer);
-
-        // Auto-play music if enabled and track is ready - delay to avoid conflicts
-        if (
-            !wasRunning &&
-            settings.autoPlay &&
-            audioManager.player &&
-            audioManager.status?.isLoaded &&
-            !audioManager.isPlaying
-        ) {
-            setTimeout(async () => {
-                try {
-                    console.log(
-                        '🎵 Auto-playing music after timer start - checking timer state before starting music',
-                    );
-                    const currentTimerState = usePomodoroStore.getState().timer;
-                    console.log('🔍 Timer state before music auto-play:', {
-                        isRunning: currentTimerState.isRunning,
-                        isPaused: currentTimerState.isPaused,
-                    });
-
-                    // Only auto-play if timer is still running
-                    if (currentTimerState.isRunning && !currentTimerState.isPaused) {
-                        await audioManager.handlePlayPause();
-                        console.log('✅ Music auto-played successfully');
-                    } else {
-                        console.warn('⚠️ Timer not running, skipping auto-play');
-                    }
-                } catch (error) {
-                    console.warn('Failed to auto-play music:', error);
-                }
-            }, 500); // Small delay to ensure timer state is stable
+        // Prevent rapid successive calls that can cause Android delays
+        const now = Date.now();
+        if (now - lastToggleTime.current < 300 || isToggling.current) {
+            return;
         }
 
-        // Trigger pulse animation
-        if (!wasRunning) {
-            pulseAnimation.value = withSequence(
-                withTiming(1.1, { duration: 200 }),
-                withTiming(1, { duration: 200 }),
-            );
+        lastToggleTime.current = now;
+        isToggling.current = true;
+
+        try {
+            const wasRunning = timer.isRunning;
+            const wasPaused = timer.isPaused;
+
+            // Immediately trigger pulse animation for better responsiveness
+            if (!wasRunning) {
+                pulseAnimation.value = withSequence(
+                    withTiming(1.1, { duration: 150 }),
+                    withTiming(1, { duration: 150 }),
+                );
+            }
+
+            // Handle timer toggle with background support
+            await handleTimerToggleWithBackground(wasRunning, wasPaused, baseHandleToggleTimer);
+
+            // Auto-play music if enabled and track is ready - run without blocking delay
+            if (
+                !wasRunning &&
+                settings.autoPlay &&
+                audioManager.player &&
+                audioManager.status?.isLoaded &&
+                !audioManager.isPlaying
+            ) {
+                // Use non-blocking promise to avoid delaying UI
+                Promise.resolve().then(async () => {
+                    try {
+                        const currentTimerState = usePomodoroStore.getState().timer;
+                        // Only auto-play if timer is still running
+                        if (currentTimerState.isRunning && !currentTimerState.isPaused) {
+                            await audioManager.handlePlayPause();
+                            console.log('✅ Music auto-played successfully');
+                        }
+                    } catch (error) {
+                        console.warn('Failed to auto-play music:', error);
+                    }
+                });
+            }
+        } finally {
+            isToggling.current = false;
         }
     }, [
         timer.isRunning,
@@ -339,7 +355,7 @@ const FlowTimerScreen: React.FC<FlowTimerScreenProps> = () => {
                     styles.scrollContent,
                     isTablet && isLandscape && styles.tabletLandscapeScrollContent,
                     isTablet && !isLandscape && styles.tabletPortraitScrollContent,
-                    !isTablet && isLandscape && styles.phoneScrollContentLandscape
+                    !isTablet && isLandscape && styles.phoneScrollContentLandscape,
                 ]}
                 showsVerticalScrollIndicator={false}
                 bounces={true}
@@ -431,6 +447,7 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingVertical: 28,
+        paddingTop: Platform.OS === 'ios' ? 28 : 68,
     },
 });
 
