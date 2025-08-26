@@ -16,13 +16,6 @@ class DatabaseService {
         }
     }
 
-    // Goals operations (disabled - was part of Supabase functionality)
-    async saveGoal(goal: any): Promise<void> {
-        console.log('Goals functionality disabled - was part of Supabase integration');
-        // const service = this.getService();
-        // await service.saveGoal(goal);
-    }
-
     // Statistics operations
     async saveStatistics(stats: any): Promise<void> {
         const service = this.getService();
