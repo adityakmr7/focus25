@@ -39,6 +39,7 @@
         "NSUserNotificationsUsageDescription": "This app sends notifications to remind you about focus sessions and breaks.",
         "UILaunchStoryboardName": "SplashScreen"
       },
+      "googleServicesFile": "./GoogleService-Info.plist",
       "bundleIdentifier": "com.focus25.app"
     },
     "android": {
@@ -61,6 +62,7 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
+      "googleServicesFile": "./google-services.json",
       "package": "com.focus25.app"
     },
     "web": {
@@ -83,7 +85,18 @@
         }
       ],
       "expo-font",
-      "expo-sqlite"
+      "expo-sqlite",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-firebase/crashlytics",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

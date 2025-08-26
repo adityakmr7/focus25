@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, SafeAreaView, Share, StyleSheet, Text, View } from 'react-native';
+import { Alert, Button, Platform, SafeAreaView, Share, StyleSheet, Text, View } from 'react-native';
 import Animated, {
     interpolate,
     useAnimatedStyle,
@@ -224,6 +224,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             ],
         );
     }, [deleteData, showAlert, calculateStorageUsage]);
+    const handleUpdateToPro = () => {
+        // TODO: handle update to pro.
+    };
 
     const handleStorageDetails = useCallback((): void => {
         const breakdown = storageInfo.breakdown;
@@ -381,11 +384,19 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 <View style={styles.placeholder} />
             </Animated.View>
 
+            <Animated.View
+                style={[styles.header, { borderBottomColor: theme.surface }, headerAnimatedStyle]}
+            >
+                <View style={styles.headerContent}>
+                    <Button title={'Upgrade to Pro'} onPress={handleUpdateToPro} />
+                </View>
+                <View style={styles.placeholder} />
+            </Animated.View>
             <Animated.ScrollView
                 style={[styles.scrollView, sectionsAnimatedStyle]}
                 contentContainerStyle={[
                     isTablet && styles.tabletScrollContent,
-                    isLandscape && isTablet && styles.tabletLandscapeContent
+                    isLandscape && isTablet && styles.tabletLandscapeContent,
                 ]}
                 showsVerticalScrollIndicator={false}
             >

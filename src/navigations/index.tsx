@@ -9,9 +9,9 @@ import ThemeCustomizationScreen from '../screens/ThemeCustomizationScreen';
 import TodoScreen from '../screens/TodoScreen';
 import { useThemeStore } from '../store/themeStore';
 import { useSettingsStore } from '../store/settingsStore';
-import { useColorScheme } from 'react-native';
-import { View, Text } from 'react-native';
+import { Text, useColorScheme, View } from 'react-native';
 import { useDeviceOrientation } from '../hooks/useDeviceOrientation';
+import OnboardingScreen from '../screens/OnboardingScreen';
 
 type AppTabParamList = {
     Statistics: undefined;
@@ -24,6 +24,7 @@ type AppStackParamList = {
     Root: undefined;
     FlowAnalytics: undefined;
     ThemeCustomization: undefined;
+    Onboarding: undefined;
 };
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
@@ -97,9 +98,7 @@ const AppTabNavigation = () => {
             })}
             initialRouteName="FlowTimer"
         >
-            {showStatistics && (
-                <Tab.Screen name="Statistics" component={StatisticsScreen} />
-            )}
+            {showStatistics && <Tab.Screen name="Statistics" component={StatisticsScreen} />}
             <Tab.Screen name="Todo" component={TodoScreen} />
             <Tab.Screen name="FlowTimer" component={FlowTimerScreen} />
             <Tab.Screen name="Settings" component={SettingsScreen} />
@@ -115,6 +114,7 @@ const AppStackNavigation = () => {
 
     return (
         <Stack.Navigator
+            initialRouteName={'Onboarding'}
             screenOptions={{
                 headerStyle: {
                     backgroundColor: theme.background,
@@ -125,6 +125,13 @@ const AppStackNavigation = () => {
                 },
             }}
         >
+            <Stack.Screen
+                name="Onboarding"
+                component={OnboardingScreen}
+                options={{
+                    headerShown: false,
+                }}
+            />
             <Stack.Screen
                 name="Root"
                 component={AppTabNavigation}
