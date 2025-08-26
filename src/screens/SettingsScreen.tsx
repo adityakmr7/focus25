@@ -202,7 +202,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const handleDeleteData = useCallback((): void => {
         Alert.alert(
             'Delete All Data',
-            `Are you sure you want to delete all your focus data? This will permanently remove:\n\n• ${goals.length} goals\n• All statistics and flow metrics\n• Custom settings and themes\n\nThis action cannot be undone.`,
+            `Are you sure you want to delete all your focus data? This will permanently remove:\n\n• All statistics and flow metrics\n• Custom settings and themes\n\nThis action cannot be undone.`,
             [
                 { text: 'Cancel', style: 'cancel' },
                 {

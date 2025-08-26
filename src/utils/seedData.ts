@@ -2,9 +2,6 @@ import {
     AccentColor,
     FlowIntensity,
     FlowMetrics,
-    Goal,
-    GoalCategory,
-    GoalType,
     NotificationStatus,
     Session,
     SessionType,
@@ -52,7 +49,8 @@ export class DatabaseSeeder {
         await this.seedAll();
     }
 
-    private async seedGoals(): Promise<void> {
+    // Goals functionality disabled - was part of Supabase integration
+    /*private async seedGoals(): Promise<void> {
         console.log('📝 Seeding goals...');
 
         const goals: Goal[] = [
@@ -149,7 +147,7 @@ export class DatabaseSeeder {
         }
 
         console.log(`✅ Seeded ${goals.length} goals`);
-    }
+    }*/
 
     private async seedStatistics(): Promise<void> {
         console.log('📊 Seeding statistics...');
@@ -239,7 +237,7 @@ export class DatabaseSeeder {
 
         const theme: Theme = {
             mode: ThemeMode.AUTO,
-            accentColor: AccentColor.BLUE,
+            accentColor: AccentColor.SOFT_TEAL,
             timerStyle: TimerStyle.DIGITAL,
             activeCustomTheme: 'ocean',
         };
@@ -331,8 +329,9 @@ export class DatabaseSeeder {
 
     // Helper method to seed specific data types individually
     async seedGoalsOnly(): Promise<void> {
-        await this.db.initializeDatabase();
-        await this.seedGoals();
+        console.log('Goals seeding disabled - was part of Supabase functionality');
+        // await this.db.initializeDatabase();
+        // await this.seedGoals();
     }
 
     async seedStatisticsOnly(): Promise<void> {

@@ -7,7 +7,7 @@ import { useStatisticsStore } from '../store/statisticsStore';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { useThemeStore } from '../store/themeStore';
 
-import { hybridDatabaseService } from '../data/hybridDatabase';
+import { databaseService } from '../data/hybridDatabase';
 import { localDatabaseService } from '../data/local/localDatabase';
 import { seedDatabase } from '../utils/seedData';
 
@@ -151,7 +151,7 @@ export class AppInitializer {
         console.log('✅ Local database initialized');
 
         // Initialize hybrid database service
-        await hybridDatabaseService.initializeDatabase();
+        await databaseService.initializeDatabase();
         console.log('✅ Hybrid database initialized');
 
         // Handle seeding in development (non-blocking)

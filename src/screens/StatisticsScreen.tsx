@@ -18,7 +18,6 @@ import { useStatisticsStore } from '../store/statisticsStore';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { useThemeStore } from '../store/themeStore';
 import { useColorScheme } from 'react-native';
-import { hybridDatabaseService } from '../data/hybridDatabase';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -177,7 +176,6 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
 
     // Update hybrid database service with auth state
     // useEffect(() => {
-    //     hybridDatabaseService.setAuthState(isAuthenticated, user?.id);
     // }, [isAuthenticated, user?.id]);
 
     useEffect(() => {
@@ -223,14 +221,6 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
         }
     };
 
-    const handleSyncData = async () => {
-        try {
-            await hybridDatabaseService.syncToSupabase();
-            setLastUpdateTime(new Date());
-        } catch (error) {
-            console.error('Failed to sync data:', error);
-        }
-    };
 
     const headerOpacity = headerAnimatedValue.interpolate({
         inputRange: [0, 1],

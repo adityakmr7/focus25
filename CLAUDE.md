@@ -25,7 +25,7 @@ This is a React Native app built with Expo SDK 53 that implements a sophisticate
 - **Framework**: React Native with Expo
 - **Navigation**: React Navigation 7 with bottom tabs and native stack
 - **State Management**: Zustand stores for different app domains
-- **Database**: Hybrid architecture with SQLite (local) and Supabase (remote sync)
+- **Database**: SQLite for local storage
 - **Styling**: NativeWind (Tailwind CSS for React Native)
 - **Audio**: Expo Audio for focus music and timer sounds
 - **Background Processing**: Expo Background Tasks and Task Manager
@@ -42,11 +42,10 @@ The app uses domain-specific Zustand stores:
 - `todoStore` - Todo items and task management
 
 #### Database Architecture
-Hybrid database pattern in `src/data/`:
-- `hybridDatabase.ts` - Main service that routes between local/remote
-- `local/localDatabase.ts` - SQLite operations for offline-first functionality
-- `remote/supabaseDatabase.ts` - Supabase integration for cloud sync
-- `database.ts` - Unified interface that abstracts the hybrid system
+Local SQLite database pattern in `src/data/`:
+- `hybridDatabase.ts` - Main database service using SQLite
+- `local/localDatabase.ts` - SQLite operations for all data persistence
+- `database.ts` - Unified interface for database operations
 
 #### Component Organization
 - `src/screens/` - Main screen components (FlowTimerScreen, SettingsScreen, etc.)
@@ -116,7 +115,7 @@ Key services:
 - `src/hooks/useAppStateHandling.ts` - Manages app state transitions
 
 #### Database Operations
-Always use the hybrid database service (`src/data/database.ts`) which automatically routes operations between local SQLite and remote Supabase based on connectivity and user authentication status.
+Always use the database service (`src/data/database.ts`) which provides a unified interface to the local SQLite database.
 
 #### Error Handling
 Use the centralized error handler (`src/services/errorHandler.ts`) for logging errors with context and severity levels. The app implements graceful degradation for offline scenarios.
