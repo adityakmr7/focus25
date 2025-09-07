@@ -84,6 +84,12 @@
           }
         }
       ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.1061434350092-0nt8td1bhccn3skhv7tqrpflhnqhpjl5"
+        }
+      ],
       "expo-font",
       "expo-sqlite",
       "@react-native-firebase/app",

@@ -5,7 +5,10 @@ const OnboardingScreen = () => {
     const navigation = useNavigation();
     const route = useRoute();
 
-    const handleContinueOffline = () => {};
+    const handleContinueOffline = () => {
+        // Navigate directly to the main app (Root screen), which will show FlowTimer by default
+        navigation.navigate('Root' as never);
+    };
     return (
         <View style={Styles.container}>
             <Text>ONboarding screen</Text>
