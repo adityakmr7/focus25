@@ -6,4 +6,5 @@ export const APP_CONFIG = {
     APP_ID: '6748275526',
     FEEDBACK_FORM_URL: 'https://forms.gle/UEeLL53Fh45gTwSe9',
     TEAM_ID: 'PAYP925PPX',
+    APPLE_CALLBACK_URL: 'https://focus25-2cdb2.firebaseapp.com/__/auth/handler',
 };

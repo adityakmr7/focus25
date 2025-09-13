@@ -17,6 +17,7 @@
       "buildNumber": "3",
       "requireFullScreen": false,
       "userInterfaceStyle": "automatic",
+      "usesAppleSignIn": true,
       "splash": {
         "image": "./assets/splash-ios.png",
         "resizeMode": "contain",
@@ -40,7 +41,8 @@
         "UILaunchStoryboardName": "SplashScreen"
       },
       "googleServicesFile": "./GoogleService-Info.plist",
-      "bundleIdentifier": "com.focus25.app"
+      "bundleIdentifier": "com.focus25.app",
+      "appleTeamId": "PAYP925PPX"
     },
     "android": {
       "icon": "./assets/icon_android.png",
@@ -74,6 +76,7 @@
       "expo-audio",
       "expo-notifications",
       "expo-task-manager",
+      "expo-apple-authentication",
       [
         "expo-build-properties",
         {

@@ -21,6 +21,7 @@ import { updateService } from '../services/updateService';
 import { useDeviceOrientation } from '../hooks/useDeviceOrientation';
 import { firebaseSyncService, SyncResult } from '../services/firebaseSyncService';
 import { onAuthStateChanged, signInWithGoogle, signOut } from '../config/firebase';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
 interface SettingsScreenProps {
     navigation?: {
@@ -465,8 +466,32 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 <View style={styles.headerContent}>
                     <Button title={'Upgrade to Pro'} onPress={handleUpdateToPro} />
                 </View>
+                <AppleAuthentication.AppleAuthenticationButton
+                    buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                    buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                    cornerRadius={5}
+                    style={styles.button}
+                    onPress={async () => {
+                        try {
+                            const credential = await AppleAuthentication.signInAsync({
+                                requestedScopes: [
+                                    AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                                    AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                                ],
+                            });
+                            // signed in
+                        } catch (e) {
+                            if (e.code === 'ERR_REQUEST_CANCELED') {
+                                // handle that the user canceled the sign-in flow
+                            } else {
+                                // handle other errors
+                            }
+                        }
+                    }}
+                />
                 <View style={styles.placeholder} />
             </Animated.View>
+
             <Animated.ScrollView
                 style={[styles.scrollView, sectionsAnimatedStyle]}
                 contentContainerStyle={[
@@ -873,6 +898,10 @@ const styles = StyleSheet.create({
     },
     copyrightText: {
         fontSize: 12,
+    },
+    button: {
+        width: 200,
+        height: 44,
     },
 });
 
