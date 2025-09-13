@@ -19,6 +19,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { version } from '../../package.json';
 import { updateService } from '../services/updateService';
 import { useDeviceOrientation } from '../hooks/useDeviceOrientation';
+import { firebaseSyncService, SyncResult } from '../services/firebaseSyncService';
+import { onAuthStateChanged, signInWithGoogle, signOut } from '../config/firebase';
 
 interface SettingsScreenProps {
     navigation?: {
@@ -82,6 +84,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const [isCalculatingStorage, setIsCalculatingStorage] = useState(false);
     const [hasAnimated, setHasAnimated] = useState(false); // Track if animations have run
     const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
+    const [currentUser, setCurrentUser] = useState<{
+        uid: string;
+        email?: string;
+        displayName?: string;
+        photoURL?: string;
+    } | null>(null);
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
     // Reanimated shared values
     const headerProgress = useSharedValue(0);
@@ -97,6 +108,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
         calculateStorageUsage();
     }, []); // Empty dependency array - only run on mount
+
+    // Listen for authentication state changes
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged((user) => {
+            setCurrentUser(user);
+            setIsCheckingAuth(false);
+        });
+
+        return unsubscribe;
+    }, []);
 
     // Separate effect for storage recalculation
     useEffect(() => {
@@ -224,8 +245,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             ],
         );
     }, [deleteData, showAlert, calculateStorageUsage]);
-    const handleUpdateToPro = () => {
-        // TODO: handle update to pro.
+    const handleUpdateToPro = async () => {
+        await signInWithGoogle();
     };
 
     const handleStorageDetails = useCallback((): void => {
@@ -315,6 +336,60 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             showAlert('Navigation Error', 'Theme customization is not available.');
         }
     }, [navigation, showAlert]);
+
+    const handleGoogleSignIn = useCallback(async (): Promise<void> => {
+        setIsAuthenticating(true);
+        try {
+            const result = await signInWithGoogle();
+            if (result.success) {
+                showAlert('Sign In Successful', `Welcome, ${result.user?.displayName || 'User'}!`);
+                setCurrentUser(result.user);
+            } else {
+                showAlert('Sign In Failed', 'Failed to sign in with Google. Please try again.');
+            }
+        } catch (error) {
+            console.error('Google sign-in error:', error);
+            showAlert('Sign In Error', 'An error occurred during sign in. Please try again.');
+        } finally {
+            setIsAuthenticating(false);
+        }
+    }, [showAlert]);
+
+    const handleSignOut = useCallback(async (): Promise<void> => {
+        try {
+            const result = await signOut();
+            if (result.success) {
+                showAlert('Signed Out', 'You have been signed out successfully.');
+                setCurrentUser(null);
+            } else {
+                showAlert('Sign Out Failed', 'Failed to sign out. Please try again.');
+            }
+        } catch (error) {
+            console.error('Sign out error:', error);
+            showAlert('Sign Out Error', 'An error occurred during sign out. Please try again.');
+        }
+    }, [showAlert]);
+
+    const handleSyncToCloud = useCallback(async (): Promise<void> => {
+        if (!currentUser) {
+            showAlert(
+                'Authentication Required',
+                'Please sign in with Google first to sync your data.',
+            );
+            return;
+        }
+
+        setIsSyncing(true);
+        try {
+            const result: SyncResult = await firebaseSyncService.syncToFirebase();
+            showAlert(result.success ? 'Sync Successful' : 'Sync Failed', result.message);
+        } catch (error) {
+            console.error('Sync error:', error);
+            showAlert('Sync Failed', 'Failed to sync data to cloud. Please try again.');
+        } finally {
+            setIsSyncing(false);
+        }
+    }, [currentUser, showAlert]);
 
     // Memoize animated styles
     const headerAnimatedStyle = useAnimatedStyle(() => {
@@ -523,6 +598,57 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 <AnimatedSection delay={500}>
                     <SectionHeader title="DATA & SYNC" />
                     <View style={[styles.section, { backgroundColor: theme.surface }]}>
+                        {/* Authentication Section */}
+                        {isCheckingAuth ? (
+                            <SettingItem
+                                title="Checking Authentication..."
+                                subtitle="Please wait"
+                                icon="person-outline"
+                                showArrow={false}
+                            />
+                        ) : currentUser ? (
+                            <>
+                                <SettingItem
+                                    title="Signed in as"
+                                    subtitle={
+                                        currentUser.displayName || currentUser.email || 'User'
+                                    }
+                                    icon="person"
+                                    showArrow={false}
+                                />
+                                <SettingItem
+                                    title="Sign Out"
+                                    subtitle="Sign out of your Google account"
+                                    icon="log-out-outline"
+                                    showArrow={true}
+                                    onPress={handleSignOut}
+                                />
+                                <SettingItem
+                                    title={isSyncing ? 'Syncing to Cloud...' : 'Sync to Cloud'}
+                                    subtitle={
+                                        isSyncing
+                                            ? 'Please wait...'
+                                            : 'Upload your data to Firebase'
+                                    }
+                                    icon="cloud-upload-outline"
+                                    showArrow={!isSyncing}
+                                    onPress={isSyncing ? undefined : handleSyncToCloud}
+                                />
+                            </>
+                        ) : (
+                            <SettingItem
+                                title={isAuthenticating ? 'Signing In...' : 'Sign In with Google'}
+                                subtitle={
+                                    isAuthenticating
+                                        ? 'Please wait...'
+                                        : 'Sign in to sync your data across devices'
+                                }
+                                icon="logo-google"
+                                showArrow={!isAuthenticating}
+                                onPress={isAuthenticating ? undefined : handleGoogleSignIn}
+                            />
+                        )}
+
                         <SettingItem
                             disabled={true}
                             title="Cloud Sync"

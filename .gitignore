@@ -8,6 +8,8 @@ android
 dist/
 web-build/
 expo-env.d.ts
+google-services.json
+GoogleService-Info.plist
 
 # Native
 .kotlin/
@@ -31,8 +33,13 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.local
 .env*.local
+
+# Firebase configuration files (sensitive)
+GoogleService-Info.plist
+google-services.json
 
 # typescript
 *.tsbuildinfo
-.env

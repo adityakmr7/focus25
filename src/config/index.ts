@@ -5,4 +5,5 @@ export const APP_CONFIG = {
     APP_RATING_URL: 'itms-apps://itunes.apple.com/app/id6748275526?action=write-review',
     APP_ID: '6748275526',
     FEEDBACK_FORM_URL: 'https://forms.gle/UEeLL53Fh45gTwSe9',
+    TEAM_ID: 'PAYP925PPX',
 };

@@ -81,6 +81,10 @@
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
             "buildToolsVersion": "35.0.0"
+          },
+          "ios": {
+            "useFrameworks": "static",
+            "deploymentTarget": "16.1"
           }
         }
       ],
@@ -93,16 +97,7 @@
       "expo-font",
       "expo-sqlite",
       "@react-native-firebase/app",
-      "@react-native-firebase/auth",
-      "@react-native-firebase/crashlytics",
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "useFrameworks": "static"
-          }
-        }
-      ]
+      "@react-native-firebase/auth"
     ],
     "experiments": {
       "typedRoutes": true

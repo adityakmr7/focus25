@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAppInitialization } from './src/hooks/useAppInitialization';
 import { useAppStateHandling } from './src/hooks/useAppStateHandling';
 import { notificationManager } from './src/services/notificationManager';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 // Enable screens before any navigation components are rendered
 enableScreens();
 
@@ -85,7 +86,10 @@ const AppContent = () => {
 
     const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
     const theme = getCurrentTheme();
-
+    GoogleSignin.configure({
+        webClientId: process.env.EXPO_PUBLIC_FIREBASE_WEB_CLIENT_ID, // for Firebase Auth
+        iosClientId: process.env.EXPO_PUBLIC_FIREBASE_IOS_CLIENT_ID, // for iOS sign in
+    });
     return (
         <>
             <StatusBar style={isDark ? 'light' : 'dark'} />
