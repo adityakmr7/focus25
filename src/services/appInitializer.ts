@@ -18,6 +18,7 @@ import { updateService } from './updateService';
 import { widgetService } from './widgetService';
 import { AudioCacheManager } from '../utils/audioCache';
 import { musicTracks } from '../utils/constants';
+import { initializeFirebase } from '../config/firebase';
 
 export interface InitializationState {
     isReady: boolean;
@@ -47,6 +48,7 @@ export class AppInitializer {
             this.loadFonts(),
             this.initializeErrorHandler(),
             this.initializeDatabase(),
+            this.initializeFirebase(),
         ]);
 
         // Initialize stores (depends on database)
@@ -160,6 +162,16 @@ export class AppInitializer {
                 console.warn('Development seeding failed:', error);
                 // Don't block initialization
             });
+        }
+    }
+
+    private async initializeFirebase(): Promise<void> {
+        console.log('🔥 Initializing Firebase...');
+        const success = await initializeFirebase();
+        if (success) {
+            console.log('✅ Firebase initialized');
+        } else {
+            console.warn('⚠️ Firebase initialization failed');
         }
     }
 

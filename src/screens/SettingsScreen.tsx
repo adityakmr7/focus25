@@ -20,7 +20,9 @@ import { version } from '../../package.json';
 import { updateService } from '../services/updateService';
 import { useDeviceOrientation } from '../hooks/useDeviceOrientation';
 import { firebaseSyncService, SyncResult } from '../services/firebaseSyncService';
-import { onAuthStateChanged, signInWithGoogle, signOut } from '../config/firebase';
+import { onAuthStateChanged, signInWithApple, signInWithGoogle, signOut } from '../config/firebase';
+import { canExportData, canUseCloudSync, proFeatureService } from '../services/proFeatureService';
+import DebugFirestore from '../services/debugFirestore';
 import * as AppleAuthentication from 'expo-apple-authentication';
 
 interface SettingsScreenProps {
@@ -89,12 +91,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const [isAuthenticating, setIsAuthenticating] = useState(false);
     const [currentUser, setCurrentUser] = useState<{
         uid: string;
-        email?: string;
-        displayName?: string;
-        photoURL?: string;
+        email: string | null;
+        displayName: string | null;
+        photoURL: string | null;
+        isPro?: boolean;
     } | null>(null);
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+    const [isProUser, setIsProUser] = useState(false);
 
+    console.log('isProUser', currentUser);
     // Reanimated shared values
     const headerProgress = useSharedValue(0);
     const sectionsProgress = useSharedValue(0);
@@ -112,8 +117,21 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
     // Listen for authentication state changes
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged((user) => {
-            setCurrentUser(user);
+        const unsubscribe = onAuthStateChanged(async (user) => {
+            if (user) {
+                const isPro = await proFeatureService.checkProStatus();
+                setCurrentUser({
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL,
+                    isPro,
+                });
+                setIsProUser(isPro);
+            } else {
+                setCurrentUser(null);
+                setIsProUser(false);
+            }
             setIsCheckingAuth(false);
         });
 
@@ -192,6 +210,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     }, []);
 
     const handleExportData = useCallback(async (): Promise<void> => {
+        if (!canExportData()) {
+            const proPrompt = proFeatureService.showProUpgradePrompt('export_data');
+            showAlert(proPrompt.title, proPrompt.message);
+            return;
+        }
+
         setIsExporting(true);
         try {
             const exportedData = await exportData();
@@ -247,7 +271,21 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         );
     }, [deleteData, showAlert, calculateStorageUsage]);
     const handleUpdateToPro = async () => {
-        await signInWithGoogle();
+        if (currentUser) {
+            // User is already signed in, upgrade them to Pro
+            const result = await proFeatureService.upgradeUserToPro();
+            showAlert(result.success ? 'Upgrade Successful' : 'Upgrade Failed', result.message);
+            if (result.success) {
+                setIsProUser(true);
+                setCurrentUser((prev) => (prev ? { ...prev, isPro: true } : null));
+            }
+        } else {
+            // User is not signed in, show sign-in options
+            showAlert(
+                'Sign In Required',
+                'Please sign in with Google or Apple to upgrade to Pro features.',
+            );
+        }
     };
 
     const handleStorageDetails = useCallback((): void => {
@@ -342,15 +380,49 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         setIsAuthenticating(true);
         try {
             const result = await signInWithGoogle();
-            if (result.success) {
-                showAlert('Sign In Successful', `Welcome, ${result.user?.displayName || 'User'}!`);
-                setCurrentUser(result.user);
+            if (result.success && result.user) {
+                showAlert('Sign In Successful', `Welcome, ${result.user.displayName || 'User'}!`);
+                const isPro = await proFeatureService.checkProStatus();
+                setCurrentUser({
+                    ...result.user,
+                    isPro,
+                });
+                setIsProUser(isPro);
             } else {
                 showAlert('Sign In Failed', 'Failed to sign in with Google. Please try again.');
             }
         } catch (error) {
             console.error('Google sign-in error:', error);
             showAlert('Sign In Error', 'An error occurred during sign in. Please try again.');
+        } finally {
+            setIsAuthenticating(false);
+        }
+    }, [showAlert]);
+
+    const handleAppleSignIn = useCallback(async (): Promise<void> => {
+        setIsAuthenticating(true);
+        try {
+            const result = await signInWithApple();
+            if (result.success && result.user) {
+                showAlert('Sign In Successful', `Welcome, ${result.user.displayName || 'User'}!`);
+                const isPro = await proFeatureService.checkProStatus();
+                setCurrentUser({
+                    ...result.user,
+                    isPro,
+                });
+                setIsProUser(isPro);
+            } else if (result.cancelled) {
+                // User cancelled, don't show error
+                return;
+            } else {
+                showAlert(
+                    'Sign In Failed',
+                    result.error || 'Failed to sign in with Apple. Please try again.',
+                );
+            }
+        } catch (error) {
+            console.error('Apple sign-in error:', error);
+            showAlert('Sign In Error', 'An error occurred during Apple sign in. Please try again.');
         } finally {
             setIsAuthenticating(false);
         }
@@ -375,10 +447,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         if (!currentUser) {
             showAlert(
                 'Authentication Required',
-                'Please sign in with Google first to sync your data.',
+                'Please sign in with Google or Apple first to sync your data.',
             );
             return;
         }
+
+        // if (!canUseCloudSync()) {
+        //     const proPrompt = proFeatureService.showProUpgradePrompt('cloud_sync');
+        //     showAlert(proPrompt.title, proPrompt.message);
+        //     return;
+        // }
 
         setIsSyncing(true);
         try {
@@ -387,6 +465,33 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         } catch (error) {
             console.error('Sync error:', error);
             showAlert('Sync Failed', 'Failed to sync data to cloud. Please try again.');
+        } finally {
+            setIsSyncing(false);
+        }
+    }, [currentUser, showAlert]);
+
+    const handleSyncFromCloud = useCallback(async (): Promise<void> => {
+        if (!currentUser) {
+            showAlert(
+                'Authentication Required',
+                'Please sign in to restore your data from the cloud.',
+            );
+            return;
+        }
+
+        if (!canUseCloudSync()) {
+            const proPrompt = proFeatureService.showProUpgradePrompt('cloud_sync');
+            showAlert(proPrompt.title, proPrompt.message);
+            return;
+        }
+
+        setIsSyncing(true);
+        try {
+            const result: SyncResult = await firebaseSyncService.syncFromFirebase();
+            showAlert(result.success ? 'Restore Successful' : 'Restore Failed', result.message);
+        } catch (error) {
+            console.error('Sync from cloud error:', error);
+            showAlert('Restore Failed', 'Failed to restore data from cloud. Please try again.');
         } finally {
             setIsSyncing(false);
         }
@@ -460,35 +565,24 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 <View style={styles.placeholder} />
             </Animated.View>
 
+            {/* Pro Status Header */}
             <Animated.View
                 style={[styles.header, { borderBottomColor: theme.surface }, headerAnimatedStyle]}
             >
                 <View style={styles.headerContent}>
-                    <Button title={'Upgrade to Pro'} onPress={handleUpdateToPro} />
+                    {currentUser?.isPro ? (
+                        <View style={styles.proStatusContainer}>
+                            <Text style={[styles.proStatusText, { color: theme.accent }]}>
+                                ✨ Pro User
+                            </Text>
+                            <Text style={[styles.proStatusSubtext, { color: theme.textSecondary }]}>
+                                All features unlocked
+                            </Text>
+                        </View>
+                    ) : (
+                        <Button title={'Upgrade to Pro'} onPress={handleUpdateToPro} />
+                    )}
                 </View>
-                <AppleAuthentication.AppleAuthenticationButton
-                    buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                    buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-                    cornerRadius={5}
-                    style={styles.button}
-                    onPress={async () => {
-                        try {
-                            const credential = await AppleAuthentication.signInAsync({
-                                requestedScopes: [
-                                    AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-                                    AppleAuthentication.AppleAuthenticationScope.EMAIL,
-                                ],
-                            });
-                            // signed in
-                        } catch (e) {
-                            if (e.code === 'ERR_REQUEST_CANCELED') {
-                                // handle that the user canceled the sign-in flow
-                            } else {
-                                // handle other errors
-                            }
-                        }
-                    }}
-                />
                 <View style={styles.placeholder} />
             </Animated.View>
 
@@ -649,33 +743,66 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                                     onPress={handleSignOut}
                                 />
                                 <SettingItem
-                                    title={isSyncing ? 'Syncing to Cloud...' : 'Sync to Cloud'}
+                                    title={isSyncing ? 'Syncing to Cloud...' : 'Backup to Cloud'}
                                     subtitle={
                                         isSyncing
                                             ? 'Please wait...'
-                                            : 'Upload your data to Firebase'
+                                            : 'Upload your data to the cloud'
                                     }
                                     icon="cloud-upload-outline"
                                     showArrow={!isSyncing}
                                     onPress={isSyncing ? undefined : handleSyncToCloud}
                                 />
+                                <SettingItem
+                                    title={
+                                        isSyncing ? 'Syncing from Cloud...' : 'Restore from Cloud'
+                                    }
+                                    subtitle={
+                                        isSyncing
+                                            ? 'Please wait...'
+                                            : 'Download and restore your data from the cloud'
+                                    }
+                                    icon="cloud-download-outline"
+                                    showArrow={!isSyncing}
+                                    onPress={isSyncing ? undefined : handleSyncFromCloud}
+                                />
                             </>
                         ) : (
-                            <SettingItem
-                                title={isAuthenticating ? 'Signing In...' : 'Sign In with Google'}
-                                subtitle={
-                                    isAuthenticating
-                                        ? 'Please wait...'
-                                        : 'Sign in to sync your data across devices'
-                                }
-                                icon="logo-google"
-                                showArrow={!isAuthenticating}
-                                onPress={isAuthenticating ? undefined : handleGoogleSignIn}
-                            />
+                            <>
+                                <SettingItem
+                                    title={
+                                        isAuthenticating ? 'Signing In...' : 'Sign In with Google'
+                                    }
+                                    subtitle={
+                                        isAuthenticating
+                                            ? 'Please wait...'
+                                            : 'Sign in to sync your data across devices'
+                                    }
+                                    icon="logo-google"
+                                    showArrow={!isAuthenticating}
+                                    onPress={isAuthenticating ? undefined : handleGoogleSignIn}
+                                />
+                                {Platform.OS === 'ios' && (
+                                    <View style={styles.appleSignInContainer}>
+                                        <AppleAuthentication.AppleAuthenticationButton
+                                            buttonType={
+                                                AppleAuthentication.AppleAuthenticationButtonType
+                                                    .SIGN_IN
+                                            }
+                                            buttonStyle={
+                                                AppleAuthentication.AppleAuthenticationButtonStyle
+                                                    .BLACK
+                                            }
+                                            cornerRadius={8}
+                                            style={styles.appleButton}
+                                            onPress={handleAppleSignIn}
+                                        />
+                                    </View>
+                                )}
+                            </>
                         )}
 
                         <SettingItem
-                            disabled={true}
                             title="Cloud Sync"
                             subtitle="Sync your data across devices"
                             icon="cloud-outline"
@@ -779,6 +906,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             showArrow={true}
                             onPress={handleDeleteData}
                         />
+                        {__DEV__ && (
+                            <SettingItem
+                                title="🔧 Firestore Debug"
+                                subtitle="Test Firestore setup and data structure"
+                                icon="bug-outline"
+                                showArrow={true}
+                                onPress={() => DebugFirestore.showDebugMenu()}
+                            />
+                        )}
                     </View>
                 </AnimatedSection>
 
@@ -901,6 +1037,28 @@ const styles = StyleSheet.create({
     },
     button: {
         width: 200,
+        height: 44,
+    },
+    proStatusContainer: {
+        alignItems: 'center',
+    },
+    proStatusText: {
+        fontSize: 18,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    proStatusSubtext: {
+        fontSize: 14,
+        marginTop: 2,
+        textAlign: 'center',
+    },
+    appleSignInContainer: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        alignItems: 'center',
+    },
+    appleButton: {
+        width: '100%',
         height: 44,
     },
 });

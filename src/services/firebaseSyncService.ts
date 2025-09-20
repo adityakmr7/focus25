@@ -1,4 +1,5 @@
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 import { databaseService } from '../data/database';
 
 export interface SyncResult {
@@ -7,11 +8,47 @@ export interface SyncResult {
     error?: Error;
 }
 
+export interface UserData {
+    statistics: any;
+    flowMetrics: any;
+    settings: any;
+    theme: any;
+    todos: any[];
+    lastSync: Date;
+}
+
 class FirebaseSyncService {
     private isInitialized = false;
 
     constructor() {
         this.initialize();
+    }
+
+    private sanitizeDataForFirestore(data: any): any {
+        if (data === undefined) {
+            return null;
+        }
+        
+        if (data === null) {
+            return null;
+        }
+        
+        if (Array.isArray(data)) {
+            return data.map(item => this.sanitizeDataForFirestore(item));
+        }
+        
+        if (typeof data === 'object' && data !== null) {
+            const sanitized: any = {};
+            for (const [key, value] of Object.entries(data)) {
+                const sanitizedValue = this.sanitizeDataForFirestore(value);
+                if (sanitizedValue !== undefined) {
+                    sanitized[key] = sanitizedValue;
+                }
+            }
+            return sanitized;
+        }
+        
+        return data;
     }
 
     private async initialize() {
@@ -36,9 +73,63 @@ class FirebaseSyncService {
         if (!userId) {
             throw new Error('User not authenticated');
         }
-        // TODO: Return Firestore collection reference when import issue is resolved
-        console.log('Getting user data collection for user:', userId);
-        return null;
+        return firestore().collection('userData').doc(userId);
+    }
+
+    private async backupLocalData(): Promise<UserData> {
+        const userId = this.getCurrentUserId();
+        const [statistics, flowMetrics, settings, theme, todos] = await Promise.all([
+            databaseService.getStatistics(),
+            databaseService.getFlowMetrics(),
+            databaseService.getSettings(),
+            databaseService.getTheme(),
+            databaseService.getTodos(userId || undefined),
+        ]);
+
+        // If user is authenticated, assign userId to any legacy todos (for future sync consistency)
+        if (userId) {
+            for (const todo of todos) {
+                if (!todo.userId) {
+                    const updatedTodo = { ...todo, userId };
+                    await databaseService.saveTodo(updatedTodo);
+                    todo.userId = userId; // Update the in-memory object too
+                }
+            }
+        }
+
+        const userData = {
+            statistics,
+            flowMetrics,
+            settings,
+            theme,
+            todos,
+            lastSync: new Date(),
+        };
+
+        // Sanitize data to remove undefined values for Firestore
+        return this.sanitizeDataForFirestore(userData);
+    }
+
+    private async restoreLocalData(userData: UserData): Promise<void> {
+        try {
+            // Restore data to local database
+            await Promise.all([
+                databaseService.saveStatistics(userData.statistics),
+                databaseService.saveFlowMetrics(userData.flowMetrics),
+                databaseService.saveSettings(userData.settings),
+                databaseService.saveTheme(userData.theme),
+            ]);
+
+            // Restore todos
+            for (const todo of userData.todos) {
+                await databaseService.saveTodo(todo);
+            }
+
+            console.log('Local data restored successfully from cloud');
+        } catch (error) {
+            console.error('Error restoring local data:', error);
+            throw error;
+        }
     }
 
     async syncToFirebase(): Promise<SyncResult> {
@@ -51,40 +142,25 @@ class FirebaseSyncService {
                 };
             }
 
-            // Get all local data
-            const [
-                statistics,
-                flowMetrics,
-                settings,
-                theme,
-                todos
-            ] = await Promise.all([
-                databaseService.getStatistics(),
-                databaseService.getFlowMetrics(),
-                databaseService.getSettings(),
-                databaseService.getTheme(),
-                databaseService.getTodos(),
-            ]);
+            // Backup local data
+            const userData = await this.backupLocalData();
+            
+            // Save to Firestore
+            const userDataRef = this.getUserDataCollection();
+            await userDataRef.set(userData, { merge: true });
 
-            // For now, just log the sync data (Firestore integration will be added later)
-            console.log('Sync data prepared for user:', userId, {
-                statistics,
-                flowMetrics,
-                settings,
-                theme,
-                todosCount: todos.length,
-            });
+            console.log('Data synced successfully to cloud for user:', userId);
 
             return {
                 success: true,
-                message: 'Authentication successful! Full sync will be available soon.',
+                message: 'Your data has been successfully synced to the cloud!',
             };
 
         } catch (error) {
             console.error('Firebase sync failed:', error);
             return {
                 success: false,
-                message: 'Failed to sync data to cloud',
+                message: 'Failed to sync data to cloud. Please try again.',
                 error: error instanceof Error ? error : new Error('Unknown error'),
             };
         }
@@ -100,19 +176,39 @@ class FirebaseSyncService {
                 };
             }
 
-            // TODO: Implement Firestore sync from cloud
-            console.log('Would sync data from cloud for user:', userId);
+            // Get data from Firestore
+            const userDataRef = this.getUserDataCollection();
+            const doc = await userDataRef.get();
+
+            if (!doc.exists) {
+                return {
+                    success: false,
+                    message: 'No cloud data found for your account',
+                };
+            }
+
+            const userData = doc.data() as UserData;
+            
+            // Convert Firestore timestamp back to Date
+            if (userData.lastSync && typeof userData.lastSync === 'object' && 'toDate' in userData.lastSync) {
+                userData.lastSync = (userData.lastSync as any).toDate();
+            }
+
+            // Restore data to local database
+            await this.restoreLocalData(userData);
+
+            console.log('Data synced successfully from cloud for user:', userId);
 
             return {
-                success: false,
-                message: 'Sync from cloud feature coming soon!',
+                success: true,
+                message: 'Your data has been successfully restored from the cloud!',
             };
 
         } catch (error) {
             console.error('Firebase sync from cloud failed:', error);
             return {
                 success: false,
-                message: 'Failed to sync data from cloud',
+                message: 'Failed to sync data from cloud. Please try again.',
                 error: error instanceof Error ? error : new Error('Unknown error'),
             };
         }
@@ -133,10 +229,25 @@ class FirebaseSyncService {
                 };
             }
 
-            // TODO: Check Firestore for cloud data
+            // Check Firestore for cloud data
+            const userDataRef = this.getUserDataCollection();
+            const doc = await userDataRef.get();
+            
+            const hasCloudData = doc.exists;
+            let lastSync: Date | null = null;
+            
+            if (hasCloudData) {
+                const data = doc.data() as UserData;
+                if (data.lastSync) {
+                    lastSync = typeof data.lastSync === 'object' && 'toDate' in data.lastSync ? 
+                        (data.lastSync as any).toDate() : 
+                        data.lastSync;
+                }
+            }
+
             return {
-                hasCloudData: false,
-                lastSync: null,
+                hasCloudData,
+                lastSync,
                 isSignedIn: true,
             };
         } catch (error) {
@@ -159,18 +270,51 @@ class FirebaseSyncService {
                 };
             }
 
-            // TODO: Clear Firestore data
-            console.log('Would clear cloud data for user:', userId);
+            // Clear Firestore data
+            const userDataRef = this.getUserDataCollection();
+            await userDataRef.delete();
+
+            console.log('Cloud data cleared successfully for user:', userId);
 
             return {
                 success: true,
-                message: 'Cloud data clear feature coming soon!',
+                message: 'Your cloud data has been cleared successfully!',
             };
         } catch (error) {
             console.error('Failed to clear cloud data:', error);
             return {
                 success: false,
-                message: 'Failed to clear cloud data',
+                message: 'Failed to clear cloud data. Please try again.',
+                error: error instanceof Error ? error : new Error('Unknown error'),
+            };
+        }
+    }
+
+    async performFullSync(): Promise<SyncResult> {
+        try {
+            const userId = this.getCurrentUserId();
+            if (!userId) {
+                return {
+                    success: false,
+                    message: 'Please sign in to perform full sync',
+                };
+            }
+
+            // First, sync to cloud (backup current data)
+            const syncToResult = await this.syncToFirebase();
+            if (!syncToResult.success) {
+                return syncToResult;
+            }
+
+            return {
+                success: true,
+                message: 'Full sync completed successfully!',
+            };
+        } catch (error) {
+            console.error('Full sync failed:', error);
+            return {
+                success: false,
+                message: 'Full sync failed. Please try again.',
                 error: error instanceof Error ? error : new Error('Unknown error'),
             };
         }
