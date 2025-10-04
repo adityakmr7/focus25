@@ -6,7 +6,7 @@ import FlowTimerScreen from '../screens/FlowTimerScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import FlowAnalyticsScreen from '../screens/FlowAnalyticsScreen';
 import ThemeCustomizationScreen from '../screens/ThemeCustomizationScreen';
-import TodoScreen from '../screens/TodoScreen';
+import MinimalistTodoScreen from '../screens/MinimalistTodoScreen';
 import { useThemeStore } from '../store/themeStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { Text, useColorScheme, View } from 'react-native';
@@ -99,7 +99,7 @@ const AppTabNavigation = () => {
             initialRouteName="FlowTimer"
         >
             {showStatistics && <Tab.Screen name="Statistics" component={StatisticsScreen} />}
-            <Tab.Screen name="Todo" component={TodoScreen} />
+            <Tab.Screen name="Todo" component={MinimalistTodoScreen} />
             <Tab.Screen name="FlowTimer" component={FlowTimerScreen} />
             <Tab.Screen name="Settings" component={SettingsScreen} />
         </Tab.Navigator>
