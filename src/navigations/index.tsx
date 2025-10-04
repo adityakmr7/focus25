@@ -114,7 +114,7 @@ const AppStackNavigation = () => {
 
     return (
         <Stack.Navigator
-            initialRouteName={'Onboarding'}
+            initialRouteName={'Root'}
             screenOptions={{
                 headerStyle: {
                     backgroundColor: theme.background,
@@ -125,13 +125,7 @@ const AppStackNavigation = () => {
                 },
             }}
         >
-            <Stack.Screen
-                name="Onboarding"
-                component={OnboardingScreen}
-                options={{
-                    headerShown: false,
-                }}
-            />
+
             <Stack.Screen
                 name="Root"
                 component={AppTabNavigation}

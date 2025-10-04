@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Platform, SafeAreaView, Share, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, SafeAreaView, Share, StyleSheet, Text, View } from 'react-native';
 import Animated, {
     interpolate,
     useAnimatedStyle,
@@ -7,13 +7,25 @@ import Animated, {
     withDelay,
     withTiming,
 } from 'react-native-reanimated';
-import { SettingItem } from '../components/SettingItem';
 import { SectionHeader } from '../components/SectionHeader';
 import { TimeDurationSelector } from '../components/TimeDurationSelector';
+// Design System Components
+import {
+    Container,
+    Stack,
+    Spacer,
+    Card,
+    CardHeader,
+    CardContent,
+    Button,
+    SettingItem as DSSettingItem,
+} from '../design-system';
 import { useSettingsStore } from '../store/settingsStore';
 import { useThemeStore } from '../store/themeStore';
 import { useTheme } from '../hooks/useTheme';
 import { useStatisticsStore } from '../store/statisticsStore';
+// Design System Theme
+import { useTheme as useDesignSystemTheme, ThemeProvider } from '../design-system/themes';
 import { usePomodoroStore } from '../store/pomodoroStore';
 import { Ionicons } from '@expo/vector-icons';
 import { version } from '../../package.json';
@@ -22,12 +34,13 @@ import { useDeviceOrientation } from '../hooks/useDeviceOrientation';
 import { firebaseSyncService, SyncResult } from '../services/firebaseSyncService';
 import { onAuthStateChanged, signInWithApple, signInWithGoogle, signOut } from '../config/firebase';
 import { canExportData, canUseCloudSync, proFeatureService } from '../services/proFeatureService';
-import DebugFirestore from '../services/debugFirestore';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useFeatureAccess } from '../hooks/useFeatureAccess';
 import { FeatureGate } from '../components/FeatureGate';
 import { FEATURES } from '../constants/features';
 import { useAuthStore } from '../store/authStore';
+import { ProUpgradeBottomSheet } from '../components/ProUpgradeBottomSheet';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 interface SettingsScreenProps {
     navigation?: {
@@ -47,9 +60,11 @@ interface StorageInfo {
     formattedSize: string;
 }
 
-const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
+// Inner component that uses design system theme
+const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const { setMode } = useThemeStore();
     const { theme, isDark } = useTheme();
+    const { theme: designSystemTheme } = useDesignSystemTheme();
     const { isLandscape, isTablet } = useDeviceOrientation();
     const { isAuthenticated, isPro, user } = useFeatureAccess();
     const { initializeAuth, setUser, updateUserProfile } = useAuthStore();
@@ -95,6 +110,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [isAuthenticating, setIsAuthenticating] = useState(false);
+    const [showProUpgradeSheet, setShowProUpgradeSheet] = useState(false);
     // Reanimated shared values
     const headerProgress = useSharedValue(0);
     const sectionsProgress = useSharedValue(0);
@@ -247,49 +263,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             ],
         );
     }, [deleteData, showAlert, calculateStorageUsage]);
-    const handleUpdateToPro = async () => {
-        if (user) {
-            // User is already signed in, upgrade them to Pro
-            const result = await proFeatureService.upgradeUserToPro();
-            showAlert(result.success ? 'Upgrade Successful' : 'Upgrade Failed', result.message);
-            if (result.success) {
-                updateUserProfile({ isPro: true });
-            }
-        } else {
-            // User is not signed in, show sign-in options
-            showAlert(
-                'Sign In Required',
-                'Please sign in with Google or Apple to upgrade to Pro features.',
-            );
-        }
+    const handleUpdateToPro = () => {
+        setShowProUpgradeSheet(true);
     };
 
-    const handleStorageDetails = useCallback((): void => {
-        const breakdown = storageInfo.breakdown;
-        const total = storageInfo.totalSize;
+    const handleProUpgradeSuccess = () => {
+        // Refresh any necessary data after successful upgrade
+        calculateStorageUsage();
+    };
 
-        const formatBytes = (bytes: number): string => {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        };
-
-        const getPercentage = (size: number): string => {
-            return total > 0 ? `${Math.round((size / total) * 100)}%` : '0%';
-        };
-
-        const message =
-            `Storage Breakdown:\n\n` +
-            `📈 Statistics: ${formatBytes(breakdown.statistics)} (${getPercentage(breakdown.statistics)})\n` +
-            `🔥 Flow Metrics: ${formatBytes(breakdown.flowMetrics)} (${getPercentage(breakdown.flowMetrics)})\n` +
-            `⚙️ Settings: ${formatBytes(breakdown.settings)} (${getPercentage(breakdown.settings)})\n` +
-            `🎨 Theme: ${formatBytes(breakdown.theme)} (${getPercentage(breakdown.theme)})\n\n` +
-            `Total: ${storageInfo.formattedSize}`;
-
-        Alert.alert('Storage Details', message, [{ text: 'OK' }]);
-    }, [storageInfo]);
+   
 
     const handleRateApp = useCallback((): void => {
         rateApp();
@@ -418,11 +401,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             return;
         }
 
-        // if (!canUseCloudSync()) {
-        //     const proPrompt = proFeatureService.showProUpgradePrompt('cloud_sync');
-        //     showAlert(proPrompt.title, proPrompt.message);
-        //     return;
-        // }
 
         setIsSyncing(true);
         try {
@@ -532,21 +510,26 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             </Animated.View>
 
             {/* Pro Status Header */}
-            <Animated.View
-                style={[ { borderBottomColor: theme.surface,marginTop:14 }, headerAnimatedStyle]}
-            >
-                    {user?.isPro ? (
-                        <View style={styles.proStatusContainer}>
-                            <Text style={[styles.proStatusText, { color: theme.accent }]}>
-                                ✨ Pro User
-                            </Text>
-                            <Text style={[styles.proStatusSubtext, { color: theme.textSecondary }]}>
-                                All features unlocked
-                            </Text>
-                        </View>
-                    ) : (
-                        <Button title={'Upgrade to Pro'} onPress={handleUpdateToPro} />
-                    )}
+            <Animated.View>
+                {user?.isPro ? (
+                    <View style={styles.proStatusContainer}>
+                        <Text style={[styles.proStatusText, { color: theme.accent }]}>
+                            ✨ Pro User
+                        </Text>
+                        <Text style={[styles.proStatusSubtext, { color: theme.textSecondary }]}>
+                            All features unlocked
+                        </Text>
+                    </View>
+                ) : (
+                    <Button 
+                        variant="ghost"
+                        size="md" 
+                        onPress={handleUpdateToPro}
+                        style={{ alignSelf: 'center', marginHorizontal: 20 }}
+                    >
+                        Upgrade to Pro
+                    </Button>
+                )}
                 <View style={styles.placeholder} />
             </Animated.View>
 
@@ -560,418 +543,366 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             >
                 <AnimatedSection delay={100}>
                     <SectionHeader title="TIMER SETTINGS" />
-                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
-                        <View style={styles.timeDurationContainer}>
-                            <View style={styles.durationContent}>
-                                <Ionicons
-                                    name="timer"
-                                    size={20}
-                                    color={theme.accent}
-                                    style={styles.durationIcon}
-                                />
-                                <Text style={[styles.timeDurationLabel, { color: theme.text }]}>
-                                    Focus Duration
-                                </Text>
-                            </View>
-                            <TimeDurationSelector value={timeDuration} onChange={setTimeDuration} />
-                        </View>
+                    <Card variant="elevated" padding="md" style={{  marginBottom: 8 }}>
+                        <CardContent>
+                            <Stack direction="column" gap="md">
+                                <View style={styles.timeDurationContainer}>
+                                    <View style={styles.durationContent}>
+                                        <Ionicons
+                                            name="timer"
+                                            size={20}
+                                            color={theme.accent}
+                                            style={styles.durationIcon}
+                                        />
+                                        <Text style={[styles.timeDurationLabel, { color: theme.text }]}>
+                                            Focus Duration
+                                        </Text>
+                                    </View>
+                                    <TimeDurationSelector value={timeDuration} onChange={setTimeDuration} />
+                                </View>
 
-                        <View style={styles.timeDurationContainer}>
-                            <View style={styles.durationContent}>
-                                <Ionicons
-                                    name="cafe"
-                                    size={20}
-                                    color={theme.accent}
-                                    style={styles.durationIcon}
-                                />
-                                <Text style={[styles.timeDurationLabel, { color: theme.text }]}>
-                                    Break Duration
-                                </Text>
-                            </View>
-                            <TimeDurationSelector
-                                value={breakDuration}
-                                onChange={setBreakDuration}
-                            />
-                        </View>
-                    </View>
+                                <View style={styles.timeDurationContainer}>
+                                    <View style={styles.durationContent}>
+                                        <Ionicons
+                                            name="cafe"
+                                            size={20}
+                                            color={theme.accent}
+                                            style={styles.durationIcon}
+                                        />
+                                        <Text style={[styles.timeDurationLabel, { color: theme.text }]}>
+                                            Break Duration
+                                        </Text>
+                                    </View>
+                                    <TimeDurationSelector
+                                        value={breakDuration}
+                                        onChange={setBreakDuration}
+                                    />
+                                </View>
+                            </Stack>
+                        </CardContent>
+                    </Card>
                 </AnimatedSection>
 
                 <AnimatedSection delay={200}>
                     <SectionHeader title="APPEARANCE" />
-                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
-                        <SettingItem
-                            title="Dark Mode"
-                            subtitle="Toggle dark/light theme"
-                            icon="moon-outline"
-                            hasSwitch={true}
-                            switchValue={isDark}
-                            onSwitchToggle={handleTheme}
-                        />
-                        
-                        <FeatureGate 
-                            feature={FEATURES.ADVANCED_THEMES}
-                            fallback={
-                                <SettingItem
-                                    title="Premium Themes"
-                                    subtitle="Unlock beautiful custom themes"
-                                    icon="color-palette-outline"
-                                    showArrow={true}
-                                    onPress={() => {}}
+                    <Card variant="elevated" padding="md" style={{  marginBottom: 8 }}>
+
+                        <CardContent>
+                            <Stack direction="column" gap="sm">
+                                <DSSettingItem
+                                    title="Dark Mode"
+                                    subtitle="Toggle dark/light theme"
+                                    icon="moon-outline"
+                                    hasSwitch={true}
+                                    switchValue={isDark}
+                                    onSwitchToggle={handleTheme}
                                 />
-                            }
-                        >
-                            <SettingItem
-                                title="Theme Customization"
-                                subtitle="Personalize colors and timer style"
-                                icon="color-palette"
-                                showArrow={true}
-                                onPress={handleThemeCustomization}
-                            />
-                        </FeatureGate>
-                    </View>
+                                
+                                <FeatureGate 
+                                    feature={FEATURES.ADVANCED_THEMES}
+                                    fallback={
+                                        <DSSettingItem
+                                            title="Premium Themes"
+                                            subtitle="Unlock beautiful custom themes"
+                                            icon="color-palette-outline"
+                                            showArrow={true}
+                                            onPress={() => {}}
+                                        />
+                                    }
+                                >
+                                    <DSSettingItem
+                                        title="Theme Customization"
+                                        subtitle="Personalize colors and timer style"
+                                        icon="color-palette"
+                                        showArrow={true}
+                                        onPress={handleThemeCustomization}
+                                    />
+                                </FeatureGate>
+                            </Stack>
+                        </CardContent>
+                    </Card>
                 </AnimatedSection>
 
                 <AnimatedSection delay={300}>
                     <SectionHeader title="NOTIFICATIONS" />
-                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
-                        <SettingItem
-                            title="Push Notifications"
-                            subtitle="Receive focus reminders and updates"
-                            icon="notifications-outline"
-                            hasSwitch={true}
-                            switchValue={notifications}
-                            onSwitchToggle={() => toggleSetting('notifications')}
-                        />
-                        <SettingItem
-                            title="Focus Reminders"
-                            subtitle="Get reminded to start your focus sessions"
-                            icon="time-outline"
-                            hasSwitch={true}
-                            switchValue={focusReminders}
-                            onSwitchToggle={() => toggleSetting('focusReminders')}
-                        />
-                        <SettingItem
-                            disabled={true}
-                            title="Weekly Reports"
-                            subtitle="Receive weekly productivity summaries"
-                            icon="bar-chart-outline"
-                            hasSwitch={true}
-                            switchValue={weeklyReports}
-                            onSwitchToggle={() => toggleSetting('weeklyReports')}
-                        />
-                    </View>
+                    <Card variant="elevated" padding="md" style={{  marginBottom: 8 }}>
+                        <CardContent>
+                            <Stack direction="column" gap="sm">
+                                <DSSettingItem
+                                    title="Push Notifications"
+                                    subtitle="Receive focus reminders and updates"
+                                    icon="notifications-outline"
+                                    hasSwitch={true}
+                                    switchValue={notifications}
+                                    onSwitchToggle={() => toggleSetting('notifications')}
+                                />
+                                <DSSettingItem
+                                    title="Focus Reminders"
+                                    subtitle="Get reminded to start your focus sessions"
+                                    icon="time-outline"
+                                    hasSwitch={true}
+                                    switchValue={focusReminders}
+                                    onSwitchToggle={() => toggleSetting('focusReminders')}
+                                />
+                                <DSSettingItem
+                                    disabled={true}
+                                    title="Weekly Reports"
+                                    subtitle="Receive weekly productivity summaries"
+                                    icon="bar-chart-outline"
+                                    hasSwitch={true}
+                                    switchValue={weeklyReports}
+                                    onSwitchToggle={() => toggleSetting('weeklyReports')}
+                                />
+                            </Stack>
+                        </CardContent>
+                    </Card>
                 </AnimatedSection>
 
                 <AnimatedSection delay={400}>
                     <SectionHeader title="EXPERIENCE" />
-                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
-                        <SettingItem
-                            title="Sound Effects"
-                            subtitle="Play sounds during focus sessions"
-                            icon="volume-medium-outline"
-                            hasSwitch={true}
-                            switchValue={soundEffects}
-                            onSwitchToggle={() => toggleSetting('soundEffects')}
-                        />
-                        <SettingItem
-                            title="Show Statistics"
-                            subtitle="Show statistics tab in navigation"
-                            icon="bar-chart-outline"
-                            hasSwitch={true}
-                            switchValue={showStatistics}
-                            onSwitchToggle={() => toggleSetting('showStatistics')}
-                        />
-                        {/*<SettingItem*/}
-                        {/*    title="Auto Break"*/}
-                        {/*    subtitle="Automatically start break sessions"*/}
-                        {/*    icon="pause-circle-outline"*/}
-                        {/*    hasSwitch={true}*/}
-                        {/*    switchValue={autoBreak}*/}
-                        {/*    onSwitchToggle={() => toggleSetting('autoBreak')}*/}
-                        {/*/>*/}
-                    </View>
-                </AnimatedSection>
+                    <Card variant="elevated" padding="md" style={{ marginBottom: 8 }}>
 
-                {/* Account Section */}
-                <AnimatedSection delay={450}>
-                    <SectionHeader title="ACCOUNT" />
-                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
-                        {user ? (
-                            <>
-                                <SettingItem
-                                    title="Signed in as"
-                                    subtitle={user.displayName || user.email || 'User'}
-                                    icon="person"
-                                    showArrow={false}
+                        <CardContent>
+                            <Stack direction="column" gap="sm">
+                                <DSSettingItem
+                                    title="Sound Effects"
+                                    subtitle="Play sounds during focus sessions"
+                                    icon="volume-medium-outline"
+                                    hasSwitch={true}
+                                    switchValue={soundEffects}
+                                    onSwitchToggle={() => toggleSetting('soundEffects')}
                                 />
-                                {isPro && (
-                                    <SettingItem
-                                        title="Pro Member"
-                                        subtitle="You have access to all premium features"
-                                        icon="star"
-                                        showArrow={false}
-                                    />
-                                )}
-                                <SettingItem
-                                    title="Sign Out"
-                                    subtitle="Sign out of your account"
-                                    icon="log-out-outline"
-                                    showArrow={true}
-                                    onPress={handleSignOut}
+                                <DSSettingItem
+                                    title="Show Statistics"
+                                    subtitle="Show statistics tab in navigation"
+                                    icon="bar-chart-outline"
+                                    hasSwitch={true}
+                                    switchValue={showStatistics}
+                                    onSwitchToggle={() => toggleSetting('showStatistics')}
                                 />
-                            </>
-                        ) : (
-                            <>
-                                <SettingItem
-                                    title={isAuthenticating ? 'Signing In...' : 'Sign In with Google'}
-                                    subtitle={
-                                        isAuthenticating
-                                            ? 'Please wait...'
-                                            : 'Create a free account to sync your data'
-                                    }
-                                    icon="logo-google"
-                                    showArrow={!isAuthenticating}
-                                    onPress={isAuthenticating ? undefined : handleGoogleSignIn}
-                                />
-                                {Platform.OS === 'ios' && (
-                                    <View style={styles.appleSignInContainer}>
-                                        <AppleAuthentication.AppleAuthenticationButton
-                                            buttonType={
-                                                AppleAuthentication.AppleAuthenticationButtonType
-                                                    .SIGN_IN
-                                            }
-                                            buttonStyle={
-                                                AppleAuthentication.AppleAuthenticationButtonStyle
-                                                    .BLACK
-                                            }
-                                            cornerRadius={8}
-                                            style={styles.appleButton}
-                                            onPress={handleAppleSignIn}
-                                        />
-                                    </View>
-                                )}
-                            </>
-                        )}
-                    </View>
+                            </Stack>
+                        </CardContent>
+                    </Card>
                 </AnimatedSection>
 
                 {/* Pro Features Section */}
                 <AnimatedSection delay={500}>
                     <SectionHeader title="PRO FEATURES" />
-                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
-                        <FeatureGate 
-                            feature={FEATURES.CLOUD_SYNC}
-                            fallback={
-                                <SettingItem
-                                    title="Cloud Sync"
-                                    subtitle="Sync your data across devices"
-                                    icon="cloud-outline"
-                                    hasSwitch={true}
-                                    switchValue={dataSync}
-                                    onSwitchToggle={() => toggleSetting('dataSync')}
-                                />
-                            }
-                        >
-                            <SettingItem
-                                title={isSyncing ? 'Syncing to Cloud...' : 'Backup to Cloud'}
-                                subtitle={
-                                    isSyncing
-                                        ? 'Please wait...'
-                                        : 'Upload your data to the cloud'
-                                }
-                                icon="cloud-upload-outline"
-                                showArrow={!isSyncing}
-                                onPress={isSyncing ? undefined : handleSyncToCloud}
-                            />
-                            <SettingItem
-                                title={isSyncing ? 'Syncing from Cloud...' : 'Restore from Cloud'}
-                                subtitle={
-                                    isSyncing
-                                        ? 'Please wait...'
-                                        : 'Download and restore your data from the cloud'
-                                }
-                                icon="cloud-download-outline"
-                                showArrow={!isSyncing}
-                                onPress={isSyncing ? undefined : handleSyncFromCloud}
-                            />
-                        </FeatureGate>
+                    <Card variant="elevated" padding="md" style={{  marginBottom: 8 }}>
 
-                        <FeatureGate 
-                            feature={FEATURES.MUSIC_LIBRARY}
-                            fallback={
-                                <SettingItem
-                                    title="Focus Music Library"
-                                    subtitle="Unlock premium ambient sounds"
-                                    icon="musical-notes-outline"
-                                    showArrow={true}
-                                    onPress={() => {}}
-                                />
-                            }
-                        >
-                            <SettingItem
-                                title="Focus Music Library"
-                                subtitle="Access premium ambient sounds and music"
-                                icon="musical-notes"
-                                showArrow={true}
-                                onPress={() => navigation?.navigate('MusicLibrary')}
-                            />
-                        </FeatureGate>
+                        <CardContent>
+                            <Stack direction="column" gap="sm">
+                                <FeatureGate 
+                                    feature={FEATURES.CLOUD_SYNC}
+                                    fallback={
+                                        <DSSettingItem
+                                            title="Cloud Sync"
+                                            subtitle="Sync your data across devices"
+                                            icon="cloud-outline"
+                                            hasSwitch={true}
+                                            switchValue={dataSync}
+                                            onSwitchToggle={() => toggleSetting('dataSync')}
+                                        />
+                                    }
+                                >
+                                    <DSSettingItem
+                                        title={isSyncing ? 'Syncing to Cloud...' : 'Backup to Cloud'}
+                                        subtitle={
+                                            isSyncing
+                                                ? 'Please wait...'
+                                                : 'Upload your data to the cloud'
+                                        }
+                                        icon="cloud-upload-outline"
+                                        showArrow={!isSyncing}
+                                        onPress={isSyncing ? undefined : handleSyncToCloud}
+                                    />
+                                    <DSSettingItem
+                                        title={isSyncing ? 'Syncing from Cloud...' : 'Restore from Cloud'}
+                                        subtitle={
+                                            isSyncing
+                                                ? 'Please wait...'
+                                                : 'Download and restore your data from the cloud'
+                                        }
+                                        icon="cloud-download-outline"
+                                        showArrow={!isSyncing}
+                                        onPress={isSyncing ? undefined : handleSyncFromCloud}
+                                    />
+                                </FeatureGate>
 
-                        <FeatureGate 
-                            feature={FEATURES.ADVANCED_ANALYTICS}
-                            fallback={
-                                <SettingItem
-                                    title="Advanced Analytics"
-                                    subtitle="Unlock detailed productivity insights"
-                                    icon="analytics-outline"
-                                    showArrow={true}
-                                    onPress={() => {}}
-                                />
-                            }
-                        >
-                            <SettingItem
-                                title="Advanced Analytics"
-                                subtitle="View detailed productivity insights"
-                                icon="analytics"
-                                showArrow={true}
-                                onPress={() => navigation?.navigate('Analytics')}
-                            />
-                        </FeatureGate>
+                                <FeatureGate 
+                                    feature={FEATURES.MUSIC_LIBRARY}
+                                    fallback={
+                                        <DSSettingItem
+                                            title="Focus Music Library"
+                                            subtitle="Unlock premium ambient sounds"
+                                            icon="musical-notes-outline"
+                                            showArrow={true}
+                                            onPress={() => {}}
+                                        />
+                                    }
+                                >
+                                    <DSSettingItem
+                                        title="Focus Music Library"
+                                        subtitle="Access premium ambient sounds and music"
+                                        icon="musical-notes"
+                                        showArrow={true}
+                                        onPress={() => navigation?.navigate('MusicLibrary')}
+                                    />
+                                </FeatureGate>
 
-                        {!isPro && (
-                            <SettingItem
-                                title="Upgrade to Pro"
-                                subtitle="Unlock all premium features"
-                                icon="diamond-outline"
-                                showArrow={true}
-                                onPress={() => {}}
-                            />
-                        )}
-                    </View>
-                </AnimatedSection>
+                                <FeatureGate 
+                                    feature={FEATURES.ADVANCED_ANALYTICS}
+                                    fallback={
+                                        <DSSettingItem
+                                            title="Advanced Analytics"
+                                            subtitle="Unlock detailed productivity insights"
+                                            icon="analytics-outline"
+                                            showArrow={true}
+                                            onPress={() => {}}
+                                        />
+                                    }
+                                >
+                                    <DSSettingItem
+                                        title="Advanced Analytics"
+                                        subtitle="View detailed productivity insights"
+                                        icon="analytics"
+                                        showArrow={true}
+                                        onPress={() => navigation?.navigate('Analytics')}
+                                    />
+                                </FeatureGate>
 
-                {/* Data Management Section */}
-                <AnimatedSection delay={550}>
-                    <SectionHeader title="DATA MANAGEMENT" />
-                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
-                        <SettingItem
-                            title={isExporting ? 'Exporting...' : 'Export Data'}
-                            subtitle={`Download statistics & settings`}
-                            icon="download-outline"
-                            showArrow={!isExporting}
-                            onPress={isExporting ? undefined : handleExportData}
-                        />
-                        <SettingItem
-                            title="Storage Usage"
-                            subtitle={
-                                isCalculatingStorage
-                                    ? 'Calculating...'
-                                    : `${storageInfo.formattedSize} used`
-                            }
-                            icon="folder-outline"
-                            value={isCalculatingStorage ? '...' : storageInfo.formattedSize}
-                            showArrow={true}
-                            onPress={handleStorageDetails}
-                        />
-                    </View>
+                                {!isPro && (
+                                    <DSSettingItem
+                                        title="Upgrade to Pro"
+                                        subtitle="Unlock all premium features"
+                                        icon="diamond-outline"
+                                        showArrow={true}
+                                        onPress={handleUpdateToPro}
+                                    />
+                                )}
+                            </Stack>
+                        </CardContent>
+                    </Card>
                 </AnimatedSection>
 
                 <AnimatedSection delay={600}>
                     <SectionHeader title="SUPPORT" />
-                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
-                        <SettingItem
-                            title="Help & Support"
-                            subtitle="Get help with the app"
-                            icon="help-circle-outline"
-                            showArrow={true}
-                            onPress={handleSupport}
-                        />
-                        <SettingItem
-                            title={
-                                isCheckingUpdates ? 'Checking for Updates...' : 'Check for Updates'
-                            }
-                            subtitle={
-                                isCheckingUpdates
-                                    ? 'Please wait...'
-                                    : 'Check if a new version is available'
-                            }
-                            icon="refresh-outline"
-                            showArrow={!isCheckingUpdates}
-                            onPress={isCheckingUpdates ? undefined : handleCheckForUpdates}
-                        />
-                        <SettingItem
-                            title="Rate App"
-                            subtitle="Rate us on the App Store"
-                            icon="star-outline"
-                            showArrow={true}
-                            onPress={handleRateApp}
-                        />
-                        <SettingItem
-                            title="Send Feedback"
-                            subtitle="Share your thoughts with us"
-                            icon="chatbubble-outline"
-                            showArrow={true}
-                            onPress={handleFeedback}
-                        />
-                    </View>
+                    <Card variant="elevated" padding="md" style={{ marginBottom: 8 }}>
+
+                        <CardContent>
+                            <Stack direction="column" gap="sm">
+                                <DSSettingItem
+                                    title="Help & Support"
+                                    subtitle="Get help with the app"
+                                    icon="help-circle-outline"
+                                    showArrow={true}
+                                    onPress={handleSupport}
+                                />
+                                <DSSettingItem
+                                    title={
+                                        isCheckingUpdates ? 'Checking for Updates...' : 'Check for Updates'
+                                    }
+                                    subtitle={
+                                        isCheckingUpdates
+                                            ? 'Please wait...'
+                                            : 'Check if a new version is available'
+                                    }
+                                    icon="refresh-outline"
+                                    showArrow={!isCheckingUpdates}
+                                    onPress={isCheckingUpdates ? undefined : handleCheckForUpdates}
+                                />
+                                <DSSettingItem
+                                    title="Rate App"
+                                    subtitle="Rate us on the App Store"
+                                    icon="star-outline"
+                                    showArrow={true}
+                                    onPress={handleRateApp}
+                                />
+                                <DSSettingItem
+                                    title="Send Feedback"
+                                    subtitle="Share your thoughts with us"
+                                    icon="chatbubble-outline"
+                                    showArrow={true}
+                                    onPress={handleFeedback}
+                                />
+                            </Stack>
+                        </CardContent>
+                    </Card>
                 </AnimatedSection>
 
                 <AnimatedSection delay={700}>
                     <SectionHeader title="LEGAL" />
-                    <View style={[styles.section, { backgroundColor: theme.surface }]}>
-                        <SettingItem
-                            title="Privacy Policy"
-                            icon="shield-outline"
-                            showArrow={true}
-                            onPress={handlePrivacy}
-                        />
-                        <SettingItem
-                            title="Terms of Service"
-                            icon="document-text-outline"
-                            showArrow={true}
-                            onPress={handleTerms}
-                        />
-                    </View>
+                    <Card variant="elevated" padding="md" style={{  marginBottom: 8 }}>
+                        <CardContent>
+                            <Stack direction="column" gap="sm">
+                                <DSSettingItem
+                                    title="Privacy Policy"
+                                    icon="shield-outline"
+                                    showArrow={true}
+                                    onPress={handlePrivacy}
+                                />
+                                <DSSettingItem
+                                    title="Terms of Service"
+                                    icon="document-text-outline"
+                                    showArrow={true}
+                                    onPress={handleTerms}
+                                />
+                            </Stack>
+                        </CardContent>
+                    </Card>
                 </AnimatedSection>
 
                 <AnimatedSection delay={800}>
                     <SectionHeader title="DANGER ZONE" />
-                    <View
-                        style={[
-                            styles.section,
-                            styles.dangerSection,
-                            { backgroundColor: theme.surface },
-                        ]}
-                    >
-                        <SettingItem
-                            title="Delete All Data"
-                            subtitle={`Permanently all statistics`}
-                            icon="trash-outline"
-                            showArrow={true}
-                            onPress={handleDeleteData}
-                        />
-                        {__DEV__ && (
-                            <SettingItem
-                                title="🔧 Firestore Debug"
-                                subtitle="Test Firestore setup and data structure"
-                                icon="bug-outline"
-                                showArrow={true}
-                                onPress={() => DebugFirestore.showDebugMenu()}
-                            />
-                        )}
-                    </View>
+                    <Card variant="elevated" padding="md" style={{  marginBottom: 8, borderColor: '#FEE2E2', borderWidth: 1 }}>
+
+                        <CardContent>
+                            <Stack direction="column" gap="sm">
+                                <DSSettingItem
+                                    title="Delete All Data"
+                                    subtitle={`Permanently all statistics`}
+                                    icon="trash-outline"
+                                    showArrow={true}
+                                    onPress={handleDeleteData}
+                                    variant="destructive"
+                                />
+                            </Stack>
+                        </CardContent>
+                    </Card>
                 </AnimatedSection>
 
-                <View style={styles.footer}>
-                    <Text style={[styles.versionText, { color: theme.textSecondary }]}>
-                        Focus25 {version}
-                    </Text>
-                    <Text style={[styles.copyrightText, { color: theme.textSecondary }]}>
-                        © 2025 Focus25 App
-                    </Text>
-                </View>
+                <Container padding="lg" center>
+                    <Stack direction="column" gap="xs" align="center">
+                        <Text style={[styles.versionText, { color: theme.textSecondary }]}>
+                            Focus25 {version}
+                        </Text>
+                        <Text style={[styles.copyrightText, { color: theme.textSecondary }]}>
+                            © 2025 Focus25 App
+                        </Text>
+                    </Stack>
+                </Container>
             </Animated.ScrollView>
+            
+            {/* Pro Upgrade Bottom Sheet */}
+            <ProUpgradeBottomSheet
+                visible={showProUpgradeSheet}
+                onClose={() => setShowProUpgradeSheet(false)}
+                onSuccess={handleProUpgradeSuccess}
+            />
         </SafeAreaView>
+    );
+};
+
+// Main SettingsScreen component that provides theme context
+const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
+    const { theme, isDark } = useTheme();
+    
+    return (
+        <ThemeProvider initialMode={isDark ? 'dark' : 'light'}>
+            <BottomSheetModalProvider>
+                <SettingsScreenContent navigation={navigation} />
+            </BottomSheetModalProvider>
+        </ThemeProvider>
     );
 };
 

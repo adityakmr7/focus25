@@ -24,3 +24,6 @@ export * from './components/Layout';
 export * from './components/Timer';
 export * from './components/Metrics';
 export * from './components/Settings';
+
+// Overlay Components
+export * from './components/Overlay';
