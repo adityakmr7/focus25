@@ -52,7 +52,7 @@ export interface LocalDataBase {
     // Todo operations
     initializeTodos(): Promise<void>;
     saveTodo(todo: Todo): Promise<void>;
-    getTodos(): Promise<Todo[]>;
+    getTodos(userId?: string): Promise<Todo[]>;
     updateTodo(id: string, updates: Partial<Todo>): Promise<void>;
     deleteTodo(id: string): Promise<void>;
 
@@ -97,6 +97,7 @@ class SQLiteService implements LocalDataBase {
             }
 
             await this.createTables();
+            await this.runMigrations();
             console.log('SQLite database initialized successfully');
         } catch (error) {
             console.error('Failed to initialize database:', error);
@@ -202,7 +203,8 @@ class SQLiteService implements LocalDataBase {
         created_at TEXT NOT NULL,
         completed_at TEXT,
         tags TEXT,
-        notes TEXT
+        notes TEXT,
+        user_id TEXT
       );
 
       -- Create indexes for better performance
@@ -217,6 +219,20 @@ class SQLiteService implements LocalDataBase {
     `;
 
         await this.db.execAsync(createTablesSQL);
+    }
+
+    private async runMigrations(): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        // Check if user_id column exists in todos table
+        const pragmaResult = await this.db.getAllAsync("PRAGMA table_info(todos)");
+        const hasUserIdColumn = pragmaResult.some((column: any) => column.name === 'user_id');
+
+        if (!hasUserIdColumn) {
+            console.log('Adding user_id column to todos table...');
+            await this.db.execAsync('ALTER TABLE todos ADD COLUMN user_id TEXT');
+            console.log('Migration completed: user_id column added to todos table');
+        }
     }
 
     // Helper method to map SessionRow to Session
@@ -242,6 +258,7 @@ class SQLiteService implements LocalDataBase {
             isCompleted: Boolean(row.is_completed),
             createdAt: row.created_at,
             completedAt: row.completed_at || undefined,
+            userId: row.user_id || undefined,
         };
     }
 
@@ -616,8 +633,8 @@ class SQLiteService implements LocalDataBase {
 
         const sql = `
             INSERT OR REPLACE INTO todos 
-            (id, title, is_completed, created_at, completed_at)
-            VALUES (?, ?, ?, ?, ?)
+            (id, title, is_completed, created_at, completed_at, user_id)
+            VALUES (?, ?, ?, ?, ?, ?)
         `;
 
         await this.db.runAsync(sql, [
@@ -626,15 +643,28 @@ class SQLiteService implements LocalDataBase {
             todo.isCompleted ? 1 : 0,
             todo.createdAt,
             todo.completedAt || null,
+            todo.userId || null,
         ]);
     }
 
-    async getTodos(): Promise<Todo[]> {
+    async getTodos(userId?: string): Promise<Todo[]> {
         if (!this.db) throw new Error('Database not initialized');
 
-        const result = (await this.db.getAllAsync(
-            'SELECT * FROM todos ORDER BY created_at DESC',
-        )) as TodoRow[];
+        let query = 'SELECT * FROM todos';
+        let params: any[] = [];
+
+        if (userId) {
+            // If userId provided, return todos for that user AND legacy todos (null user_id)
+            query += ' WHERE (user_id = ? OR user_id IS NULL)';
+            params.push(userId);
+        } else {
+            // If no userId provided, return todos with null user_id (for backward compatibility)
+            query += ' WHERE user_id IS NULL';
+        }
+
+        query += ' ORDER BY created_at DESC';
+
+        const result = (await this.db.getAllAsync(query, params)) as TodoRow[];
         return result.map((row) => this.mapTodoRowToTodo(row));
     }
 
@@ -650,7 +680,9 @@ class SQLiteService implements LocalDataBase {
                           ? 'created_at'
                           : key === 'completedAt'
                             ? 'completed_at'
-                            : key;
+                            : key === 'userId'
+                              ? 'user_id'
+                              : key;
                 return `${dbKey} = ?`;
             })
             .join(', ');

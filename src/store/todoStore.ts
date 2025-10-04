@@ -3,6 +3,7 @@ import { databaseService } from '../data/database';
 import { Todo } from '../types/database';
 import { v4 as uuidv4 } from 'uuid';
 import { widgetService } from '../services/widgetService';
+import { useAuthStore } from './authStore';
 
 interface TodoState {
     todos: Todo[];
@@ -58,9 +59,13 @@ export const useTodoStore = create<TodoState>((set, get) => ({
             // Initialize database table if needed
             await databaseService.initializeTodos();
 
-            // Load existing todos
-            const savedTodos = await databaseService.getTodos();
+            // Get current user from auth store
+            const authStore = useAuthStore.getState();
+            const currentUser = authStore.user;
 
+            // Load existing todos (filtered by user if authenticated)
+            const savedTodos = await databaseService.getTodos(currentUser?.uid);
+            console.log('currentUser', currentUser?.uid);
             // If no todos exist, create default ones
             if (savedTodos.length === 0) {
                 const todosToCreate = defaultTodos.map((todo) => ({
@@ -68,6 +73,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
                     ...todo,
                     isCompleted: false,
                     createdAt: new Date().toISOString(),
+                    userId: currentUser?.uid,
                 }));
 
                 await Promise.all(todosToCreate.map((todo) => databaseService.saveTodo(todo)));
@@ -88,11 +94,16 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         set({ isLoading: true, error: null });
 
         try {
+            // Get current user from auth store
+            const authStore = useAuthStore.getState();
+            const currentUser = authStore.user;
+
             const newTodo: Todo = {
                 id: uuidv4(),
                 ...todoData,
                 isCompleted: false,
                 createdAt: new Date().toISOString(),
+                userId: currentUser?.uid,
             };
 
             await databaseService.saveTodo(newTodo);
@@ -228,7 +239,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
     syncWithDatabase: async () => {
         try {
-            const todos = await databaseService.getTodos();
+            // Get current user from auth store
+            const authStore = useAuthStore.getState();
+            const currentUser = authStore.user;
+
+            const todos = await databaseService.getTodos(currentUser?.uid);
             set({ todos });
         } catch (error) {
             console.error('Failed to sync with database:', error);

@@ -183,6 +183,7 @@ export interface Todo {
     isCompleted: boolean;
     createdAt: string;
     completedAt?: string;
+    userId?: string;
 }
 
 export interface TodoRow {
@@ -197,4 +198,5 @@ export interface TodoRow {
     completed_at?: string;
     tags?: string;
     notes?: string;
+    user_id?: string;
 }

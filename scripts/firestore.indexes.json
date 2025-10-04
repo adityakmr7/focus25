@@ -1,0 +1,32 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "userData",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastSync",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastSignIn",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ]
+}

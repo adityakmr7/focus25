@@ -87,9 +87,9 @@ class DatabaseService {
         await service.saveTodo(todo);
     }
 
-    async getTodos(): Promise<any[]> {
+    async getTodos(userId?: string): Promise<any[]> {
         const service = this.getService();
-        return await service.getTodos();
+        return await service.getTodos(userId);
     }
 
     async updateTodo(id: string, updates: any): Promise<void> {
