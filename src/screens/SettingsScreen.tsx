@@ -545,7 +545,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                             </Text>
                         </View>
                     ) : (
-                        <Button  title={'Upgrade to Pro'} onPress={handleUpdateToPro} />
+                        <Button title={'Upgrade to Pro'} onPress={handleUpdateToPro} />
                     )}
                 <View style={styles.placeholder} />
             </Animated.View>
