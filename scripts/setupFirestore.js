@@ -1,10 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * Firestore Setup Script
+ * Improved Firestore Setup Script
  *
- * This script automatically creates the complete Firestore structure
- * for the Focus25 app including collections, sample data, and security rules.
+ * This script automatically creates the improved Firestore structure
+ * with subcollections for better performance and scalability.
+ * Features:
+ * - Subcollections for todos, statistics, themes
+ * - Pro user feature differentiation
+ * - Enhanced security rules
+ * - Optimized indexes
  *
  * Usage: node scripts/setupFirestore.js
  */
@@ -299,17 +304,177 @@ class FirestoreSetupScript {
             },
         };
 
-        await this.db.collection('userData').doc(userId).set(userData);
-        success('Created userData collection with sample data');
+        // Create improved structure with subcollections
+        await this.createTodosSubcollection(userId);
+        await this.createStatisticsSubcollection(userId);
+        await this.createFlowMetrics(userId);
+        await this.createSettings(userId);
+        await this.createThemesSubcollection(userId);
 
-        // Log key parts of the structure
-        log('\n📊 User Data Structure Summary:', 'blue');
-        log('- statistics: Array with daily session data');
-        log('- flowMetrics: Current performance metrics');
-        log('- settings: App configuration');
-        log('- theme: UI customization settings');
-        log('- todos: Task management data');
-        log('- deviceInfo: Sync metadata');
+        success('Created improved Firestore structure with subcollections');
+    }
+
+    async createTodosSubcollection(userId) {
+        const todos = [
+            {
+                title: 'Complete project proposal',
+                completed: false,
+                createdAt: admin.firestore.Timestamp.now(),
+                priority: 'high',
+                category: 'work',
+                tags: ['urgent', 'project'],
+            },
+            {
+                title: 'Review team feedback',
+                completed: true,
+                createdAt: admin.firestore.Timestamp.fromDate(new Date(Date.now() - 24 * 60 * 60 * 1000)),
+                completedAt: admin.firestore.Timestamp.now(),
+                priority: 'medium',
+                category: 'work',
+                tags: ['feedback', 'review'],
+            },
+            {
+                title: 'Schedule client meeting',
+                completed: false,
+                createdAt: admin.firestore.Timestamp.fromDate(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)),
+                priority: 'high',
+                category: 'work',
+                tags: ['meeting', 'client'],
+            },
+        ];
+
+        const todosRef = this.db.collection('users').doc(userId).collection('todos');
+        
+        for (const todo of todos) {
+            await todosRef.add(todo);
+        }
+        
+        success(`Created ${todos.length} todos in subcollection`);
+    }
+
+    async createStatisticsSubcollection(userId) {
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const statistics = [
+            {
+                date: today.toISOString().split('T')[0],
+                sessions: 5,
+                totalMinutes: 125,
+                completedFlows: 4,
+                averageSession: 25,
+                focusScore: 85,
+                interruptions: 2,
+            },
+            {
+                date: yesterday.toISOString().split('T')[0],
+                sessions: 3,
+                totalMinutes: 75,
+                completedFlows: 2,
+                averageSession: 25,
+                focusScore: 70,
+                interruptions: 1,
+            },
+        ];
+
+        const statsRef = this.db.collection('users').doc(userId).collection('statistics');
+        
+        for (const stat of statistics) {
+            await statsRef.doc(stat.date).set(stat);
+        }
+        
+        success(`Created ${statistics.length} statistics entries`);
+    }
+
+    async createFlowMetrics(userId) {
+        const flowMetrics = {
+            currentStreak: 7,
+            bestStreak: 14,
+            totalFocusMinutes: 1500,
+            totalBreakMinutes: 300,
+            flowIntensity: 'medium',
+            lastFlowDuration: 25,
+            averageFlowDuration: 23,
+            bestFlowDuration: 45,
+            totalInterruptions: 12,
+            interruptionRate: 0.15,
+            sessionsCompleted: 85,
+            sessionsStarted: 95,
+            completionRate: 0.89,
+            dailyGoal: 120,
+            weeklyGoal: 840,
+            achievements: ['first_flow', 'week_streak', 'perfect_day'],
+            lastSessionDate: admin.firestore.Timestamp.now(),
+            updatedAt: admin.firestore.Timestamp.now(),
+        };
+
+        await this.db.collection('users').doc(userId).collection('flowMetrics').doc('current').set(flowMetrics);
+        success('Created flow metrics');
+    }
+
+    async createSettings(userId) {
+        const settings = {
+            timeDuration: 25,
+            breakDuration: 5,
+            autoBreak: true,
+            soundEffects: true,
+            focusMusic: {
+                enabled: true,
+                volume: 0.7,
+                selectedTrack: 'forest_ambience',
+            },
+            notifications: true,
+            focusReminders: true,
+            weeklyReports: false,
+            showStatistics: true,
+            dataSync: true,
+            analyticsEnabled: true,
+            crashReportingEnabled: true,
+            updatedAt: admin.firestore.Timestamp.now(),
+        };
+
+        await this.db.collection('users').doc(userId).collection('settings').doc('app').set(settings);
+        success('Created settings');
+    }
+
+    async createThemesSubcollection(userId) {
+        const themes = [
+            {
+                name: 'Default Light',
+                isDefault: true,
+                colors: {
+                    primary: '#007AFF',
+                    accent: '#FF9500',
+                    surface: '#F2F2F7',
+                    background: '#FFFFFF',
+                    text: '#000000',
+                },
+                timerStyle: 'circular',
+                createdAt: admin.firestore.Timestamp.now(),
+            },
+            {
+                name: 'Default Dark',
+                isDefault: true,
+                colors: {
+                    primary: '#0A84FF',
+                    accent: '#FF9F0A',
+                    surface: '#1C1C1E',
+                    background: '#000000',
+                    text: '#FFFFFF',
+                },
+                timerStyle: 'circular',
+                createdAt: admin.firestore.Timestamp.now(),
+            },
+        ];
+
+        const themesRef = this.db.collection('users').doc(userId).collection('themes');
+        
+        for (const theme of themes) {
+            await themesRef.add(theme);
+        }
+        
+        success(`Created ${themes.length} themes`);
     }
 
     async createSecurityRules() {
@@ -319,14 +484,33 @@ class FirestoreSetupScript {
             const rules = `rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can only access their own profile
+    
+    // User profile - only authenticated users can access their own
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Pro users can access all subcollections
+      match /{subcollection}/{document=**} {
+        allow read, write: if request.auth != null 
+          && request.auth.uid == userId 
+          && isProUser(userId);
+      }
+      
+      // Free users can only access basic todos
+      match /todos/{todoId} {
+        allow read, write: if request.auth != null 
+          && request.auth.uid == userId 
+          && isFreeUser(userId);
+      }
     }
     
-    // Users can only access their own app data
-    match /userData/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Helper functions
+    function isProUser(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.subscription.isPro == true;
+    }
+    
+    function isFreeUser(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.subscription.isPro == false;
     }
   }
 }`;
@@ -358,19 +542,36 @@ service cloud.firestore {
             const indexes = {
                 indexes: [
                     {
-                        collectionGroup: 'userData',
+                        collectionGroup: 'todos',
                         queryScope: 'COLLECTION',
                         fields: [
-                            { fieldPath: '__name__', order: 'ASCENDING' },
-                            { fieldPath: 'lastSync', order: 'DESCENDING' },
+                            { fieldPath: 'userId', order: 'ASCENDING' },
+                            { fieldPath: 'createdAt', order: 'DESCENDING' },
                         ],
                     },
                     {
-                        collectionGroup: 'users',
+                        collectionGroup: 'todos',
                         queryScope: 'COLLECTION',
                         fields: [
-                            { fieldPath: '__name__', order: 'ASCENDING' },
-                            { fieldPath: 'lastSignIn', order: 'DESCENDING' },
+                            { fieldPath: 'userId', order: 'ASCENDING' },
+                            { fieldPath: 'completed', order: 'ASCENDING' },
+                            { fieldPath: 'createdAt', order: 'DESCENDING' },
+                        ],
+                    },
+                    {
+                        collectionGroup: 'statistics',
+                        queryScope: 'COLLECTION',
+                        fields: [
+                            { fieldPath: 'userId', order: 'ASCENDING' },
+                            { fieldPath: 'date', order: 'DESCENDING' },
+                        ],
+                    },
+                    {
+                        collectionGroup: 'flowMetrics',
+                        queryScope: 'COLLECTION',
+                        fields: [
+                            { fieldPath: 'userId', order: 'ASCENDING' },
+                            { fieldPath: 'updatedAt', order: 'DESCENDING' },
                         ],
                     },
                 ],
@@ -395,27 +596,44 @@ service cloud.firestore {
 
             // Check if collections exist and have data
             const usersSnapshot = await this.db.collection('users').limit(1).get();
-            const userDataSnapshot = await this.db.collection('userData').limit(1).get();
 
             if (usersSnapshot.empty) {
                 error('Users collection is empty');
                 return false;
             }
 
-            if (userDataSnapshot.empty) {
-                error('UserData collection is empty');
+            // Get first user to check subcollections
+            const firstUser = usersSnapshot.docs[0];
+            const userId = firstUser.id;
+
+            // Check subcollections
+            const todosSnapshot = await this.db.collection('users').doc(userId).collection('todos').limit(1).get();
+            const statsSnapshot = await this.db.collection('users').doc(userId).collection('statistics').limit(1).get();
+            const themesSnapshot = await this.db.collection('users').doc(userId).collection('themes').limit(1).get();
+
+            if (todosSnapshot.empty) {
+                error('Todos subcollection is empty');
                 return false;
             }
 
-            success('Collections verified successfully');
+            if (statsSnapshot.empty) {
+                error('Statistics subcollection is empty');
+                return false;
+            }
+
+            success('Improved Firestore structure verified successfully');
 
             // Show collection stats
             const usersCount = (await this.db.collection('users').get()).size;
-            const userDataCount = (await this.db.collection('userData').get()).size;
+            const todosCount = (await this.db.collection('users').doc(userId).collection('todos').get()).size;
+            const statsCount = (await this.db.collection('users').doc(userId).collection('statistics').get()).size;
+            const themesCount = (await this.db.collection('users').doc(userId).collection('themes').get()).size;
 
-            log(`\n📈 Collection Stats:`, 'blue');
+            log(`\n📈 Improved Structure Stats:`, 'blue');
             log(`- Users: ${usersCount} documents`);
-            log(`- UserData: ${userDataCount} documents`);
+            log(`- Todos: ${todosCount} documents (in subcollection)`);
+            log(`- Statistics: ${statsCount} documents (in subcollection)`);
+            log(`- Themes: ${themesCount} documents (in subcollection)`);
 
             return true;
         } catch (err) {
@@ -430,16 +648,20 @@ service cloud.firestore {
 
         log('\n✅ What was created:', 'cyan');
         log('- users collection with sample user profile');
-        log('- userData collection with complete app data structure');
-        log('- firestore.rules file with security rules');
-        log('- firestore.indexes.json with performance indexes');
+        log('- todos subcollection with sample todos');
+        log('- statistics subcollection with daily stats');
+        log('- flowMetrics subcollection with performance data');
+        log('- settings subcollection with app configuration');
+        log('- themes subcollection with UI themes');
+        log('- firestore.rules file with improved security rules');
+        log('- firestore.indexes.json with optimized indexes');
 
         log('\n📋 Next Steps:', 'yellow');
         log('1. Go to Firebase Console → Firestore → Data');
-        log('2. Verify you see "users" and "userData" collections');
+        log('2. Verify you see "users" collection with subcollections');
         log('3. Go to Firestore → Rules and apply the security rules');
-        log("4. Test your app's cloud sync functionality");
-        log('5. Deploy indexes: firebase deploy --only firestore:indexes');
+        log('4. Deploy indexes: firebase deploy --only firestore:indexes');
+        log("5. Test your app's improved cloud sync functionality");
 
         log('\n🔗 Firebase Console:', 'blue');
         log('https://console.firebase.google.com/project/your-project/firestore');

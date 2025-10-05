@@ -1,6 +1,6 @@
-# 🔥 Focus25 Firestore Setup Guide
+# 🔥 Focus25 Improved Firestore Setup Guide
 
-This guide will help you set up the complete Firestore database structure for the Focus25 app's cloud sync functionality.
+This guide will help you set up the improved Firestore database structure with subcollections for better performance, scalability, and pro user features.
 
 ## 📋 Prerequisites
 
