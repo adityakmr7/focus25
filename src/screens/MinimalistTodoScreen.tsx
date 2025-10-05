@@ -16,6 +16,7 @@ import {
   Platform,
   LayoutAnimation,
   UIManager,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
@@ -25,6 +26,7 @@ interface TodoItem {
   id: string;
   text: string;
   completed: boolean;
+  
   createdAt: Date;
 }
 
@@ -35,20 +37,27 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 const MinimalistTodoScreen: React.FC = () => {
   const { theme } = useTheme();
-  const { todos, createTodo, toggleTodo, deleteTodo } = useTodoStore();
-  
+  const { todos, loadTodos, isInitialized,createTodo, toggleTodo, deleteTodo } = useTodoStore();
+
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [newItemText, setNewItemText] = useState('');
   
   // Animation values
-  const [fadeAnim] = useState(new Animated.Value(0));
+  const [fadeAnim] = useState(new Animated.Value(1));
   const [slideAnim] = useState(new Animated.Value(50));
   const [scaleAnim] = useState(new Animated.Value(0.8));
   const [buttonScaleAnim] = useState(new Animated.Value(1));
   const [inputScaleAnim] = useState(new Animated.Value(0.9));
   const [fabScaleAnim] = useState(new Animated.Value(1));
+
   const [todoItemAnims] = useState<{ [key: string]: Animated.Value }>({});
+ 
   
+  useEffect(() => {
+    if (!isInitialized) {
+        loadTodos();
+    }
+}, [isInitialized, loadTodos]);
   // Refs for animations
   const addButtonRef = useRef<any>(null);
   const inputRef = useRef<TextInput>(null);
@@ -65,13 +74,59 @@ const MinimalistTodoScreen: React.FC = () => {
     return today.toLocaleDateString('en-GB', options);
   };
 
-  // Filter todos for today only
-  const todayTodos = todos.filter(todo => {
-    if (!todo.createdAt) return false;
-    const todoDate = new Date(todo.createdAt);
+  // Group todos by date sections
+  const groupTodosByDate = () => {
     const today = new Date();
-    return todoDate.toDateString() === today.toDateString();
-  });
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const groupedTodos = {
+      today: [] as any[],
+      yesterday: [] as any[],
+      older: [] as any[]
+    };
+
+    todos.forEach(todo => {
+      if (!todo.createdAt) return;
+      
+      const todoDate = new Date(todo.createdAt);
+      const todoDateString = todoDate.toDateString();
+      const todayString = today.toDateString();
+      const yesterdayString = yesterday.toDateString();
+      
+      if (todoDateString === todayString) {
+        groupedTodos.today.push(todo);
+      } else if (todoDateString === yesterdayString) {
+        groupedTodos.yesterday.push(todo);
+      } else {
+        groupedTodos.older.push(todo);
+      }
+    });
+
+    return groupedTodos;
+  };
+
+  const groupedTodos = groupTodosByDate();
+
+  // Format date for section headers
+  const getSectionDate = (date: Date) => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    } else {
+      const options: Intl.DateTimeFormatOptions = { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'short' 
+      };
+      return date.toLocaleDateString('en-GB', options);
+    }
+  };
 
   // Animation functions
   const animateIn = useCallback(() => {
@@ -177,12 +232,12 @@ const MinimalistTodoScreen: React.FC = () => {
 
   // Animate todo items when they change
   useEffect(() => {
-    todayTodos.forEach((todo, index) => {
+    todos.forEach((todo, index) => {
       if (!todoItemAnims[todo.id]) {
         animateTodoItem(todo.id, index * 100);
       }
     });
-  }, [todayTodos, todoItemAnims, animateTodoItem]);
+  }, [todos, todoItemAnims, animateTodoItem]);
 
   const handleAddItem = useCallback(() => {
     animateButtonPress();
@@ -274,9 +329,117 @@ const MinimalistTodoScreen: React.FC = () => {
     }
   }, [deleteTodo, todoItemAnims]);
 
+  // Render todo section with date header
+  const renderTodoSection = (sectionKey: string, sectionTodos: any[], sectionDate: Date) => {
+    console.log('MinimalistTodoScreen: sectionTodos', sectionTodos);
+    if (sectionTodos.length === 0) return null;
+
+    return (
+      <View key={sectionKey} style={styles.todoSection}>
+        <Text style={[styles.sectionHeader, { color: theme.textSecondary }]}>
+          {getSectionDate(sectionDate)}
+        </Text>
+        {sectionTodos.map((todo, index) => {
+          const itemAnim = todoItemAnims[todo.id] || new Animated.Value(1);
+          
+          return (
+            <Animated.View
+              key={todo.id}
+                style={[
+                  styles.todoItem,
+                  {
+                    opacity: itemAnim,
+                    transform: [
+                      {
+                        translateY: itemAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [20, 0],
+                        }),
+                      },
+                      {
+                        scale: itemAnim,
+                      },
+                    ],
+                  },
+                ]}
+            >
+              <TouchableOpacity
+                style={styles.todoContent}
+                onPress={() => handleToggleTodo(todo.id)}
+                activeOpacity={0.7}
+              >
+                <Animated.View
+                  style={[
+                    styles.checkbox,
+                    {
+                      borderColor: theme.border,
+                      backgroundColor: todo.isCompleted ? theme.text : 'transparent',
+                      transform: [
+                        {
+                          scale: todo.isCompleted ? 1.1 : 1,
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  {todo.isCompleted && (
+                    <Animated.View
+                      style={{
+                        transform: [
+                          {
+                            scale: todo.isCompleted ? 1 : 0,
+                          },
+                        ],
+                      }}
+                    >
+                      <Ionicons name="checkmark" size={12} color={theme.background} />
+                    </Animated.View>
+                  )}
+                </Animated.View>
+                <Animated.Text
+                  style={[
+                    styles.todoText,
+                    {
+                      color: todo.isCompleted ? theme.textSecondary : theme.text,
+                      textDecorationLine: todo.isCompleted ? 'line-through' : 'none',
+                      transform: [
+                        {
+                          translateX: todo.isCompleted ? 5 : 0,
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  {todo.title}
+                </Animated.Text>
+              </TouchableOpacity>
+              
+              <Animated.View
+                style={{
+                  transform: [
+                    {
+                      scale: itemAnim,
+                    },
+                  ],
+                }}
+              >
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteTodo(todo.id)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close" size={16} color={theme.textSecondary} />
+                </TouchableOpacity>
+              </Animated.View>
+            </Animated.View>
+          );
+        })}
+      </View>
+    );
+  };
 
   // Empty state
-  if (!isAddingItem && todayTodos.length === 0) {
+  if (!isAddingItem && todos.length === 0) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <Animated.View 
@@ -416,6 +579,7 @@ const MinimalistTodoScreen: React.FC = () => {
     );
   }
 
+  console.log('MinimalistTodoScreen: todos', groupedTodos);
   // Items added state
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -456,104 +620,31 @@ const MinimalistTodoScreen: React.FC = () => {
           </Animated.View>
         </View>
 
-        {/* Todo Items */}
-        <View style={styles.todoList}>
-          {todayTodos.map((todo, index) => {
-            const itemAnim = todoItemAnims[todo.id] || new Animated.Value(0);
-            
-            return (
-              <Animated.View
-                key={todo.id}
-                style={[
-                  styles.todoItem,
-                  {
-                    opacity: itemAnim,
-                    transform: [
-                      {
-                        translateY: itemAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [20, 0],
-                        }),
-                      },
-                      {
-                        scale: itemAnim,
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <TouchableOpacity
-                  style={styles.todoContent}
-                  onPress={() => handleToggleTodo(todo.id)}
-                  activeOpacity={0.7}
-                >
-                  <Animated.View
-                    style={[
-                      styles.checkbox,
-                      {
-                        borderColor: theme.border,
-                        backgroundColor: todo.isCompleted ? theme.text : 'transparent',
-                        transform: [
-                          {
-                            scale: todo.isCompleted ? 1.1 : 1,
-                          },
-                        ],
-                      },
-                    ]}
-                  >
-                    {todo.isCompleted && (
-                      <Animated.View
-                        style={{
-                          transform: [
-                            {
-                              scale: todo.isCompleted ? 1 : 0,
-                            },
-                          ],
-                        }}
-                      >
-                        <Ionicons name="checkmark" size={12} color={theme.background} />
-                      </Animated.View>
-                    )}
-                  </Animated.View>
-                  <Animated.Text
-                    style={[
-                      styles.todoText,
-                      {
-                        color: todo.isCompleted ? theme.textSecondary : theme.text,
-                        textDecorationLine: todo.isCompleted ? 'line-through' : 'none',
-                        transform: [
-                          {
-                            translateX: todo.isCompleted ? 5 : 0,
-                          },
-                        ],
-                      },
-                    ]}
-                  >
-                    {todo.title}
-                  </Animated.Text>
-                </TouchableOpacity>
-                
-                <Animated.View
-                  style={{
-                    transform: [
-                      {
-                        scale: itemAnim,
-                      },
-                    ],
-                  }}
-                >
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => handleDeleteTodo(todo.id)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="close" size={16} color={theme.textSecondary} />
-                  </TouchableOpacity>
-                </Animated.View>
-              </Animated.View>
-            );
-          })}
-        </View>
+        {/* Todo Items by Date Sections */}
+        <ScrollView style={styles.todoList} showsVerticalScrollIndicator={false}>
+          {renderTodoSection('today', groupedTodos.today, new Date())}
+          {renderTodoSection('yesterday', groupedTodos.yesterday, new Date(Date.now() - 24 * 60 * 60 * 1000))}
+          
+          {/* Render older todos grouped by date */}
+          {groupedTodos.older.length > 0 && (
+            (() => {
+              const olderGrouped: { [key: string]: any[] } = {};
+              groupedTodos.older.forEach(todo => {
+                const dateKey = new Date(todo.createdAt).toDateString();
+                if (!olderGrouped[dateKey]) {
+                  olderGrouped[dateKey] = [];
+                }
+                olderGrouped[dateKey].push(todo);
+              });
+              
+              return Object.keys(olderGrouped).map(dateKey => {
+                const sectionTodos = olderGrouped[dateKey];
+                const sectionDate = new Date(dateKey);
+                return renderTodoSection(dateKey, sectionTodos, sectionDate);
+              });
+            })()
+          )}
+        </ScrollView>
       </Animated.View>
     </SafeAreaView>
   );
@@ -694,6 +785,17 @@ const styles = StyleSheet.create({
   todoList: {
     flex: 1,
     paddingTop: 20,
+  },
+  todoSection: {
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    fontSize: 14,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    paddingHorizontal: 4,
   },
   todoItem: {
     flexDirection: 'row',
