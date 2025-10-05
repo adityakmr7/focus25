@@ -48,18 +48,6 @@ interface SettingsScreenProps {
         navigate: (screen: string) => void;
     };
 }
-
-interface StorageInfo {
-    totalSize: number;
-    breakdown: {
-        statistics: number;
-        settings: number;
-        theme: number;
-        flowMetrics: number;
-    };
-    formattedSize: string;
-}
-
 // Inner component that uses design system theme
 const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const { setMode } = useThemeStore();
@@ -79,8 +67,6 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
         showStatistics,
         toggleSetting,
         setTimeDuration,
-        exportData,
-        deleteData,
         rateApp,
         openSupport,
         openPrivacy,
@@ -90,26 +76,9 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
         setBreakDuration,
     } = useSettingsStore();
 
-    const { flows, breaks, interruptions } = useStatisticsStore();
-    const { flowMetrics } = usePomodoroStore();
-
-    const [storageInfo, setStorageInfo] = useState<StorageInfo>({
-        totalSize: 0,
-        breakdown: {
-            statistics: 0,
-            settings: 0,
-            theme: 0,
-            flowMetrics: 0,
-        },
-        formattedSize: '0 KB',
-    });
-
-    const [isExporting, setIsExporting] = useState(false);
-    const [isCalculatingStorage, setIsCalculatingStorage] = useState(false);
     const [hasAnimated, setHasAnimated] = useState(false); // Track if animations have run
     const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
-    const [isAuthenticating, setIsAuthenticating] = useState(false);
     const [showProUpgradeSheet, setShowProUpgradeSheet] = useState(false);
     // Reanimated shared values
     const headerProgress = useSharedValue(0);
@@ -122,8 +91,6 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
             sectionsProgress.value = withDelay(200, withTiming(1, { duration: 800 }));
             setHasAnimated(true);
         }
-
-        calculateStorageUsage();
     }, []); // Empty dependency array - only run on mount
 
     // Initialize auth store
@@ -131,114 +98,13 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
         initializeAuth();
     }, [initializeAuth]);
 
-    // Separate effect for storage recalculation
-    useEffect(() => {
-        if (hasAnimated) {
-            // Only recalculate if initial animation has completed
-            calculateStorageUsage();
-        }
-    }, [flows, breaks, interruptions, flowMetrics]);
-
-    // Memoize storage calculation
-    const calculateStorageUsage = useCallback(async () => {
-        setIsCalculatingStorage(true);
-        try {
-            const statisticsSize = JSON.stringify({ flows, breaks, interruptions }).length;
-            const settingsSize = JSON.stringify({
-                timeDuration,
-                breakDuration,
-                soundEffects,
-                notifications,
-                autoBreak,
-                focusReminders,
-                weeklyReports,
-                dataSync,
-            }).length;
-            const themeSize = 500;
-            const flowMetricsSize = JSON.stringify(flowMetrics).length;
-
-            const totalSize = statisticsSize + settingsSize + themeSize + flowMetricsSize;
-
-            const formatBytes = (bytes: number): string => {
-                if (bytes === 0) return '0 B';
-                const k = 1024;
-                const sizes = ['B', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            };
-
-            setStorageInfo({
-                totalSize,
-                breakdown: {
-                    statistics: statisticsSize,
-                    settings: settingsSize,
-                    theme: themeSize,
-                    flowMetrics: flowMetricsSize,
-                },
-                formattedSize: formatBytes(totalSize),
-            });
-        } catch (error) {
-            console.error('Failed to calculate storage usage:', error);
-        } finally {
-            setIsCalculatingStorage(false);
-        }
-    }, [
-        flows,
-        breaks,
-        interruptions,
-        flowMetrics,
-        timeDuration,
-        breakDuration,
-        soundEffects,
-        notifications,
-        autoBreak,
-        focusReminders,
-        weeklyReports,
-        dataSync,
-    ]);
 
     // Memoize handlers
     const showAlert = useCallback((title: string, message: string): void => {
         Alert.alert(title, message, [{ text: 'OK' }]);
     }, []);
 
-    const handleExportData = useCallback(async (): Promise<void> => {
-        if (!canExportData()) {
-            const proPrompt = proFeatureService.showProUpgradePrompt('export_data');
-            showAlert(proPrompt.title, proPrompt.message);
-            return;
-        }
-
-        setIsExporting(true);
-        try {
-            const exportedData = await exportData();
-
-            if (Platform.OS === 'web') {
-                const blob = new Blob([exportedData], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `focus25_backup_${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showAlert('Export Successful', 'Your data has been downloaded successfully.');
-            } else {
-                await Share.share({
-                    message: exportedData,
-                    title: 'Focus25 Data Export',
-                });
-            }
-        } catch (error) {
-            console.error('Export failed:', error);
-            showAlert('Export Failed', 'Failed to export your data. Please try again.');
-        } finally {
-            setIsExporting(false);
-        }
-    }, [exportData, showAlert]);
-
-   
+  
     
     
     const handleUpdateToPro = () => {
@@ -247,7 +113,6 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
 
     const handleProUpgradeSuccess = () => {
         // Refresh any necessary data after successful upgrade
-        calculateStorageUsage();
     };
 
    
@@ -305,70 +170,6 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
         }
     }, [showAlert]);
 
-    const handleThemeCustomization = useCallback((): void => {
-        if (navigation) {
-            navigation.navigate('ThemeCustomization');
-        } else {
-            showAlert('Navigation Error', 'Theme customization is not available.');
-        }
-    }, [navigation, showAlert]);
-
-    const handleGoogleSignIn = useCallback(async (): Promise<void> => {
-        setIsAuthenticating(true);
-        try {
-            const result = await signInWithGoogle();
-            if (result.success && result.user) {
-                showAlert('Sign In Successful', `Welcome, ${result.user.displayName || 'User'}!`);
-                // User will be updated automatically by authStore auth listener
-            } else {
-                showAlert('Sign In Failed', 'Failed to sign in with Google. Please try again.');
-            }
-        } catch (error) {
-            console.error('Google sign-in error:', error);
-            showAlert('Sign In Error', 'An error occurred during sign in. Please try again.');
-        } finally {
-            setIsAuthenticating(false);
-        }
-    }, [showAlert]);
-
-    const handleAppleSignIn = useCallback(async (): Promise<void> => {
-        setIsAuthenticating(true);
-        try {
-            const result = await signInWithApple();
-            if (result.success && result.user) {
-                showAlert('Sign In Successful', `Welcome, ${result.user.displayName || 'User'}!`);
-                // User will be updated automatically by authStore auth listener
-            } else if (result.cancelled) {
-                // User cancelled, don't show error
-                return;
-            } else {
-                showAlert(
-                    'Sign In Failed',
-                    result.error || 'Failed to sign in with Apple. Please try again.',
-                );
-            }
-        } catch (error) {
-            console.error('Apple sign-in error:', error);
-            showAlert('Sign In Error', 'An error occurred during Apple sign in. Please try again.');
-        } finally {
-            setIsAuthenticating(false);
-        }
-    }, [showAlert]);
-
-    const handleSignOut = useCallback(async (): Promise<void> => {
-        try {
-            const result = await signOut();
-            if (result.success) {
-                showAlert('Signed Out', 'You have been signed out successfully.');
-                // User will be cleared automatically by authStore auth listener
-            } else {
-                showAlert('Sign Out Failed', 'Failed to sign out. Please try again.');
-            }
-        } catch (error) {
-            console.error('Sign out error:', error);
-            showAlert('Sign Out Error', 'An error occurred during sign out. Please try again.');
-        }
-    }, [showAlert]);
 
     const handleSyncToCloud = useCallback(async (): Promise<void> => {
         if (!user) {
@@ -746,24 +547,7 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
                     </Card>
                 </AnimatedSection>
 
-                {/* <AnimatedSection delay={800}>
-                    <SectionHeader title="DANGER ZONE" />
-                    <Card variant="elevated" padding="md" style={{  marginBottom: 8, borderColor: '#FEE2E2', borderWidth: 1 }}>
 
-                        <CardContent>
-                            <Stack direction="column" gap="sm">
-                                <DSSettingItem
-                                    title="Delete All Data"
-                                    subtitle={`Permanently all statistics`}
-                                    icon="trash-outline"
-                                    showArrow={true}
-                                    onPress={handleDeleteData}
-                                    variant="destructive"
-                                />
-                            </Stack>
-                        </CardContent>
-                    </Card>
-                </AnimatedSection> */}
 
                 <Container padding="lg" center>
                     <Stack direction="column" gap="xs" align="center">
