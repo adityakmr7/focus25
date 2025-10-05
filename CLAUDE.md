@@ -5,21 +5,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Essential Commands
+
 - `npm run dev` - Start Expo development server
 - `npm run start` - Start Expo development server (alias for dev)
 - `npm run android` - Run on Android emulator/device
-- `npm run ios` - Run on iOS simulator/device  
+- `npm run ios` - Run on iOS simulator/device
 - `npm run web` - Run on web browser
 - `npm run lint` - Run ESLint for code quality checks
 - `npm run format` - Format code using Prettier
 
 ### Build Commands
+
 - `npm run build` - Build the app for production
 - `npm run prebuild` - Generate native code before building
 
 ## Project Architecture
 
 ### Technology Stack
+
 This is a React Native app built with Expo SDK 53 that implements a sophisticated productivity timer with flow state tracking:
 
 - **Framework**: React Native with Expo
@@ -34,7 +37,9 @@ This is a React Native app built with Expo SDK 53 that implements a sophisticate
 ### Core Architecture Patterns
 
 #### State Management Structure
+
 The app uses domain-specific Zustand stores:
+
 - `pomodoroStore` - Timer state, flow metrics, session management
 - `settingsStore` - User preferences, timer durations, notification settings
 - `statisticsStore` - Usage analytics, historical data, achievements
@@ -42,19 +47,24 @@ The app uses domain-specific Zustand stores:
 - `todoStore` - Todo items and task management
 
 #### Database Architecture
+
 Local SQLite database pattern in `src/data/`:
+
 - `hybridDatabase.ts` - Main database service using SQLite
 - `local/localDatabase.ts` - SQLite operations for all data persistence
 - `database.ts` - Unified interface for database operations
 
 #### Component Organization
+
 - `src/screens/` - Main screen components (FlowTimerScreen, SettingsScreen, etc.)
 - `src/components/` - Reusable UI components organized by feature
 - `src/components/FlowTimerScreen/` - Timer-specific components (Header, TimerContainer, etc.)
 - `src/components/TodoScreenComponents/` - Todo-specific components
 
 #### Services Architecture
+
 Background services in `src/services/`:
+
 - `backgroundTimer.ts` - Handles timer continuation when app is backgrounded
 - `notificationService.ts` - Smart notifications based on flow state and achievements
 - `errorHandler.ts` - Production error logging and crash reporting
@@ -64,28 +74,36 @@ Background services in `src/services/`:
 ### Key Implementation Details
 
 #### Flow State Tracking
+
 The app implements sophisticated flow state analysis:
+
 - Tracks distraction patterns, session lengths, and consecutive sessions
 - Calculates flow intensity ('low', 'medium', 'high') based on multiple factors
 - Provides adaptive session length recommendations
 - Maintains streak counters and best flow duration records
 
 #### Background Processing
+
 Robust background timer implementation:
+
 - Uses Expo Background Tasks to continue timing when app is backgrounded
 - Syncs timer state when app returns to foreground
 - Schedules notifications for session completions and break reminders
 - Handles app state transitions gracefully
 
 #### Audio System
+
 Integrated focus music player:
+
 - Audio caching system for offline playback (`src/utils/audioCache.ts`)
 - Pre-downloads popular tracks during app initialization
 - Bottom sheet music player with playback controls
 - Supports various ambient sound categories
 
 #### Theme System
+
 Comprehensive theming with NativeWind:
+
 - Light/dark mode with auto-detection
 - Custom color schemes defined in `tailwind.config.js`
 - Theme store manages user preferences and system sync
@@ -94,39 +112,48 @@ Comprehensive theming with NativeWind:
 ### Development Guidelines
 
 #### App Initialization (Optimized)
+
 The app uses an optimized two-phase initialization system to minimize splash screen time:
 
 **Critical Phase** (blocks splash screen):
+
 1. Font loading
-2. Error handler initialization  
+2. Error handler initialization
 3. Database initialization
 4. Store initialization (parallel)
 
 **Background Phase** (after splash screen hidden):
+
 1. Background services setup (mobile only)
 2. Audio preloading
 3. Update checking
 4. Notification permissions
 
 Key services:
+
 - `src/services/appInitializer.ts` - Manages the two-phase initialization
 - `src/hooks/useAppInitialization.ts` - React hook for initialization state
 - `src/services/notificationManager.ts` - Handles notification setup
 - `src/hooks/useAppStateHandling.ts` - Manages app state transitions
 
 #### Database Operations
+
 Always use the database service (`src/data/database.ts`) which provides a unified interface to the local SQLite database.
 
 #### Error Handling
+
 Use the centralized error handler (`src/services/errorHandler.ts`) for logging errors with context and severity levels. The app implements graceful degradation for offline scenarios.
 
 #### Background Tasks
+
 When implementing background functionality, use the existing `backgroundTimer.ts` service as a reference. Always handle app state changes and sync appropriately.
 
 #### Testing
+
 The project structure includes test directories but currently has minimal test coverage. When adding tests, place them in `__tests__` directories alongside the source files or in `src/services/__tests__/`.
 
 ### Important Notes
+
 - The app supports both iOS and Android with platform-specific optimizations
 - Web support is available but with limited functionality (no background tasks)
 - Database seeding occurs automatically in development mode

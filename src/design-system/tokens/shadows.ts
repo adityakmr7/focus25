@@ -13,7 +13,7 @@ export const shadowTokens = {
     shadowRadius: 0,
     elevation: 0,
   },
-  
+
   sm: {
     ...Platform.select({
       ios: {
@@ -27,7 +27,7 @@ export const shadowTokens = {
       },
     }),
   },
-  
+
   base: {
     ...Platform.select({
       ios: {
@@ -41,7 +41,7 @@ export const shadowTokens = {
       },
     }),
   },
-  
+
   md: {
     ...Platform.select({
       ios: {
@@ -55,7 +55,7 @@ export const shadowTokens = {
       },
     }),
   },
-  
+
   lg: {
     ...Platform.select({
       ios: {
@@ -69,7 +69,7 @@ export const shadowTokens = {
       },
     }),
   },
-  
+
   xl: {
     ...Platform.select({
       ios: {
@@ -83,7 +83,7 @@ export const shadowTokens = {
       },
     }),
   },
-  
+
   '2xl': {
     ...Platform.select({
       ios: {

@@ -6,10 +6,17 @@
 
 import React, { useCallback, useMemo, useRef, forwardRef } from 'react';
 import { View, Text, ViewStyle, TextStyle } from 'react-native';
-import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
+import BottomSheet, {
+  BottomSheetBackdrop,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../themes';
-import { createStyleSheet, combineViewStyles, combineTextStyles } from '../../utils';
+import {
+  createStyleSheet,
+  combineViewStyles,
+  combineTextStyles,
+} from '../../utils';
 
 export interface BottomSheetProps {
   children: React.ReactNode;
@@ -102,14 +109,8 @@ export const BottomSheetComponent = forwardRef<BottomSheet, BottomSheetProps>(
         enablePanDownToClose={enablePanDownToClose}
         enableOverDrag={enableOverDrag}
         enableHandlePanningGesture={enableHandlePanningGesture}
-        handleIndicatorStyle={[
-          styles.handleIndicator,
-          handleIndicatorStyle,
-        ]}
-        backgroundStyle={[
-          styles.background,
-          backgroundStyle,
-        ]}
+        handleIndicatorStyle={[styles.handleIndicator, handleIndicatorStyle]}
+        backgroundStyle={[styles.background, backgroundStyle]}
         style={[styles.container, style]}
         backdropComponent={renderBackdrop}
       >
@@ -139,13 +140,15 @@ export const BottomSheetHeader: React.FC<BottomSheetHeaderProps> = ({
       <View style={styles.headerContent}>
         {leftIcon && (
           <View style={styles.leftIconContainer}>
-            <Ionicons name={leftIcon} size={24} color={theme.colors['accent-focus']} />
+            <Ionicons
+              name={leftIcon}
+              size={24}
+              color={theme.colors['accent-focus']}
+            />
           </View>
         )}
         <View style={styles.headerText}>
-          {title && (
-            <Text style={[styles.title, titleStyle]}>{title}</Text>
-          )}
+          {title && <Text style={[styles.title, titleStyle]}>{title}</Text>}
           {subtitle && (
             <Text style={[styles.subtitle, subtitleStyle]}>{subtitle}</Text>
           )}
@@ -163,7 +166,7 @@ export const BottomSheetHeader: React.FC<BottomSheetHeaderProps> = ({
         )}
         {showCloseButton && onClose && (
           <Ionicons
-            name="close"
+            name='close'
             size={24}
             color={theme.colors['text-secondary']}
             onPress={onClose}
@@ -196,11 +199,7 @@ export const BottomSheetFooter: React.FC<BottomSheetFooterProps> = ({
   const { theme } = useTheme();
   const styles = createStyleSheet(bottomSheetStyles, theme);
 
-  return (
-    <View style={[styles.footer, style]}>
-      {children}
-    </View>
-  );
+  return <View style={[styles.footer, style]}>{children}</View>;
 };
 
 const bottomSheetStyles = (theme: any) => ({

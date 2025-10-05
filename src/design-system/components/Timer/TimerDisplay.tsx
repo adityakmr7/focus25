@@ -7,7 +7,11 @@
 import React from 'react';
 import { View, Text, ViewStyle, TextStyle } from 'react-native';
 import { useTheme } from '../../themes';
-import { createStyleSheet, combineViewStyles, combineTextStyles } from '../../utils';
+import {
+  createStyleSheet,
+  combineViewStyles,
+  combineTextStyles,
+} from '../../utils';
 
 export interface TimerDisplayProps {
   minutes: number;
@@ -36,18 +40,18 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(timerDisplayStyles, theme);
-  
+
   const formatTime = (mins: number, secs: number): string => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-  
+
   const getTimerStyle = (): ViewStyle => {
     const baseStyle = styles.timer;
     const sizeStyle = styles[`${size}Timer`];
     const variantStyle = styles[`${variant}Timer`];
     const stateStyle = isRunning ? styles.runningTimer : {};
     const breakStyle = isBreak ? styles.breakTimer : {};
-    
+
     return combineViewStyles(
       baseStyle,
       sizeStyle,
@@ -57,14 +61,14 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
       style
     );
   };
-  
+
   const getTextStyle = (): TextStyle => {
     const baseStyle = styles.text;
     const sizeStyle = styles[`${size}Text`];
     const variantStyle = styles[`${variant}Text`];
     const stateStyle = isRunning ? styles.runningText : {};
     const breakStyle = isBreak ? styles.breakText : {};
-    
+
     return combineTextStyles(
       baseStyle,
       sizeStyle,
@@ -74,31 +78,27 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
       textStyle
     );
   };
-  
+
   const getProgressStyle = (): ViewStyle => {
     const baseStyle = styles.progress;
     const sizeStyle = styles[`${size}Progress`];
     const progressWidth = Math.max(0, Math.min(100, progress * 100));
-    
-    return combineViewStyles(
-      baseStyle,
-      sizeStyle,
-      { width: `${progressWidth}%` as const }
-    );
+
+    return combineViewStyles(baseStyle, sizeStyle, {
+      width: `${progressWidth}%` as const,
+    });
   };
-  
+
   return (
     <View style={getTimerStyle()}>
-      <Text style={getTextStyle()}>
-        {formatTime(minutes, seconds)}
-      </Text>
-      
+      <Text style={getTextStyle()}>{formatTime(minutes, seconds)}</Text>
+
       {showProgress && variant !== 'minimal' && (
         <View style={styles.progressContainer}>
           <View style={getProgressStyle()} />
         </View>
       )}
-      
+
       {variant === 'detailed' && (
         <View style={styles.details}>
           <Text style={styles.detailsText}>
@@ -120,7 +120,7 @@ const timerDisplayStyles = (theme: any) => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  
+
   // Size variants
   smTimer: {
     padding: theme.spacing[2],
@@ -134,7 +134,7 @@ const timerDisplayStyles = (theme: any) => ({
   xlTimer: {
     padding: theme.spacing[8],
   },
-  
+
   // Variant styles
   defaultTimer: {
     backgroundColor: theme.colors['bg-elevated'],
@@ -150,7 +150,7 @@ const timerDisplayStyles = (theme: any) => ({
     padding: theme.spacing[8],
     ...theme.shadows.lg,
   },
-  
+
   // State styles
   runningTimer: {
     transform: [{ scale: 1.02 }],
@@ -158,14 +158,14 @@ const timerDisplayStyles = (theme: any) => ({
   breakTimer: {
     backgroundColor: theme.colors['bg-break-short'],
   },
-  
+
   // Text styles
   text: {
     fontFamily: theme.typography.fontFamily.bold,
     textAlign: 'center',
     color: theme.colors['text-primary'],
   },
-  
+
   smText: {
     fontSize: theme.typography.fontSize['2xl'],
   },
@@ -178,7 +178,7 @@ const timerDisplayStyles = (theme: any) => ({
   xlText: {
     fontSize: theme.typography.fontSize['8xl'],
   },
-  
+
   defaultText: {
     color: theme.colors['text-primary'],
   },
@@ -189,14 +189,14 @@ const timerDisplayStyles = (theme: any) => ({
     color: theme.colors['text-primary'],
     marginBottom: theme.spacing[4],
   },
-  
+
   runningText: {
     color: theme.colors['accent-focus'],
   },
   breakText: {
     color: theme.colors['accent-break-short'],
   },
-  
+
   // Progress styles
   progressContainer: {
     width: '100%',
@@ -211,7 +211,7 @@ const timerDisplayStyles = (theme: any) => ({
     backgroundColor: theme.colors['accent-focus'],
     borderRadius: theme.borderRadius.full,
   },
-  
+
   smProgress: {
     height: 2,
   },
@@ -224,7 +224,7 @@ const timerDisplayStyles = (theme: any) => ({
   xlProgress: {
     height: 6,
   },
-  
+
   // Details styles
   details: {
     alignItems: 'center',

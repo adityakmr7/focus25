@@ -16,7 +16,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../themes';
-import { createStyleSheet, combineViewStyles, combineTextStyles } from '../../utils';
+import {
+  createStyleSheet,
+  combineViewStyles,
+  combineTextStyles,
+} from '../../utils';
 
 export interface InputProps extends Omit<TextInputProps, 'style'> {
   variant?: 'default' | 'outlined' | 'filled' | 'underlined';
@@ -39,140 +43,143 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   errorTextStyle?: TextStyle;
 }
 
-export const Input = forwardRef<TextInput, InputProps>(({
-  variant = 'default',
-  size = 'md',
-  label,
-  placeholder,
-  helperText,
-  errorText,
-  leftIcon,
-  rightIcon,
-  onRightIconPress,
-  disabled = false,
-  required = false,
-  multiline = false,
-  numberOfLines = 1,
-  style,
-  inputStyle,
-  labelStyle,
-  helperTextStyle,
-  errorTextStyle,
-  ...props
-}, ref) => {
-  const { theme } = useTheme();
-  const styles = createStyleSheet(inputStyles, theme);
-  const [isFocused, setIsFocused] = useState(false);
-  
-  const hasError = !!errorText;
-  const isDisabled = disabled;
-  
-  const getContainerStyle = (): ViewStyle => {
-    const baseStyle = styles.container;
-    const variantStyle = styles[`${variant}Container`];
-    const sizeStyle = styles[`${size}Container`];
-    const stateStyle = isFocused ? styles.focusedContainer : {};
-    const errorStyle = hasError ? styles.errorContainer : {};
-    const disabledStyle = isDisabled ? styles.disabledContainer : {};
-    
-    return combineViewStyles(
-      baseStyle,
-      variantStyle,
-      sizeStyle,
-      stateStyle,
-      errorStyle,
-      disabledStyle,
-      style
-    );
-  };
-  
-  const getInputStyle = (): TextStyle => {
-    const baseStyle = styles.input;
-    const sizeStyle = styles[`${size}Input`];
-    const multilineStyle = multiline ? styles.multilineInput : {};
-    const disabledStyle = isDisabled ? styles.disabledInput : {};
-    
-    return combineTextStyles(
-      baseStyle,
-      sizeStyle,
-      multilineStyle,
-      disabledStyle,
-      inputStyle
-    );
-  };
-  
-  const getIconColor = (): string => {
-    if (isDisabled) return theme.colors['text-tertiary'];
-    if (hasError) return theme.colors['accent-error'];
-    if (isFocused) return theme.colors['accent-focus'];
-    return theme.colors['text-secondary'];
-  };
-  
-  const getBorderColor = (): string => {
-    if (hasError) return theme.colors['accent-error'];
-    if (isFocused) return theme.colors['accent-focus'];
-    return theme.colors['border-primary'];
-  };
-  
-  return (
-    <View style={styles.wrapper}>
-      {label && (
-        <Text style={combineTextStyles(styles.label, labelStyle)}>
-          {label}
-          {required && <Text style={styles.required}> *</Text>}
-        </Text>
-      )}
-      
-      <View style={getContainerStyle()}>
-        {leftIcon && (
-          <Ionicons
-            name={leftIcon}
-            size={20}
-            color={getIconColor()}
-            style={styles.leftIcon}
-          />
+export const Input = forwardRef<TextInput, InputProps>(
+  (
+    {
+      variant = 'default',
+      size = 'md',
+      label,
+      placeholder,
+      helperText,
+      errorText,
+      leftIcon,
+      rightIcon,
+      onRightIconPress,
+      disabled = false,
+      required = false,
+      multiline = false,
+      numberOfLines = 1,
+      style,
+      inputStyle,
+      labelStyle,
+      helperTextStyle,
+      errorTextStyle,
+      ...props
+    },
+    ref
+  ) => {
+    const { theme } = useTheme();
+    const styles = createStyleSheet(inputStyles, theme);
+    const [isFocused, setIsFocused] = useState(false);
+
+    const hasError = !!errorText;
+    const isDisabled = disabled;
+
+    const getContainerStyle = (): ViewStyle => {
+      const baseStyle = styles.container;
+      const variantStyle = styles[`${variant}Container`];
+      const sizeStyle = styles[`${size}Container`];
+      const stateStyle = isFocused ? styles.focusedContainer : {};
+      const errorStyle = hasError ? styles.errorContainer : {};
+      const disabledStyle = isDisabled ? styles.disabledContainer : {};
+
+      return combineViewStyles(
+        baseStyle,
+        variantStyle,
+        sizeStyle,
+        stateStyle,
+        errorStyle,
+        disabledStyle,
+        style
+      );
+    };
+
+    const getInputStyle = (): TextStyle => {
+      const baseStyle = styles.input;
+      const sizeStyle = styles[`${size}Input`];
+      const multilineStyle = multiline ? styles.multilineInput : {};
+      const disabledStyle = isDisabled ? styles.disabledInput : {};
+
+      return combineTextStyles(
+        baseStyle,
+        sizeStyle,
+        multilineStyle,
+        disabledStyle,
+        inputStyle
+      );
+    };
+
+    const getIconColor = (): string => {
+      if (isDisabled) return theme.colors['text-tertiary'];
+      if (hasError) return theme.colors['accent-error'];
+      if (isFocused) return theme.colors['accent-focus'];
+      return theme.colors['text-secondary'];
+    };
+
+    const getBorderColor = (): string => {
+      if (hasError) return theme.colors['accent-error'];
+      if (isFocused) return theme.colors['accent-focus'];
+      return theme.colors['border-primary'];
+    };
+
+    return (
+      <View style={styles.wrapper}>
+        {label && (
+          <Text style={combineTextStyles(styles.label, labelStyle)}>
+            {label}
+            {required && <Text style={styles.required}> *</Text>}
+          </Text>
         )}
-        
-        <TextInput
-          ref={ref}
-          style={getInputStyle()}
-          placeholder={placeholder}
-          placeholderTextColor={theme.colors['text-tertiary']}
-          editable={!isDisabled}
-          multiline={multiline}
-          numberOfLines={numberOfLines}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          {...props}
-        />
-        
-        {rightIcon && (
-          <TouchableOpacity
-            onPress={onRightIconPress}
-            style={styles.rightIcon}
-            disabled={!onRightIconPress}
-          >
+
+        <View style={getContainerStyle()}>
+          {leftIcon && (
             <Ionicons
-              name={rightIcon}
+              name={leftIcon}
               size={20}
               color={getIconColor()}
+              style={styles.leftIcon}
             />
-          </TouchableOpacity>
+          )}
+
+          <TextInput
+            ref={ref}
+            style={getInputStyle()}
+            placeholder={placeholder}
+            placeholderTextColor={theme.colors['text-tertiary']}
+            editable={!isDisabled}
+            multiline={multiline}
+            numberOfLines={numberOfLines}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            {...props}
+          />
+
+          {rightIcon && (
+            <TouchableOpacity
+              onPress={onRightIconPress}
+              style={styles.rightIcon}
+              disabled={!onRightIconPress}
+            >
+              <Ionicons name={rightIcon} size={20} color={getIconColor()} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {(helperText || errorText) && (
+          <Text
+            style={combineTextStyles(
+              styles.helperText,
+              hasError ? styles.errorText : {},
+              hasError ? errorTextStyle : helperTextStyle
+            )}
+          >
+            {errorText || helperText}
+          </Text>
         )}
       </View>
-      
-      {(helperText || errorText) && (
-        <Text style={combineTextStyles(
-          styles.helperText,
-          hasError ? styles.errorText : {},
-          hasError ? errorTextStyle : helperTextStyle
-        )}>
-          {errorText || helperText}
-        </Text>
-      )}
-    </View>
-  );
-});
+    );
+  }
+);
 
 Input.displayName = 'Input';
 
@@ -180,7 +187,7 @@ const inputStyles = (theme: any) => ({
   wrapper: {
     marginBottom: theme.spacing[4],
   },
-  
+
   // Container styles
   container: {
     flexDirection: 'row',
@@ -189,7 +196,7 @@ const inputStyles = (theme: any) => ({
     borderWidth: 1,
     borderColor: theme.colors['border-primary'],
   },
-  
+
   // Variants
   defaultContainer: {
     backgroundColor: theme.colors['bg-primary'],
@@ -208,7 +215,7 @@ const inputStyles = (theme: any) => ({
     borderBottomWidth: 1,
     borderRadius: 0,
   },
-  
+
   // Sizes
   smContainer: {
     minHeight: 36,
@@ -222,7 +229,7 @@ const inputStyles = (theme: any) => ({
     minHeight: 52,
     paddingHorizontal: theme.spacing[5],
   },
-  
+
   // States
   focusedContainer: {
     borderColor: theme.colors['accent-focus'],
@@ -235,14 +242,14 @@ const inputStyles = (theme: any) => ({
     backgroundColor: theme.colors['bg-tertiary'],
     opacity: 0.6,
   },
-  
+
   // Input styles
   input: {
     flex: 1,
     fontFamily: theme.typography.fontFamily.primary,
     color: theme.colors['text-primary'],
   },
-  
+
   smInput: {
     fontSize: theme.typography.fontSize.sm,
   },
@@ -252,7 +259,7 @@ const inputStyles = (theme: any) => ({
   lgInput: {
     fontSize: theme.typography.fontSize.lg,
   },
-  
+
   multilineInput: {
     textAlignVertical: 'top',
     minHeight: 80,
@@ -260,7 +267,7 @@ const inputStyles = (theme: any) => ({
   disabledInput: {
     color: theme.colors['text-tertiary'],
   },
-  
+
   // Icon styles
   leftIcon: {
     marginRight: theme.spacing[2],
@@ -269,7 +276,7 @@ const inputStyles = (theme: any) => ({
     marginLeft: theme.spacing[2],
     padding: theme.spacing[1],
   },
-  
+
   // Label styles
   label: {
     fontSize: theme.typography.fontSize.sm,
@@ -280,7 +287,7 @@ const inputStyles = (theme: any) => ({
   required: {
     color: theme.colors['accent-error'],
   },
-  
+
   // Helper text styles
   helperText: {
     fontSize: theme.typography.fontSize.xs,

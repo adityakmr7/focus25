@@ -5,10 +5,10 @@ import { themes } from '../utils/color-theme';
 import { useTheme } from '../hooks/useTheme';
 
 interface PlayPauseButtonProps {
-    isRunning: boolean;
-    isPaused: boolean;
-    onPress: () => void;
-    disabled?: boolean;
+  isRunning: boolean;
+  isPaused: boolean;
+  onPress: () => void;
+  disabled?: boolean;
 }
 
 /**
@@ -18,45 +18,45 @@ interface PlayPauseButtonProps {
  * @param onPress - Callback when button is pressed
  */
 export const PlayPauseButton: React.FC<PlayPauseButtonProps> = ({
-    isRunning,
-    isPaused,
-    onPress,
-    disabled = false,
+  isRunning,
+  isPaused,
+  onPress,
+  disabled = false,
 }) => {
-    const { theme } = useTheme();
-    return (
-        <TouchableOpacity
-            disabled={disabled}
-            style={styles.playButton}
-            onPress={onPress}
-            activeOpacity={0.8}
-        >
-            <View
-                style={[
-                    styles.playButtonInner,
-                    { backgroundColor: theme.surface, borderColor: theme.accent },
-                ]}
-            >
-                <Ionicons
-                    name={isRunning && !isPaused ? 'pause' : 'play'}
-                    size={32}
-                    color={theme.accent}
-                />
-            </View>
-        </TouchableOpacity>
-    );
+  const { theme } = useTheme();
+  return (
+    <TouchableOpacity
+      disabled={disabled}
+      style={styles.playButton}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View
+        style={[
+          styles.playButtonInner,
+          { backgroundColor: theme.surface, borderColor: theme.accent },
+        ]}
+      >
+        <Ionicons
+          name={isRunning && !isPaused ? 'pause' : 'play'}
+          size={32}
+          color={theme.accent}
+        />
+      </View>
+    </TouchableOpacity>
+  );
 };
 
 const styles = StyleSheet.create({
-    playButton: {
-        marginBottom: 30,
-    },
-    playButtonInner: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        borderWidth: 2,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+  playButton: {
+    marginBottom: 30,
+  },
+  playButtonInner: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

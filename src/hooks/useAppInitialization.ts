@@ -4,90 +4,90 @@ import { appInitializer } from '../services/appInitializer';
 import { errorHandler } from '../services/errorHandler';
 
 export interface AppInitializationState {
-    isReady: boolean;
-    isInitializing: boolean;
-    error: Error | null;
+  isReady: boolean;
+  isInitializing: boolean;
+  error: Error | null;
 }
 
 export function useAppInitialization(): AppInitializationState {
-    const [state, setState] = useState<AppInitializationState>({
-        isReady: false,
-        isInitializing: true,
-        error: null,
-    });
+  const [state, setState] = useState<AppInitializationState>({
+    isReady: false,
+    isInitializing: true,
+    error: null,
+  });
 
-    useEffect(() => {
-        let isMounted = true;
+  useEffect(() => {
+    let isMounted = true;
 
-        const initialize = async () => {
-            try {
-                await appInitializer.initialize();
-                
-                if (isMounted) {
-                    setState({
-                        isReady: true,
-                        isInitializing: false,
-                        error: null,
-                    });
-                }
-            } catch (error) {
-                console.error('💥 App initialization failed:', error);
+    const initialize = async () => {
+      try {
+        await appInitializer.initialize();
 
-                const initError = error as Error;
-                
-                // Log error for tracking
-                errorHandler.logError(initError, {
-                    context: 'App Initialization',
-                    severity: 'critical',
-                });
+        if (isMounted) {
+          setState({
+            isReady: true,
+            isInitializing: false,
+            error: null,
+          });
+        }
+      } catch (error) {
+        console.error('💥 App initialization failed:', error);
 
-                if (isMounted) {
-                    setState({
-                        isReady: false,
-                        isInitializing: false,
-                        error: initError,
-                    });
+        const initError = error as Error;
 
-                    // Show error dialog
-                    Alert.alert(
-                        'Initialization Error',
-                        'Some features may not work properly. Please restart the app.',
-                        [
-                            {
-                                text: 'Continue Anyway',
-                                onPress: () => {
-                                    setState(prev => ({
-                                        ...prev,
-                                        isReady: true,
-                                        error: null,
-                                    }));
-                                },
-                            },
-                            {
-                                text: 'Retry',
-                                onPress: () => {
-                                    setState({
-                                        isReady: false,
-                                        isInitializing: true,
-                                        error: null,
-                                    });
-                                    // Reset and retry
-                                    appInitializer.reset();
-                                    initialize();
-                                },
-                            },
-                        ],
-                    );
-                }
-            }
-        };
+        // Log error for tracking
+        errorHandler.logError(initError, {
+          context: 'App Initialization',
+          severity: 'critical',
+        });
 
-        initialize();
+        if (isMounted) {
+          setState({
+            isReady: false,
+            isInitializing: false,
+            error: initError,
+          });
 
-        return () => {
-            isMounted = false;
-        };
-    }, []);
+          // Show error dialog
+          Alert.alert(
+            'Initialization Error',
+            'Some features may not work properly. Please restart the app.',
+            [
+              {
+                text: 'Continue Anyway',
+                onPress: () => {
+                  setState(prev => ({
+                    ...prev,
+                    isReady: true,
+                    error: null,
+                  }));
+                },
+              },
+              {
+                text: 'Retry',
+                onPress: () => {
+                  setState({
+                    isReady: false,
+                    isInitializing: true,
+                    error: null,
+                  });
+                  // Reset and retry
+                  appInitializer.reset();
+                  initialize();
+                },
+              },
+            ]
+          );
+        }
+      }
+    };
 
-    return state;
+    initialize();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return state;
 }

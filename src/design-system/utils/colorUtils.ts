@@ -5,7 +5,10 @@
 
 import { colorTokens, ColorMode } from '../tokens/colors';
 
-export const getColor = (colorKey: string, mode: ColorMode = 'light'): string => {
+export const getColor = (
+  colorKey: string,
+  mode: ColorMode = 'light'
+): string => {
   const colors = colorTokens[mode];
   return (colors as any)[colorKey] || colorKey;
 };
@@ -19,7 +22,7 @@ export const withOpacity = (color: string, opacity: number): string => {
     const b = parseInt(hex.substr(4, 2), 16);
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   }
-  
+
   // If already rgba, extract values and apply new opacity
   if (color.startsWith('rgba')) {
     const values = color.match(/\d+/g);
@@ -30,13 +33,17 @@ export const withOpacity = (color: string, opacity: number): string => {
       return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     }
   }
-  
+
   return color;
 };
 
 export const getContrastColor = (backgroundColor: string): string => {
   // Simple contrast calculation - in a real app, you'd want more sophisticated logic
-  if (backgroundColor.includes('dark') || backgroundColor === '#000000' || backgroundColor === '#121212') {
+  if (
+    backgroundColor.includes('dark') ||
+    backgroundColor === '#000000' ||
+    backgroundColor === '#121212'
+  ) {
     return '#FFFFFF';
   }
   return '#000000';

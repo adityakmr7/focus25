@@ -11,14 +11,12 @@ export const createStyleSheet = <T extends Record<string, any>>(
   styles: T | ((theme: Theme) => T),
   theme: Theme
 ): T => {
-  return StyleSheet.create(typeof styles === 'function' ? styles(theme) : styles);
+  return StyleSheet.create(
+    typeof styles === 'function' ? styles(theme) : styles
+  );
 };
 
-export const getResponsiveValue = <T>(
-  phone: T,
-  tablet?: T,
-  desktop?: T
-): T => {
+export const getResponsiveValue = <T>(phone: T, tablet?: T, desktop?: T): T => {
   // For now, return phone value
   // In the future, this could be enhanced with device detection
   return phone;
@@ -34,23 +32,32 @@ export const createResponsiveStyle = (
   return phone;
 };
 
-export const combineViewStyles = (...styles: (ViewStyle | undefined)[]): ViewStyle => {
+export const combineViewStyles = (
+  ...styles: (ViewStyle | undefined)[]
+): ViewStyle => {
   return styles.reduce((acc, style) => {
     if (!style) return acc;
     return { ...acc, ...style };
   }, {} as ViewStyle);
 };
 
-export const combineTextStyles = (...styles: (TextStyle | undefined)[]): TextStyle => {
+export const combineTextStyles = (
+  ...styles: (TextStyle | undefined)[]
+): TextStyle => {
   return styles.reduce((acc, style) => {
     if (!style) return acc;
     return { ...acc, ...style };
   }, {} as TextStyle);
 };
 
-export const combineStyles = (...styles: (ViewStyle | TextStyle | undefined)[]): ViewStyle | TextStyle => {
-  return styles.reduce((acc, style) => {
-    if (!style) return acc;
-    return { ...acc, ...style };
-  }, {} as ViewStyle | TextStyle);
+export const combineStyles = (
+  ...styles: (ViewStyle | TextStyle | undefined)[]
+): ViewStyle | TextStyle => {
+  return styles.reduce(
+    (acc, style) => {
+      if (!style) return acc;
+      return { ...acc, ...style };
+    },
+    {} as ViewStyle | TextStyle
+  );
 };

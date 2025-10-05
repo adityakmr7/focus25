@@ -8,7 +8,11 @@ import React from 'react';
 import { View, Text, ViewStyle, TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../themes';
-import { createStyleSheet, combineViewStyles, combineTextStyles } from '../../utils';
+import {
+  createStyleSheet,
+  combineViewStyles,
+  combineTextStyles,
+} from '../../utils';
 
 export interface MetricCardProps {
   title: string;
@@ -37,13 +41,13 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(metricCardStyles, theme);
-  
+
   const getCardStyle = (): ViewStyle => {
     const baseStyle = styles.card;
     const sizeStyle = styles[`${size}Card`];
     const variantStyle = styles[`${variant}Card`];
     const colorStyle = styles[`${color}Card`];
-    
+
     return combineViewStyles(
       baseStyle,
       sizeStyle,
@@ -52,55 +56,59 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       style
     );
   };
-  
+
   const getValueStyle = (): TextStyle => {
     const baseStyle = styles.value;
     const sizeStyle = styles[`${size}Value`];
     const colorStyle = styles[`${color}Value`];
-    
-    return combineTextStyles(
-      baseStyle,
-      sizeStyle,
-      colorStyle
-    );
+
+    return combineTextStyles(baseStyle, sizeStyle, colorStyle);
   };
-  
+
   const getTitleStyle = (): TextStyle => {
     const baseStyle = styles.title;
     const sizeStyle = styles[`${size}Title`];
-    
-    return combineTextStyles(
-      baseStyle,
-      sizeStyle
-    );
+
+    return combineTextStyles(baseStyle, sizeStyle);
   };
-  
+
   const getIconColor = (): string => {
     switch (color) {
-      case 'success': return theme.colors['accent-success'];
-      case 'warning': return theme.colors['accent-warning'];
-      case 'error': return theme.colors['accent-error'];
-      case 'info': return theme.colors['accent-info'];
-      default: return theme.colors['accent-focus'];
+      case 'success':
+        return theme.colors['accent-success'];
+      case 'warning':
+        return theme.colors['accent-warning'];
+      case 'error':
+        return theme.colors['accent-error'];
+      case 'info':
+        return theme.colors['accent-info'];
+      default:
+        return theme.colors['accent-focus'];
     }
   };
-  
+
   const getTrendIcon = (): keyof typeof Ionicons.glyphMap => {
     switch (trend) {
-      case 'up': return 'trending-up';
-      case 'down': return 'trending-down';
-      default: return 'remove';
+      case 'up':
+        return 'trending-up';
+      case 'down':
+        return 'trending-down';
+      default:
+        return 'remove';
     }
   };
-  
+
   const getTrendColor = (): string => {
     switch (trend) {
-      case 'up': return theme.colors['accent-success'];
-      case 'down': return theme.colors['accent-error'];
-      default: return theme.colors['text-secondary'];
+      case 'up':
+        return theme.colors['accent-success'];
+      case 'down':
+        return theme.colors['accent-error'];
+      default:
+        return theme.colors['text-secondary'];
     }
   };
-  
+
   return (
     <View style={getCardStyle()}>
       <View style={styles.header}>
@@ -114,20 +122,14 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         )}
         <Text style={getTitleStyle()}>{title}</Text>
       </View>
-      
+
       <Text style={getValueStyle()}>{value}</Text>
-      
-      {subtitle && (
-        <Text style={styles.subtitle}>{subtitle}</Text>
-      )}
-      
+
+      {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+
       {trend && trendValue && (
         <View style={styles.trend}>
-          <Ionicons
-            name={getTrendIcon()}
-            size={16}
-            color={getTrendColor()}
-          />
+          <Ionicons name={getTrendIcon()} size={16} color={getTrendColor()} />
           <Text style={[styles.trendText, { color: getTrendColor() }]}>
             {trendValue}
           </Text>
@@ -144,7 +146,7 @@ const metricCardStyles = (theme: any) => ({
     padding: theme.spacing[4],
     ...theme.shadows.sm,
   },
-  
+
   // Size variants
   smCard: {
     padding: theme.spacing[3],
@@ -155,7 +157,7 @@ const metricCardStyles = (theme: any) => ({
   lgCard: {
     padding: theme.spacing[6],
   },
-  
+
   // Variant styles
   defaultCard: {
     backgroundColor: theme.colors['bg-elevated'],
@@ -169,7 +171,7 @@ const metricCardStyles = (theme: any) => ({
     borderWidth: 1,
     borderColor: theme.colors['accent-focus'],
   },
-  
+
   // Color variants
   primaryCard: {},
   successCard: {
@@ -184,7 +186,7 @@ const metricCardStyles = (theme: any) => ({
   infoCard: {
     backgroundColor: theme.colors['bg-info'],
   },
-  
+
   // Header styles
   header: {
     flexDirection: 'row',
@@ -194,7 +196,7 @@ const metricCardStyles = (theme: any) => ({
   icon: {
     marginRight: theme.spacing[2],
   },
-  
+
   // Title styles
   title: {
     fontFamily: theme.typography.fontFamily.medium,
@@ -210,7 +212,7 @@ const metricCardStyles = (theme: any) => ({
   lgTitle: {
     fontSize: theme.typography.fontSize.base,
   },
-  
+
   // Value styles
   value: {
     fontFamily: theme.typography.fontFamily.bold,
@@ -226,7 +228,7 @@ const metricCardStyles = (theme: any) => ({
   lgValue: {
     fontSize: theme.typography.fontSize['4xl'],
   },
-  
+
   primaryValue: {
     color: theme.colors['text-primary'],
   },
@@ -242,14 +244,14 @@ const metricCardStyles = (theme: any) => ({
   infoValue: {
     color: theme.colors['accent-info'],
   },
-  
+
   // Subtitle styles
   subtitle: {
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors['text-tertiary'],
     marginBottom: theme.spacing[2],
   },
-  
+
   // Trend styles
   trend: {
     flexDirection: 'row',

@@ -31,14 +31,14 @@ export const PlayPauseButton: React.FC<PlayPauseButtonProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(playPauseButtonStyles, theme);
-  
+
   const getButtonStyle = (): ViewStyle => {
     const baseStyle = styles.button;
     const sizeStyle = styles[`${size}Button`];
     const variantStyle = styles[`${variant}Button`];
     const stateStyle = isRunning ? styles.runningButton : {};
     const disabledStyle = disabled ? styles.disabledButton : {};
-    
+
     return combineViewStyles(
       baseStyle,
       sizeStyle,
@@ -48,29 +48,34 @@ export const PlayPauseButton: React.FC<PlayPauseButtonProps> = ({
       style
     );
   };
-  
+
   const getIconSize = (): number => {
     switch (size) {
-      case 'sm': return 16;
-      case 'md': return 24;
-      case 'lg': return 32;
-      case 'xl': return 40;
-      default: return 32;
+      case 'sm':
+        return 16;
+      case 'md':
+        return 24;
+      case 'lg':
+        return 32;
+      case 'xl':
+        return 40;
+      default:
+        return 32;
     }
   };
-  
+
   const getIconName = (): keyof typeof Ionicons.glyphMap => {
     if (isRunning && !isPaused) return 'pause';
     if (isRunning && isPaused) return 'play';
     return 'play';
   };
-  
+
   const getIconColor = (): string => {
     if (disabled) return theme.colors['text-tertiary'];
     if (variant === 'floating') return theme.colors['text-inverse'];
     return theme.colors['accent-focus'];
   };
-  
+
   return (
     <TouchableOpacity
       style={getButtonStyle()}
@@ -93,7 +98,7 @@ const playPauseButtonStyles = (theme: any) => ({
     justifyContent: 'center',
     borderRadius: theme.borderRadius.full,
   },
-  
+
   // Size variants
   smButton: {
     width: 40,
@@ -111,7 +116,7 @@ const playPauseButtonStyles = (theme: any) => ({
     width: 88,
     height: 88,
   },
-  
+
   // Variant styles
   defaultButton: {
     backgroundColor: theme.colors['bg-elevated'],
@@ -128,7 +133,7 @@ const playPauseButtonStyles = (theme: any) => ({
     backgroundColor: theme.colors['accent-focus'],
     ...theme.shadows.lg,
   },
-  
+
   // State styles
   runningButton: {
     backgroundColor: theme.colors['accent-focus'],

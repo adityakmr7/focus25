@@ -26,22 +26,32 @@ interface TodoItem {
   id: string;
   text: string;
   completed: boolean;
-  
+
   createdAt: Date;
 }
 
 // Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+if (
+  Platform.OS === 'android' &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 const MinimalistTodoScreen: React.FC = () => {
   const { theme } = useTheme();
-  const { todos, loadTodos, isInitialized,createTodo, toggleTodo, deleteTodo } = useTodoStore();
+  const {
+    todos,
+    loadTodos,
+    isInitialized,
+    createTodo,
+    toggleTodo,
+    deleteTodo,
+  } = useTodoStore();
 
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [newItemText, setNewItemText] = useState('');
-  
+
   // Animation values
   const [fadeAnim] = useState(new Animated.Value(1));
   const [slideAnim] = useState(new Animated.Value(50));
@@ -51,13 +61,12 @@ const MinimalistTodoScreen: React.FC = () => {
   const [fabScaleAnim] = useState(new Animated.Value(1));
 
   const [todoItemAnims] = useState<{ [key: string]: Animated.Value }>({});
- 
-  
+
   useEffect(() => {
     if (!isInitialized) {
-        loadTodos();
+      loadTodos();
     }
-}, [isInitialized, loadTodos]);
+  }, [isInitialized, loadTodos]);
   // Refs for animations
   const addButtonRef = useRef<any>(null);
   const inputRef = useRef<TextInput>(null);
@@ -65,11 +74,11 @@ const MinimalistTodoScreen: React.FC = () => {
   // Get current date formatted like in the image
   const getCurrentDate = () => {
     const today = new Date();
-    const options: Intl.DateTimeFormatOptions = { 
-      weekday: 'long', 
-      day: 'numeric', 
-      month: 'short', 
-      year: 'numeric' 
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
     };
     return today.toLocaleDateString('en-GB', options);
   };
@@ -79,21 +88,21 @@ const MinimalistTodoScreen: React.FC = () => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    
+
     const groupedTodos = {
       today: [] as any[],
       yesterday: [] as any[],
-      older: [] as any[]
+      older: [] as any[],
     };
 
     todos.forEach(todo => {
       if (!todo.createdAt) return;
-      
+
       const todoDate = new Date(todo.createdAt);
       const todoDateString = todoDate.toDateString();
       const todayString = today.toDateString();
       const yesterdayString = yesterday.toDateString();
-      
+
       if (todoDateString === todayString) {
         groupedTodos.today.push(todo);
       } else if (todoDateString === yesterdayString) {
@@ -113,16 +122,16 @@ const MinimalistTodoScreen: React.FC = () => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    
+
     if (date.toDateString() === today.toDateString()) {
       return 'Today';
     } else if (date.toDateString() === yesterday.toDateString()) {
       return 'Yesterday';
     } else {
-      const options: Intl.DateTimeFormatOptions = { 
-        weekday: 'long', 
-        day: 'numeric', 
-        month: 'short' 
+      const options: Intl.DateTimeFormatOptions = {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'short',
       };
       return date.toLocaleDateString('en-GB', options);
     }
@@ -196,35 +205,41 @@ const MinimalistTodoScreen: React.FC = () => {
     ]).start();
   }, [fabScaleAnim]);
 
-  const animateTodoItem = useCallback((todoId: string, delay: number = 0) => {
-    if (!todoItemAnims[todoId]) {
-      todoItemAnims[todoId] = new Animated.Value(0);
-    }
-    
-    Animated.timing(todoItemAnims[todoId], {
-      toValue: 1,
-      duration: 300,
-      delay,
-      useNativeDriver: true,
-    }).start();
-  }, [todoItemAnims]);
+  const animateTodoItem = useCallback(
+    (todoId: string, delay: number = 0) => {
+      if (!todoItemAnims[todoId]) {
+        todoItemAnims[todoId] = new Animated.Value(0);
+      }
 
-  const animateTodoComplete = useCallback((todoId: string) => {
-    if (todoItemAnims[todoId]) {
-      Animated.sequence([
-        Animated.timing(todoItemAnims[todoId], {
-          toValue: 1.1,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(todoItemAnims[todoId], {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [todoItemAnims]);
+      Animated.timing(todoItemAnims[todoId], {
+        toValue: 1,
+        duration: 300,
+        delay,
+        useNativeDriver: true,
+      }).start();
+    },
+    [todoItemAnims]
+  );
+
+  const animateTodoComplete = useCallback(
+    (todoId: string) => {
+      if (todoItemAnims[todoId]) {
+        Animated.sequence([
+          Animated.timing(todoItemAnims[todoId], {
+            toValue: 1.1,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+          Animated.timing(todoItemAnims[todoId], {
+            toValue: 1,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
+    },
+    [todoItemAnims]
+  );
 
   useEffect(() => {
     animateIn();
@@ -266,7 +281,7 @@ const MinimalistTodoScreen: React.FC = () => {
         await createTodo({
           title: newItemText.trim(),
         });
-        
+
         // Layout animation for smooth list update
         LayoutAnimation.configureNext({
           duration: 300,
@@ -274,7 +289,7 @@ const MinimalistTodoScreen: React.FC = () => {
           update: { type: 'easeInEaseOut' },
           delete: { type: 'easeInEaseOut', property: 'opacity' },
         });
-        
+
         setNewItemText('');
         setIsAddingItem(false);
         Keyboard.dismiss();
@@ -296,41 +311,51 @@ const MinimalistTodoScreen: React.FC = () => {
     });
   }, [inputScaleAnim]);
 
-  const handleToggleTodo = useCallback(async (id: string) => {
-    try {
-      // Animate the completion
-      animateTodoComplete(id);
-      
-      // Small delay before actual toggle for better UX
-      setTimeout(async () => {
-        await toggleTodo(id);
-      }, 100);
-    } catch (error) {
-      console.error('Failed to toggle todo:', error);
-    }
-  }, [toggleTodo, animateTodoComplete]);
+  const handleToggleTodo = useCallback(
+    async (id: string) => {
+      try {
+        // Animate the completion
+        animateTodoComplete(id);
 
-  const handleDeleteTodo = useCallback(async (id: string) => {
-    try {
-      // Animate item removal
-      if (todoItemAnims[id]) {
-        Animated.timing(todoItemAnims[id], {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }).start(async () => {
-          await deleteTodo(id);
-        });
-      } else {
-        await deleteTodo(id);
+        // Small delay before actual toggle for better UX
+        setTimeout(async () => {
+          await toggleTodo(id);
+        }, 100);
+      } catch (error) {
+        console.error('Failed to toggle todo:', error);
       }
-    } catch (error) {
-      console.error('Failed to delete todo:', error);
-    }
-  }, [deleteTodo, todoItemAnims]);
+    },
+    [toggleTodo, animateTodoComplete]
+  );
+
+  const handleDeleteTodo = useCallback(
+    async (id: string) => {
+      try {
+        // Animate item removal
+        if (todoItemAnims[id]) {
+          Animated.timing(todoItemAnims[id], {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(async () => {
+            await deleteTodo(id);
+          });
+        } else {
+          await deleteTodo(id);
+        }
+      } catch (error) {
+        console.error('Failed to delete todo:', error);
+      }
+    },
+    [deleteTodo, todoItemAnims]
+  );
 
   // Render todo section with date header
-  const renderTodoSection = (sectionKey: string, sectionTodos: any[], sectionDate: Date) => {
+  const renderTodoSection = (
+    sectionKey: string,
+    sectionTodos: any[],
+    sectionDate: Date
+  ) => {
     console.log('MinimalistTodoScreen: sectionTodos', sectionTodos);
     if (sectionTodos.length === 0) return null;
 
@@ -341,27 +366,27 @@ const MinimalistTodoScreen: React.FC = () => {
         </Text>
         {sectionTodos.map((todo, index) => {
           const itemAnim = todoItemAnims[todo.id] || new Animated.Value(1);
-          
+
           return (
             <Animated.View
               key={todo.id}
-                style={[
-                  styles.todoItem,
-                  {
-                    opacity: itemAnim,
-                    transform: [
-                      {
-                        translateY: itemAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [20, 0],
-                        }),
-                      },
-                      {
-                        scale: itemAnim,
-                      },
-                    ],
-                  },
-                ]}
+              style={[
+                styles.todoItem,
+                {
+                  opacity: itemAnim,
+                  transform: [
+                    {
+                      translateY: itemAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [20, 0],
+                      }),
+                    },
+                    {
+                      scale: itemAnim,
+                    },
+                  ],
+                },
+              ]}
             >
               <TouchableOpacity
                 style={styles.todoContent}
@@ -373,7 +398,9 @@ const MinimalistTodoScreen: React.FC = () => {
                     styles.checkbox,
                     {
                       borderColor: theme.border,
-                      backgroundColor: todo.isCompleted ? theme.text : 'transparent',
+                      backgroundColor: todo.isCompleted
+                        ? theme.text
+                        : 'transparent',
                       transform: [
                         {
                           scale: todo.isCompleted ? 1.1 : 1,
@@ -392,7 +419,11 @@ const MinimalistTodoScreen: React.FC = () => {
                         ],
                       }}
                     >
-                      <Ionicons name="checkmark" size={12} color={theme.background} />
+                      <Ionicons
+                        name='checkmark'
+                        size={12}
+                        color={theme.background}
+                      />
                     </Animated.View>
                   )}
                 </Animated.View>
@@ -400,8 +431,12 @@ const MinimalistTodoScreen: React.FC = () => {
                   style={[
                     styles.todoText,
                     {
-                      color: todo.isCompleted ? theme.textSecondary : theme.text,
-                      textDecorationLine: todo.isCompleted ? 'line-through' : 'none',
+                      color: todo.isCompleted
+                        ? theme.textSecondary
+                        : theme.text,
+                      textDecorationLine: todo.isCompleted
+                        ? 'line-through'
+                        : 'none',
                       transform: [
                         {
                           translateX: todo.isCompleted ? 5 : 0,
@@ -413,7 +448,7 @@ const MinimalistTodoScreen: React.FC = () => {
                   {todo.title}
                 </Animated.Text>
               </TouchableOpacity>
-              
+
               <Animated.View
                 style={{
                   transform: [
@@ -428,7 +463,11 @@ const MinimalistTodoScreen: React.FC = () => {
                   onPress={() => handleDeleteTodo(todo.id)}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="close" size={16} color={theme.textSecondary} />
+                  <Ionicons
+                    name='close'
+                    size={16}
+                    color={theme.textSecondary}
+                  />
                 </TouchableOpacity>
               </Animated.View>
             </Animated.View>
@@ -441,8 +480,10 @@ const MinimalistTodoScreen: React.FC = () => {
   // Empty state
   if (!isAddingItem && todos.length === 0) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <Animated.View 
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: theme.background }]}
+      >
+        <Animated.View
           style={[
             styles.content,
             {
@@ -463,10 +504,7 @@ const MinimalistTodoScreen: React.FC = () => {
           <View style={styles.centerContent}>
             <Animated.View
               style={{
-                transform: [
-                  { scale: buttonScaleAnim },
-                  { scale: scaleAnim },
-                ],
+                transform: [{ scale: buttonScaleAnim }, { scale: scaleAnim }],
               }}
             >
               <TouchableOpacity
@@ -475,7 +513,9 @@ const MinimalistTodoScreen: React.FC = () => {
                 onPress={handleAddItem}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.addButtonText, { color: theme.background }]}>
+                <Text
+                  style={[styles.addButtonText, { color: theme.background }]}
+                >
                   + Add item
                 </Text>
               </TouchableOpacity>
@@ -499,8 +539,10 @@ const MinimalistTodoScreen: React.FC = () => {
   // Adding item state
   if (isAddingItem) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <Animated.View 
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: theme.background }]}
+      >
+        <Animated.View
           style={[
             styles.content,
             {
@@ -521,11 +563,11 @@ const MinimalistTodoScreen: React.FC = () => {
           <View style={styles.centerContent}>
             <Animated.View
               style={[
-                styles.inputContainer, 
-                { 
+                styles.inputContainer,
+                {
                   borderColor: theme.border,
                   transform: [{ scale: inputScaleAnim }],
-                }
+                },
               ]}
             >
               <TextInput
@@ -533,10 +575,10 @@ const MinimalistTodoScreen: React.FC = () => {
                 style={[styles.textInput, { color: theme.text }]}
                 value={newItemText}
                 onChangeText={setNewItemText}
-                placeholder="What do you want to do?"
+                placeholder='What do you want to do?'
                 placeholderTextColor={theme.textSecondary}
                 autoFocus
-                returnKeyType="done"
+                returnKeyType='done'
                 onSubmitEditing={handleSaveItem}
                 onBlur={handleCancelAdd}
               />
@@ -547,18 +589,24 @@ const MinimalistTodoScreen: React.FC = () => {
               >
                 <TouchableOpacity
                   style={[
-                    styles.addIconButton, 
-                    { 
-                      backgroundColor: newItemText.trim() ? theme.text : theme.border,
-                    }
+                    styles.addIconButton,
+                    {
+                      backgroundColor: newItemText.trim()
+                        ? theme.text
+                        : theme.border,
+                    },
                   ]}
                   onPress={handleSaveItem}
                   disabled={!newItemText.trim()}
                 >
-                  <Ionicons 
-                    name="add" 
-                    size={16} 
-                    color={newItemText.trim() ? theme.background : theme.textSecondary} 
+                  <Ionicons
+                    name='add'
+                    size={16}
+                    color={
+                      newItemText.trim()
+                        ? theme.background
+                        : theme.textSecondary
+                    }
                   />
                 </TouchableOpacity>
               </Animated.View>
@@ -581,8 +629,10 @@ const MinimalistTodoScreen: React.FC = () => {
 
   // Items added state
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <Animated.View 
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.background }]}
+    >
+      <Animated.View
         style={[
           styles.content,
           {
@@ -600,7 +650,7 @@ const MinimalistTodoScreen: React.FC = () => {
               {getCurrentDate()}
             </Text>
           </View>
-          
+
           <Animated.View
             style={{
               transform: [{ scale: fabScaleAnim }],
@@ -614,18 +664,25 @@ const MinimalistTodoScreen: React.FC = () => {
               }}
               activeOpacity={0.8}
             >
-              <Ionicons name="add" size={20} color={theme.background} />
+              <Ionicons name='add' size={20} color={theme.background} />
             </TouchableOpacity>
           </Animated.View>
         </View>
 
         {/* Todo Items by Date Sections */}
-        <ScrollView style={styles.todoList} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.todoList}
+          showsVerticalScrollIndicator={false}
+        >
           {renderTodoSection('today', groupedTodos.today, new Date())}
-          {renderTodoSection('yesterday', groupedTodos.yesterday, new Date(Date.now() - 24 * 60 * 60 * 1000))}
-          
+          {renderTodoSection(
+            'yesterday',
+            groupedTodos.yesterday,
+            new Date(Date.now() - 24 * 60 * 60 * 1000)
+          )}
+
           {/* Render older todos grouped by date */}
-          {groupedTodos.older.length > 0 && (
+          {groupedTodos.older.length > 0 &&
             (() => {
               const olderGrouped: { [key: string]: any[] } = {};
               groupedTodos.older.forEach(todo => {
@@ -635,14 +692,13 @@ const MinimalistTodoScreen: React.FC = () => {
                 }
                 olderGrouped[dateKey].push(todo);
               });
-              
+
               return Object.keys(olderGrouped).map(dateKey => {
                 const sectionTodos = olderGrouped[dateKey];
                 const sectionDate = new Date(dateKey);
                 return renderTodoSection(dateKey, sectionTodos, sectionDate);
               });
-            })()
-          )}
+            })()}
         </ScrollView>
       </Animated.View>
     </SafeAreaView>

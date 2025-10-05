@@ -17,22 +17,26 @@ import { Button, Card, Input, TimerDisplay } from '@/design-system';
 ## 🎯 Core Principles
 
 ### 1. **Consistency**
+
 - Unified design tokens across all components
 - Consistent spacing, typography, and color usage
 - Standardized component APIs
 
 ### 2. **Accessibility**
+
 - Built-in accessibility features
 - Screen reader support
 - High contrast support
 - Keyboard navigation
 
 ### 3. **Performance**
+
 - Optimized for React Native
 - Minimal re-renders
 - Efficient styling system
 
 ### 4. **Developer Experience**
+
 - TypeScript support
 - Comprehensive documentation
 - Intuitive component APIs
@@ -40,42 +44,45 @@ import { Button, Card, Input, TimerDisplay } from '@/design-system';
 ## 🎨 Design Tokens
 
 ### Colors
+
 The design system includes a comprehensive color palette with light and dark mode support:
 
 ```typescript
 import { colorTokens } from '@/design-system';
 
 // Light mode colors
-colorTokens.light['bg-primary']     // #FFFFFF
-colorTokens.light['text-primary']   // #1A202C
-colorTokens.light['accent-focus']   // #5A67D8
+colorTokens.light['bg-primary']; // #FFFFFF
+colorTokens.light['text-primary']; // #1A202C
+colorTokens.light['accent-focus']; // #5A67D8
 
 // Dark mode colors
-colorTokens.dark['bg-primary']      // #121212
-colorTokens.dark['text-primary']    // #E0E0E0
-colorTokens.dark['accent-focus']    // #7C90F7
+colorTokens.dark['bg-primary']; // #121212
+colorTokens.dark['text-primary']; // #E0E0E0
+colorTokens.dark['accent-focus']; // #7C90F7
 ```
 
 ### Typography
+
 Consistent typography system with multiple font weights and sizes:
 
 ```typescript
 import { typographyTokens } from '@/design-system';
 
-typographyTokens.fontFamily.primary    // 'SF-Pro-Display-Regular'
-typographyTokens.fontSize.base         // 16
-typographyTokens.fontWeight.medium     // '500'
+typographyTokens.fontFamily.primary; // 'SF-Pro-Display-Regular'
+typographyTokens.fontSize.base; // 16
+typographyTokens.fontWeight.medium; // '500'
 ```
 
 ### Spacing
+
 Consistent spacing scale based on 4px units:
 
 ```typescript
 import { spacingTokens } from '@/design-system';
 
-spacingTokens[1]   // 4px
-spacingTokens[4]   // 16px
-spacingTokens[8]   // 32px
+spacingTokens[1]; // 4px
+spacingTokens[4]; // 16px
+spacingTokens[8]; // 32px
 ```
 
 ## 🧩 Components
@@ -83,6 +90,7 @@ spacingTokens[8]   // 32px
 ### Core Components
 
 #### Button
+
 Versatile button component with multiple variants and sizes:
 
 ```typescript
@@ -99,6 +107,7 @@ import { Button } from '@/design-system';
 ```
 
 #### Card
+
 Flexible card component for content organization:
 
 ```typescript
@@ -116,6 +125,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/design-system';
 ```
 
 #### Input
+
 Form input component with validation support:
 
 ```typescript
@@ -133,6 +143,7 @@ import { Input } from '@/design-system';
 ### Layout Components
 
 #### Container
+
 Flexible container for layout management:
 
 ```typescript
@@ -144,6 +155,7 @@ import { Container } from '@/design-system';
 ```
 
 #### Stack
+
 Flexible stack layout component:
 
 ```typescript
@@ -156,6 +168,7 @@ import { Stack } from '@/design-system';
 ```
 
 #### Grid
+
 Grid layout system:
 
 ```typescript
@@ -245,7 +258,7 @@ import { ThemeProvider, useTheme } from '@/design-system';
 // Use theme in components
 const MyComponent = () => {
   const { theme, isDark, toggleTheme } = useTheme();
-  
+
   return (
     <View style={{ backgroundColor: theme.colors['bg-primary'] }}>
       <Text style={{ color: theme.colors['text-primary'] }}>
@@ -266,12 +279,15 @@ const MyComponent = () => {
 ```typescript
 import { createStyleSheet, combineStyles } from '@/design-system';
 
-const styles = createStyleSheet((theme) => ({
-  container: {
-    backgroundColor: theme.colors['bg-primary'],
-    padding: theme.spacing[4],
-  },
-}), theme);
+const styles = createStyleSheet(
+  theme => ({
+    container: {
+      backgroundColor: theme.colors['bg-primary'],
+      padding: theme.spacing[4],
+    },
+  }),
+  theme
+);
 
 const combinedStyle = combineStyles(style1, style2, style3);
 ```
@@ -296,7 +312,7 @@ const padding = getResponsiveValue(16, 24, 32); // phone, tablet, desktop
 const style = createResponsiveStyle(
   { padding: 16 }, // phone
   { padding: 24 }, // tablet
-  { padding: 32 }  // desktop
+  { padding: 32 } // desktop
 );
 ```
 
@@ -344,14 +360,14 @@ const TimerScreen = () => {
           isRunning={true}
           size="xl"
         />
-        
+
         <PlayPauseButton
           isRunning={true}
           onPress={handleToggle}
           size="lg"
           variant="floating"
         />
-        
+
         <Stack direction="row" gap="md">
           <PeriodButton
             period="Focus"
@@ -369,7 +385,7 @@ const TimerScreen = () => {
             onPress={() => setPeriod('long-break')}
           />
         </Stack>
-        
+
         <Stack direction="row" gap="md">
           <MetricCard
             title="Today's Focus"

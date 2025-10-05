@@ -7,10 +7,7 @@
     "icon": "./assets/icon_ios.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "assetBundlePatterns": [
-      "**/*",
-      "assets/fonts/*"
-    ],
+    "assetBundlePatterns": ["**/*", "assets/fonts/*"],
     "ios": {
       "icon": "./assets/icon_ios.png",
       "supportsTablet": true,
@@ -32,10 +29,7 @@
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
-        "UIBackgroundModes": [
-          "audio",
-          "processing"
-        ],
+        "UIBackgroundModes": ["audio", "processing"],
         "NSMicrophoneUsageDescription": "This app uses the microphone for focus session audio feedback.",
         "NSUserNotificationsUsageDescription": "This app sends notifications to remind you about focus sessions and breaks.",
         "UILaunchStoryboardName": "SplashScreen"

@@ -24,142 +24,150 @@ enableScreens();
 SplashScreen.preventAutoHideAsync();
 
 const AppContent = () => {
-    const { mode, getCurrentTheme } = useThemeStore();
-    const systemColorScheme = useColorScheme();
+  const { mode, getCurrentTheme } = useThemeStore();
+  const systemColorScheme = useColorScheme();
 
-    // Use optimized initialization hook
-    const { isReady, isInitializing, error } = useAppInitialization();
+  // Use optimized initialization hook
+  const { isReady, isInitializing, error } = useAppInitialization();
 
-    // Handle app state changes
-    useAppStateHandling();
+  // Handle app state changes
+  useAppStateHandling();
 
-    const [showOnboarding, setShowOnboarding] = useState(false);
-    const [notificationCleanup, setNotificationCleanup] = useState<(() => void) | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [notificationCleanup, setNotificationCleanup] = useState<
+    (() => void) | null
+  >(null);
 
-    // Setup notification handlers and request permissions
-    useEffect(() => {
-        const setupNotifications = async () => {
-            // Setup notification handlers
-            const cleanup = notificationManager.setupNotificationHandlers();
-            setNotificationCleanup(() => cleanup);
+  // Setup notification handlers and request permissions
+  useEffect(() => {
+    const setupNotifications = async () => {
+      // Setup notification handlers
+      const cleanup = notificationManager.setupNotificationHandlers();
+      setNotificationCleanup(() => cleanup);
 
-            // Request permissions (non-blocking)
-            const granted = await notificationManager.requestPermissions();
+      // Request permissions (non-blocking)
+      const granted = await notificationManager.requestPermissions();
 
-            if (!granted && Platform.OS !== 'web') {
-                // Show non-blocking alert for denied permissions
-                setTimeout(() => {
-                    Alert.alert(
-                        'Notifications Disabled',
-                        'Enable notifications in settings to get timer alerts and reminders.',
-                        [{ text: 'OK' }],
-                    );
-                }, 500);
-            }
-        };
+      if (!granted && Platform.OS !== 'web') {
+        // Show non-blocking alert for denied permissions
+        setTimeout(() => {
+          Alert.alert(
+            'Notifications Disabled',
+            'Enable notifications in settings to get timer alerts and reminders.',
+            [{ text: 'OK' }]
+          );
+        }, 500);
+      }
+    };
 
-        setupNotifications();
+    setupNotifications();
 
-        return () => {
-            if (notificationCleanup) {
-                notificationCleanup();
-            }
-        };
-    }, []);
+    return () => {
+      if (notificationCleanup) {
+        notificationCleanup();
+      }
+    };
+  }, []);
 
-    // Check onboarding status once app is ready
-    useEffect(() => {
-        if (isReady) {
-            shouldShowOnboarding()
-                .then(setShowOnboarding)
-                .catch((error) => {
-                    console.warn('Failed to check onboarding status:', error);
-                    setShowOnboarding(false);
-                });
-        }
-    }, [isReady]);
-
-    // Show loading state while initializing
-    if (!isReady) {
-        return null; // Splash screen is still showing
+  // Check onboarding status once app is ready
+  useEffect(() => {
+    if (isReady) {
+      shouldShowOnboarding()
+        .then(setShowOnboarding)
+        .catch(error => {
+          console.warn('Failed to check onboarding status:', error);
+          setShowOnboarding(false);
+        });
     }
+  }, [isReady]);
 
-    const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
-    const theme = getCurrentTheme();
-    GoogleSignin.configure({
-        webClientId: process.env.EXPO_PUBLIC_FIREBASE_WEB_CLIENT_ID, // for Firebase Auth
-        iosClientId: process.env.EXPO_PUBLIC_FIREBASE_IOS_CLIENT_ID, // for iOS sign in
-    });
-    return (
-        <>
-            <StatusBar style={isDark ? 'light' : 'dark'} />
-            <View style={{ flex: 1, backgroundColor: theme.background }}>
-                <NavigationContainer>
-                    <AppStackNavigation />
-                </NavigationContainer>
-            </View>
+  // Show loading state while initializing
+  if (!isReady) {
+    return null; // Splash screen is still showing
+  }
 
-            {/* Onboarding Flow */}
-            {/*{showOnboarding && (*/}
-            {/*    <OnboardingFlow*/}
-            {/*        visible={showOnboarding}*/}
-            {/*        onComplete={() => setShowOnboarding(false)}*/}
-            {/*    />*/}
-            {/*)}*/}
-        </>
-    );
+  const isDark =
+    mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
+  const theme = getCurrentTheme();
+  GoogleSignin.configure({
+    webClientId: process.env.EXPO_PUBLIC_FIREBASE_WEB_CLIENT_ID, // for Firebase Auth
+    iosClientId: process.env.EXPO_PUBLIC_FIREBASE_IOS_CLIENT_ID, // for iOS sign in
+  });
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <NavigationContainer>
+          <AppStackNavigation />
+        </NavigationContainer>
+      </View>
+
+      {/* Onboarding Flow */}
+      {/*{showOnboarding && (*/}
+      {/*    <OnboardingFlow*/}
+      {/*        visible={showOnboarding}*/}
+      {/*        onComplete={() => setShowOnboarding(false)}*/}
+      {/*    />*/}
+      {/*)}*/}
+    </>
+  );
 };
 
 export default function App() {
-    return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <AppContent />
-        </GestureHandlerRootView>
-    );
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppContent />
+    </GestureHandlerRootView>
+  );
 }
 
 // Development utilities for debugging database
 if (__DEV__) {
-    // Load debug utilities dynamically to avoid import issues
-    Promise.all([import('./src/data/local/localDatabase'), import('./src/utils/seedData')])
-        .then(([{ localDatabaseService }, { seedDatabase }]) => {
-            (global as Record<string, any>).debugDB = {
-                async seedNow() {
-                    try {
-                        await seedDatabase(localDatabaseService, { clearFirst: true });
-                        console.log('🎉 Manual seeding completed!');
-                    } catch (error) {
-                        console.error('💥 Manual seeding failed:', error);
-                    }
-                },
+  // Load debug utilities dynamically to avoid import issues
+  Promise.all([
+    import('./src/data/local/localDatabase'),
+    import('./src/utils/seedData'),
+  ])
+    .then(([{ localDatabaseService }, { seedDatabase }]) => {
+      (global as Record<string, any>).debugDB = {
+        async seedNow() {
+          try {
+            await seedDatabase(localDatabaseService, { clearFirst: true });
+            console.log('🎉 Manual seeding completed!');
+          } catch (error) {
+            console.error('💥 Manual seeding failed:', error);
+          }
+        },
 
-                async clearDB() {
-                    try {
-                        await localDatabaseService.clearAllData();
-                        console.log('🧹 Database cleared!');
-                    } catch (error) {
-                        console.error('💥 Failed to clear database:', error);
-                    }
-                },
+        async clearDB() {
+          try {
+            await localDatabaseService.clearAllData();
+            console.log('🧹 Database cleared!');
+          } catch (error) {
+            console.error('💥 Failed to clear database:', error);
+          }
+        },
 
-                async checkDB() {
-                    try {
-                        const [stats] = await Promise.all([localDatabaseService.getStatistics()]);
-                        console.log('📊 Database status:', {
-                            stats: stats.totalCount,
-                        });
-                    } catch (error) {
-                        console.error('💥 Failed to check database:', error);
-                    }
-                },
-            };
+        async checkDB() {
+          try {
+            const [stats] = await Promise.all([
+              localDatabaseService.getStatistics(),
+            ]);
+            console.log('📊 Database status:', {
+              stats: stats.totalCount,
+            });
+          } catch (error) {
+            console.error('💥 Failed to check database:', error);
+          }
+        },
+      };
 
-            console.log('🛠️ Debug utilities available:');
-            console.log('- debugDB.seedNow() - Seed database with sample data');
-            console.log('- debugDB.clearDB() - Clear all database data');
-            console.log('- debugDB.checkDB() - Check database status');
-        })
-        .catch(() => {
-            console.warn('Failed to load debug utilities');
-        });
+      console.log('🛠️ Debug utilities available:');
+      console.log('- debugDB.seedNow() - Seed database with sample data');
+      console.log('- debugDB.clearDB() - Clear all database data');
+      console.log('- debugDB.checkDB() - Check database status');
+    })
+    .catch(() => {
+      console.warn('Failed to load debug utilities');
+    });
 }

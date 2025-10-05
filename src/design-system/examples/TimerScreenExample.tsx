@@ -23,7 +23,9 @@ import {
 export const TimerScreenExample: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [currentPeriod, setCurrentPeriod] = useState<'focus' | 'short-break' | 'long-break'>('focus');
+  const [currentPeriod, setCurrentPeriod] = useState<
+    'focus' | 'short-break' | 'long-break'
+  >('focus');
   const [minutes, setMinutes] = useState(25);
   const [seconds, setSeconds] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -37,11 +39,13 @@ export const TimerScreenExample: React.FC = () => {
     }
   };
 
-  const handlePeriodChange = (period: 'focus' | 'short-break' | 'long-break') => {
+  const handlePeriodChange = (
+    period: 'focus' | 'short-break' | 'long-break'
+  ) => {
     setCurrentPeriod(period);
     setIsRunning(false);
     setIsPaused(false);
-    
+
     switch (period) {
       case 'focus':
         setMinutes(25);
@@ -61,8 +65,8 @@ export const TimerScreenExample: React.FC = () => {
 
   return (
     <ScrollView style={{ flex: 1 }}>
-      <Container padding="lg">
-        <Stack direction="column" align="center" gap="xl">
+      <Container padding='lg'>
+        <Stack direction='column' align='center' gap='xl'>
           {/* Timer Display */}
           <TimerDisplay
             minutes={minutes}
@@ -70,8 +74,8 @@ export const TimerScreenExample: React.FC = () => {
             progress={progress}
             isRunning={isRunning}
             isBreak={currentPeriod !== 'focus'}
-            size="xl"
-            variant="detailed"
+            size='xl'
+            variant='detailed'
           />
 
           {/* Play/Pause Button */}
@@ -79,70 +83,70 @@ export const TimerScreenExample: React.FC = () => {
             isRunning={isRunning}
             isPaused={isPaused}
             onPress={handleToggleTimer}
-            size="lg"
-            variant="floating"
+            size='lg'
+            variant='floating'
           />
 
           {/* Period Selection */}
-          <Stack direction="row" gap="sm" wrap>
+          <Stack direction='row' gap='sm' wrap>
             <PeriodButton
-              period="Focus"
+              period='Focus'
               isSelected={currentPeriod === 'focus'}
               onPress={() => handlePeriodChange('focus')}
-              variant="pill"
+              variant='pill'
             />
             <PeriodButton
-              period="Short Break"
+              period='Short Break'
               isSelected={currentPeriod === 'short-break'}
               onPress={() => handlePeriodChange('short-break')}
-              variant="pill"
+              variant='pill'
             />
             <PeriodButton
-              period="Long Break"
+              period='Long Break'
               isSelected={currentPeriod === 'long-break'}
               onPress={() => handlePeriodChange('long-break')}
-              variant="pill"
+              variant='pill'
             />
           </Stack>
 
           {/* Metrics Cards */}
-          <Stack direction="row" gap="md" wrap>
+          <Stack direction='row' gap='md' wrap>
             <MetricCard
               title="Today's Focus"
-              value="2h 30m"
-              icon="time"
-              color="success"
-              size="md"
+              value='2h 30m'
+              icon='time'
+              color='success'
+              size='md'
             />
             <MetricCard
-              title="Current Streak"
-              value="7 days"
-              icon="flame"
-              trend="up"
-              trendValue="+1 day"
-              color="primary"
-              size="md"
+              title='Current Streak'
+              value='7 days'
+              icon='flame'
+              trend='up'
+              trendValue='+1 day'
+              color='primary'
+              size='md'
             />
           </Stack>
 
           {/* Session Stats */}
-          <Card variant="elevated" padding="lg" style={{ width: '100%' }}>
+          <Card variant='elevated' padding='lg' style={{ width: '100%' }}>
             <CardHeader
-              title="Session Statistics"
-              subtitle="Your focus performance today"
-              icon="analytics"
+              title='Session Statistics'
+              subtitle='Your focus performance today'
+              icon='analytics'
             />
             <CardContent>
-              <Stack direction="column" gap="md">
-                <Stack direction="row" justify="space-between">
+              <Stack direction='column' gap='md'>
+                <Stack direction='row' justify='space-between'>
                   <Text>Sessions Completed</Text>
                   <Text>8</Text>
                 </Stack>
-                <Stack direction="row" justify="space-between">
+                <Stack direction='row' justify='space-between'>
                   <Text>Average Focus Time</Text>
                   <Text>23m</Text>
                 </Stack>
-                <Stack direction="row" justify="space-between">
+                <Stack direction='row' justify='space-between'>
                   <Text>Distractions</Text>
                   <Text>2</Text>
                 </Stack>
@@ -151,11 +155,11 @@ export const TimerScreenExample: React.FC = () => {
           </Card>
 
           {/* Action Buttons */}
-          <Stack direction="row" gap="md" wrap>
+          <Stack direction='row' gap='md' wrap>
             <Button
-              variant="outline"
-              size="md"
-              leftIcon="refresh"
+              variant='outline'
+              size='md'
+              leftIcon='refresh'
               onPress={() => {
                 setIsRunning(false);
                 setIsPaused(false);
@@ -165,9 +169,9 @@ export const TimerScreenExample: React.FC = () => {
               Reset
             </Button>
             <Button
-              variant="secondary"
-              size="md"
-              leftIcon="settings"
+              variant='secondary'
+              size='md'
+              leftIcon='settings'
               onPress={() => console.log('Settings')}
             >
               Settings

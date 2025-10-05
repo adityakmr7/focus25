@@ -22,18 +22,20 @@ export const Spacer: React.FC<SpacerProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(spacerStyles, theme);
-  
+
   const getSpacerStyle = (): ViewStyle => {
-    const baseStyle = horizontal ? styles.horizontalSpacer : styles.verticalSpacer;
+    const baseStyle = horizontal
+      ? styles.horizontalSpacer
+      : styles.verticalSpacer;
     const sizeStyle = styles[`${size}Spacer`];
-    
+
     return {
       ...baseStyle,
       ...sizeStyle,
       ...style,
     };
   };
-  
+
   return <View style={getSpacerStyle()} />;
 };
 
@@ -44,7 +46,7 @@ const spacerStyles = (theme: any) => ({
   horizontalSpacer: {
     width: 0,
   },
-  
+
   // Size variants
   xsSpacer: {
     [theme.spacing[1] ? 'height' : 'width']: theme.spacing[1],

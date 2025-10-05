@@ -21,16 +21,19 @@ This guide will help you set up the improved Firestore database structure with s
 ### Step 2: Run Setup Script
 
 **macOS/Linux:**
+
 ```bash
 ./setup-firestore.sh
 ```
 
 **Windows:**
+
 ```batch
 setup-firestore.bat
 ```
 
 **Manual:**
+
 ```bash
 cd scripts
 npm install firebase-admin
@@ -44,10 +47,11 @@ The script creates the following Firestore structure:
 ### Collections
 
 #### 📁 `users` Collection
+
 ```javascript
 {
   uid: "user_123",
-  email: "user@example.com", 
+  email: "user@example.com",
   displayName: "John Doe",
   photoURL: "https://...",
   isPro: false,
@@ -57,7 +61,8 @@ The script creates the following Firestore structure:
 }
 ```
 
-#### 📁 `userData` Collection  
+#### 📁 `userData` Collection
+
 ```javascript
 {
   statistics: [
@@ -116,7 +121,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
+
     // Users can only access their own app data
     match /userData/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
@@ -128,11 +133,13 @@ service cloud.firestore {
 ## ✅ Verification Steps
 
 ### 1. Check Firebase Console
+
 - Go to **Firestore Database → Data**
 - Verify `users` and `userData` collections exist
 - Check sample data structure matches above
 
 ### 2. Test App Integration
+
 1. **Sign in** to your app (Google/Apple)
 2. Go to **Settings** → **Data & Sync**
 3. Try **"Backup to Cloud"** - should show success
@@ -140,7 +147,9 @@ service cloud.firestore {
 5. Try **"Restore from Cloud"** - should work without errors
 
 ### 3. Debug Menu (Development Only)
+
 In development mode, you'll see a **"🔧 Firestore Debug"** option in Settings → Danger Zone:
+
 - **Show Status**: Check connection and auth
 - **Setup Sample Data**: Create test data
 - **Test Security Rules**: Verify permissions
@@ -151,37 +160,45 @@ In development mode, you'll see a **"🔧 Firestore Debug"** option in Settings 
 If the automated script doesn't work, you can set up manually:
 
 ### 1. Create Firestore Database
+
 1. Firebase Console → **Firestore Database**
 2. **Create database** → **Production mode**
 3. Choose your region
 
 ### 2. Create Collections
+
 1. Create collection: `users`
-2. Create collection: `userData` 
+2. Create collection: `userData`
 3. Add sample documents using the structure above
 
 ### 3. Apply Security Rules
+
 Copy the rules from above into **Firestore → Rules**
 
 ## 🐛 Troubleshooting
 
 ### ❌ "Permission denied"
+
 - **Fix**: Check security rules are published correctly
 - **Check**: User is signed in and UID matches
 
 ### ❌ "Service account key not found"
+
 - **Fix**: Download service account key from Firebase Console
 - **Save as**: `service-account-key.json` in project root
 
 ### ❌ "Firestore not configured"
+
 - **Fix**: Create Firestore database in Firebase Console first
 - **Check**: Database is in production mode
 
 ### ❌ "Network error"
+
 - **Fix**: Check internet connection
 - **Check**: Firebase project ID is correct
 
 ### ❌ "Module not found"
+
 - **Fix**: Run `npm install` in scripts directory
 - **Check**: Node.js version 14+ installed
 
@@ -198,7 +215,7 @@ The script creates these files:
 Once set up, the sync flow works like this:
 
 1. **User signs in** → Profile created in `users` collection
-2. **"Backup to Cloud"** → App data saved to `userData` collection  
+2. **"Backup to Cloud"** → App data saved to `userData` collection
 3. **"Restore from Cloud"** → Data downloaded from `userData` collection
 4. **Cross-device sync** → Same user can access data on multiple devices
 

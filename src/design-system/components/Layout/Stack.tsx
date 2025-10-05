@@ -13,7 +13,13 @@ export interface StackProps {
   children: React.ReactNode;
   direction?: 'row' | 'column' | 'row-reverse' | 'column-reverse';
   align?: 'start' | 'center' | 'end' | 'stretch';
-  justify?: 'start' | 'center' | 'end' | 'space-between' | 'space-around' | 'space-evenly';
+  justify?:
+    | 'start'
+    | 'center'
+    | 'end'
+    | 'space-between'
+    | 'space-around'
+    | 'space-evenly';
   gap?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   wrap?: boolean;
   style?: ViewStyle;
@@ -30,7 +36,7 @@ export const Stack: React.FC<StackProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(stackStyles, theme);
-  
+
   const getStackStyle = (): ViewStyle => {
     const baseStyle = styles.stack;
     const directionStyle = styles[`${direction}Direction`];
@@ -38,7 +44,7 @@ export const Stack: React.FC<StackProps> = ({
     const justifyStyle = styles[`${justify}Justify`];
     const gapStyle = styles[`${gap}Gap`];
     const wrapStyle = wrap ? styles.wrap : {};
-    
+
     return combineViewStyles(
       baseStyle,
       directionStyle,
@@ -49,19 +55,15 @@ export const Stack: React.FC<StackProps> = ({
       style
     );
   };
-  
-  return (
-    <View style={getStackStyle()}>
-      {children}
-    </View>
-  );
+
+  return <View style={getStackStyle()}>{children}</View>;
 };
 
 const stackStyles = (theme: any) => ({
   stack: {
     display: 'flex',
   },
-  
+
   // Direction variants
   rowDirection: {
     flexDirection: 'row',
@@ -75,7 +77,7 @@ const stackStyles = (theme: any) => ({
   'column-reverseDirection': {
     flexDirection: 'column-reverse',
   },
-  
+
   // Alignment variants
   startAlign: {
     alignItems: 'flex-start',
@@ -89,7 +91,7 @@ const stackStyles = (theme: any) => ({
   stretchAlign: {
     alignItems: 'stretch',
   },
-  
+
   // Justify variants
   startJustify: {
     justifyContent: 'flex-start',
@@ -109,7 +111,7 @@ const stackStyles = (theme: any) => ({
   'space-evenlyJustify': {
     justifyContent: 'space-evenly',
   },
-  
+
   // Gap variants
   noneGap: {
     gap: 0,
@@ -129,7 +131,7 @@ const stackStyles = (theme: any) => ({
   xlGap: {
     gap: theme.spacing[8],
   },
-  
+
   // Wrap
   wrap: {
     flexWrap: 'wrap',

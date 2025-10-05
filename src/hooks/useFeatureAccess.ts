@@ -1,9 +1,9 @@
 import { useAuthStore } from '../store/authStore';
-import { 
-  FeatureName, 
-  PRO_FEATURES, 
+import {
+  FeatureName,
+  PRO_FEATURES,
   AUTH_REQUIRED_FEATURES,
-  FEATURE_DESCRIPTIONS 
+  FEATURE_DESCRIPTIONS,
 } from '../constants/features';
 
 export interface FeatureAccess {
@@ -15,7 +15,7 @@ export interface FeatureAccess {
 
 export const useFeatureAccess = () => {
   const { user } = useAuthStore();
-  
+
   const isAuthenticated = !!user;
   const isPro = user?.isPro || false;
 
@@ -51,7 +51,7 @@ export const useFeatureAccess = () => {
           reason: 'Sign in and upgrade to Pro to access this feature',
         };
       }
-      
+
       if (!isPro) {
         return {
           canUse: false,
@@ -60,7 +60,7 @@ export const useFeatureAccess = () => {
           reason: 'Upgrade to Pro to access this feature',
         };
       }
-      
+
       return { canUse: true, needsAuth: false, needsPro: false };
     }
 
@@ -76,11 +76,11 @@ export const useFeatureAccess = () => {
     isAuthenticated,
     isPro,
     user,
-    
+
     // Feature checking
     checkFeatureAccess,
     getFeatureInfo,
-    
+
     // Quick access helpers
     canUseCloudSync: checkFeatureAccess('cloud_sync').canUse,
     canUseMusicLibrary: checkFeatureAccess('music_library').canUse,

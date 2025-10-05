@@ -26,30 +26,31 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   initialMode = 'auto',
 }) => {
   const systemColorScheme = useColorScheme();
-  const [mode, setMode] = React.useState<'light' | 'dark' | 'auto'>(initialMode);
-  
-  const isDark = mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
+  const [mode, setMode] = React.useState<'light' | 'dark' | 'auto'>(
+    initialMode
+  );
+
+  const isDark =
+    mode === 'auto' ? systemColorScheme === 'dark' : mode === 'dark';
   const theme = createTheme(isDark ? 'dark' : 'light');
-  
+
   const toggleTheme = () => {
-    setMode(prev => prev === 'light' ? 'dark' : 'light');
+    setMode(prev => (prev === 'light' ? 'dark' : 'light'));
   };
-  
+
   const setTheme = (newMode: 'light' | 'dark' | 'auto') => {
     setMode(newMode);
   };
-  
+
   const value: ThemeContextType = {
     theme,
     isDark,
     toggleTheme,
     setTheme,
   };
-  
+
   return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 };
 

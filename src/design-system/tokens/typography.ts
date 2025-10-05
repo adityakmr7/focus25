@@ -15,7 +15,7 @@ export const typographyTokens = {
     thin: 'SF-Pro-Display-Thin',
     ultralight: 'SF-Pro-Display-Ultralight',
   },
-  
+
   // Font Sizes
   fontSize: {
     xs: 12,
@@ -32,7 +32,7 @@ export const typographyTokens = {
     '8xl': 80,
     '9xl': 96,
   },
-  
+
   // Font Weights
   fontWeight: {
     thin: '100',
@@ -45,7 +45,7 @@ export const typographyTokens = {
     heavy: '800',
     black: '900',
   },
-  
+
   // Line Heights
   lineHeight: {
     none: 1,
@@ -55,7 +55,7 @@ export const typographyTokens = {
     relaxed: 1.625,
     loose: 2,
   },
-  
+
   // Letter Spacing
   letterSpacing: {
     tighter: -0.05,

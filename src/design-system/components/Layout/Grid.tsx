@@ -30,23 +30,15 @@ export const Grid: React.FC<GridProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(gridStyles, theme);
-  
+
   const getGridStyle = (): ViewStyle => {
     const baseStyle = styles.grid;
     const gapStyle = styles[`${gap}Gap`];
-    
-    return combineViewStyles(
-      baseStyle,
-      gapStyle,
-      style
-    );
+
+    return combineViewStyles(baseStyle, gapStyle, style);
   };
-  
-  return (
-    <View style={getGridStyle()}>
-      {children}
-    </View>
-  );
+
+  return <View style={getGridStyle()}>{children}</View>;
 };
 
 export const GridItem: React.FC<GridItemProps> = ({
@@ -56,23 +48,15 @@ export const GridItem: React.FC<GridItemProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(gridStyles, theme);
-  
+
   const getItemStyle = (): ViewStyle => {
     const baseStyle = styles.item;
     const spanStyle = styles[`span${span}`];
-    
-    return combineViewStyles(
-      baseStyle,
-      spanStyle,
-      style
-    );
+
+    return combineViewStyles(baseStyle, spanStyle, style);
   };
-  
-  return (
-    <View style={getItemStyle()}>
-      {children}
-    </View>
-  );
+
+  return <View style={getItemStyle()}>{children}</View>;
 };
 
 const gridStyles = (theme: any) => ({
@@ -80,7 +64,7 @@ const gridStyles = (theme: any) => ({
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
-  
+
   // Gap variants
   noneGap: {
     gap: 0,
@@ -97,12 +81,12 @@ const gridStyles = (theme: any) => ({
   xlGap: {
     gap: theme.spacing[8],
   },
-  
+
   // Grid item
   item: {
     flex: 1,
   },
-  
+
   // Span variants
   span1: { flex: 0, width: '8.333%' as const },
   span2: { flex: 0, width: '16.666%' as const },

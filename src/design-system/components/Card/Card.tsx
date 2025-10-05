@@ -15,7 +15,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../themes';
-import { createStyleSheet, combineViewStyles, combineTextStyles } from '../../utils';
+import {
+  createStyleSheet,
+  combineViewStyles,
+  combineTextStyles,
+} from '../../utils';
 
 export interface CardProps extends Omit<TouchableOpacityProps, 'style'> {
   variant?: 'default' | 'elevated' | 'outlined' | 'filled';
@@ -58,13 +62,13 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(cardStyles, theme);
-  
+
   const getCardStyle = (): ViewStyle => {
     const baseStyle = styles.card as ViewStyle;
     const variantStyle = styles[`${variant}Card`] as ViewStyle;
     const paddingStyle = styles[`${padding}Padding`] as ViewStyle;
-    const stateStyle = disabled ? styles.disabledCard as ViewStyle : {};
-    
+    const stateStyle = disabled ? (styles.disabledCard as ViewStyle) : {};
+
     return combineViewStyles(
       baseStyle,
       variantStyle,
@@ -73,9 +77,9 @@ export const Card: React.FC<CardProps> = ({
       style
     );
   };
-  
+
   const CardComponent = onPress ? TouchableOpacity : View;
-  
+
   return (
     <CardComponent
       style={getCardStyle() as any}
@@ -101,29 +105,46 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(cardStyles, theme);
-  
+
   return (
-        <View style={[styles.header as ViewStyle, style]}>
-          <View style={styles.headerLeft as ViewStyle}>
-            {leftIcon && (
-              <Ionicons
-                name={leftIcon}
-                size={20}
-                color={theme.colors['accent-focus']}
-                style={styles.headerIcon as any}
-              />
-            )}
-            <View style={styles.headerText as ViewStyle}>
-              {title && (
-                <Text style={combineTextStyles(styles.headerTitle as TextStyle, titleStyle)}>{title}</Text>
+    <View style={[styles.header as ViewStyle, style]}>
+      <View style={styles.headerLeft as ViewStyle}>
+        {leftIcon && (
+          <Ionicons
+            name={leftIcon}
+            size={20}
+            color={theme.colors['accent-focus']}
+            style={styles.headerIcon as any}
+          />
+        )}
+        <View style={styles.headerText as ViewStyle}>
+          {title && (
+            <Text
+              style={combineTextStyles(
+                styles.headerTitle as TextStyle,
+                titleStyle
               )}
-              {subtitle && (
-                <Text style={combineTextStyles(styles.headerSubtitle as TextStyle, subtitleStyle)}>{subtitle}</Text>
+            >
+              {title}
+            </Text>
+          )}
+          {subtitle && (
+            <Text
+              style={combineTextStyles(
+                styles.headerSubtitle as TextStyle,
+                subtitleStyle
               )}
-            </View>
-          </View>
+            >
+              {subtitle}
+            </Text>
+          )}
+        </View>
+      </View>
       {rightIcon && (
-        <TouchableOpacity onPress={onRightIconPress} style={styles.headerRight as ViewStyle}>
+        <TouchableOpacity
+          onPress={onRightIconPress}
+          style={styles.headerRight as ViewStyle}
+        >
           <Ionicons
             name={rightIcon}
             size={20}
@@ -141,26 +162,15 @@ export const CardContent: React.FC<CardContentProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(cardStyles, theme);
-  
-  return (
-    <View style={[styles.content as ViewStyle, style]}>
-      {children}
-    </View>
-  );
+
+  return <View style={[styles.content as ViewStyle, style]}>{children}</View>;
 };
 
-export const CardFooter: React.FC<CardFooterProps> = ({
-  children,
-  style,
-}) => {
+export const CardFooter: React.FC<CardFooterProps> = ({ children, style }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(cardStyles, theme);
-  
-  return (
-    <View style={[styles.footer as ViewStyle, style]}>
-      {children}
-    </View>
-  );
+
+  return <View style={[styles.footer as ViewStyle, style]}>{children}</View>;
 };
 
 const cardStyles = (theme: any) => ({
@@ -168,7 +178,7 @@ const cardStyles = (theme: any) => ({
     borderRadius: theme.borderRadius.lg,
     overflow: 'hidden' as const,
   } as ViewStyle,
-  
+
   // Variants
   defaultCard: {
     backgroundColor: theme.colors['bg-elevated'],
@@ -186,7 +196,7 @@ const cardStyles = (theme: any) => ({
   filledCard: {
     backgroundColor: theme.colors['bg-secondary'],
   } as ViewStyle,
-  
+
   // Padding variants
   nonePadding: {
     padding: 0,
@@ -203,12 +213,12 @@ const cardStyles = (theme: any) => ({
   xlPadding: {
     padding: theme.spacing[8],
   } as ViewStyle,
-  
+
   // States
   disabledCard: {
     opacity: 0.5,
   } as ViewStyle,
-  
+
   // Header styles
   header: {
     flexDirection: 'row',
@@ -240,12 +250,12 @@ const cardStyles = (theme: any) => ({
   headerRight: {
     padding: theme.spacing[1],
   } as ViewStyle,
-  
+
   // Content styles
   content: {
     flex: 1,
   } as ViewStyle,
-  
+
   // Footer styles
   footer: {
     marginTop: theme.spacing[4],

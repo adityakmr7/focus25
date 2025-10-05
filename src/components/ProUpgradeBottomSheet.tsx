@@ -1,14 +1,14 @@
 import React, { useState, useRef, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Platform,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, Platform, Alert } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useTheme } from '../hooks/useTheme';
-import { Button, BottomSheet, BottomSheetHeader, BottomSheetContent, BottomSheetFooter } from '../design-system';
+import {
+  Button,
+  BottomSheet,
+  BottomSheetHeader,
+  BottomSheetContent,
+  BottomSheetFooter,
+} from '../design-system';
 import { signInWithGoogle, signInWithApple } from '../config/firebase';
 import { proFeatureService } from '../services/proFeatureService';
 import { useAuthStore } from '../store/authStore';
@@ -18,7 +18,6 @@ interface ProUpgradeBottomSheetProps {
   onClose: () => void;
   onSuccess?: () => void;
 }
-
 
 export const ProUpgradeBottomSheet: React.FC<ProUpgradeBottomSheetProps> = ({
   visible,
@@ -39,18 +38,27 @@ export const ProUpgradeBottomSheet: React.FC<ProUpgradeBottomSheetProps> = ({
         const upgradeResult = await proFeatureService.upgradeUserToPro();
         if (upgradeResult.success) {
           updateUserProfile({ isPro: true });
-          Alert.alert('Upgrade Successful', 'Welcome to Pro! All premium features are now unlocked.');
+          Alert.alert(
+            'Upgrade Successful',
+            'Welcome to Pro! All premium features are now unlocked.'
+          );
           onSuccess?.();
           onClose();
         } else {
           Alert.alert('Upgrade Failed', upgradeResult.message);
         }
       } else {
-        Alert.alert('Sign In Failed', 'Failed to sign in with Google. Please try again.');
+        Alert.alert(
+          'Sign In Failed',
+          'Failed to sign in with Google. Please try again.'
+        );
       }
     } catch (error) {
       console.error('Google sign-in error:', error);
-      Alert.alert('Sign In Error', 'An error occurred during sign in. Please try again.');
+      Alert.alert(
+        'Sign In Error',
+        'An error occurred during sign in. Please try again.'
+      );
     } finally {
       setIsAuthenticating(false);
     }
@@ -65,7 +73,10 @@ export const ProUpgradeBottomSheet: React.FC<ProUpgradeBottomSheetProps> = ({
         const upgradeResult = await proFeatureService.upgradeUserToPro();
         if (upgradeResult.success) {
           updateUserProfile({ isPro: true });
-          Alert.alert('Upgrade Successful', 'Welcome to Pro! All premium features are now unlocked.');
+          Alert.alert(
+            'Upgrade Successful',
+            'Welcome to Pro! All premium features are now unlocked.'
+          );
           onSuccess?.();
           onClose();
         } else {
@@ -77,12 +88,15 @@ export const ProUpgradeBottomSheet: React.FC<ProUpgradeBottomSheetProps> = ({
       } else {
         Alert.alert(
           'Sign In Failed',
-          result.error || 'Failed to sign in with Apple. Please try again.',
+          result.error || 'Failed to sign in with Apple. Please try again.'
         );
       }
     } catch (error) {
       console.error('Apple sign-in error:', error);
-      Alert.alert('Sign In Error', 'An error occurred during Apple sign in. Please try again.');
+      Alert.alert(
+        'Sign In Error',
+        'An error occurred during Apple sign in. Please try again.'
+      );
     } finally {
       setIsAuthenticating(false);
     }
@@ -94,11 +108,14 @@ export const ProUpgradeBottomSheet: React.FC<ProUpgradeBottomSheetProps> = ({
     }
   };
 
-  const handleSheetChanges = useCallback((index: number) => {
-    if (index === -1) {
-      handleClose();
-    }
-  }, [handleClose]);
+  const handleSheetChanges = useCallback(
+    (index: number) => {
+      if (index === -1) {
+        handleClose();
+      }
+    },
+    [handleClose]
+  );
 
   if (!visible) return null;
 
@@ -111,35 +128,34 @@ export const ProUpgradeBottomSheet: React.FC<ProUpgradeBottomSheetProps> = ({
       onChange={handleSheetChanges}
       onClose={handleClose}
       style={{
-        flex:1
+        flex: 1,
       }}
     >
       <BottomSheetHeader
-        title="Upgrade to Pro"
-        subtitle="Unlock all premium features and enhance your productivity"
-        leftIcon="diamond"
+        title='Upgrade to Pro'
+        subtitle='Unlock all premium features and enhance your productivity'
+        leftIcon='diamond'
         showCloseButton={true}
         onClose={handleClose}
       />
-      
-      <BottomSheetContent style={{
-        flex:1
-      }}>
-        {/* Features List */}
 
+      <BottomSheetContent
+        style={{
+          flex: 1,
+        }}
+      >
+        {/* Features List */}
 
         {/* Authentication Options */}
         <View style={styles.authContainer}>
-
-          
           {/* Google Sign In */}
           <Button
-            variant="outline"
-            size="lg"
+            variant='outline'
+            size='lg'
             fullWidth
             onPress={handleGoogleSignIn}
             disabled={isAuthenticating}
-            leftIcon="logo-google"
+            leftIcon='logo-google'
             style={styles.authButton}
           >
             {isAuthenticating ? 'Signing in...' : 'Continue with Google'}
@@ -149,8 +165,12 @@ export const ProUpgradeBottomSheet: React.FC<ProUpgradeBottomSheetProps> = ({
           {Platform.OS === 'ios' && (
             <View style={styles.appleContainer}>
               <AppleAuthentication.AppleAuthenticationButton
-                buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                buttonType={
+                  AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+                }
+                buttonStyle={
+                  AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                }
                 cornerRadius={8}
                 style={styles.appleButton}
                 onPress={handleAppleSignIn}
@@ -159,7 +179,6 @@ export const ProUpgradeBottomSheet: React.FC<ProUpgradeBottomSheetProps> = ({
           )}
         </View>
       </BottomSheetContent>
-
     </BottomSheet>
   );
 };
@@ -206,7 +225,7 @@ const styles = StyleSheet.create({
   authContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
-    marginTop:100
+    marginTop: 100,
   },
   authTitle: {
     fontSize: 18,

@@ -6,7 +6,7 @@ export const FEATURES = {
   BASIC_THEMES: 'basic_themes',
   LOCAL_STORAGE: 'local_storage',
   BASIC_NOTIFICATIONS: 'basic_notifications',
-  
+
   // Pro features (requires payment)
   CLOUD_SYNC: 'cloud_sync',
   MUSIC_LIBRARY: 'music_library',
@@ -14,13 +14,13 @@ export const FEATURES = {
   ADVANCED_THEMES: 'advanced_themes',
   PRIORITY_SUPPORT: 'priority_support',
   CROSS_DEVICE_CONTINUITY: 'cross_device_continuity',
-  
+
   // Auth-required features (requires account but not necessarily Pro)
   ACCOUNT_MANAGEMENT: 'account_management',
   DATA_BACKUP: 'data_backup',
 } as const;
 
-export type FeatureName = typeof FEATURES[keyof typeof FEATURES];
+export type FeatureName = (typeof FEATURES)[keyof typeof FEATURES];
 
 export const PRO_FEATURES: FeatureName[] = [
   FEATURES.CLOUD_SYNC,

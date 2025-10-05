@@ -15,7 +15,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../themes';
-import { createStyleSheet, combineViewStyles, combineTextStyles } from '../../utils';
+import {
+  createStyleSheet,
+  combineViewStyles,
+  combineTextStyles,
+} from '../../utils';
 
 export interface ButtonProps extends Omit<TouchableOpacityProps, 'style'> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
@@ -45,16 +49,16 @@ export const Button: React.FC<ButtonProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(buttonStyles, theme);
-  
+
   const isDisabled = disabled || loading;
-  
+
   const getButtonStyle = (): ViewStyle => {
     const baseStyle = styles.button as ViewStyle;
     const variantStyle = styles[`${variant}Button`] as ViewStyle;
     const sizeStyle = styles[`${size}Button`] as ViewStyle;
-    const stateStyle = isDisabled ? styles.disabledButton as ViewStyle : {};
-    const widthStyle = fullWidth ? styles.fullWidthButton as ViewStyle : {};
-    
+    const stateStyle = isDisabled ? (styles.disabledButton as ViewStyle) : {};
+    const widthStyle = fullWidth ? (styles.fullWidthButton as ViewStyle) : {};
+
     return combineViewStyles(
       baseStyle,
       variantStyle,
@@ -64,13 +68,13 @@ export const Button: React.FC<ButtonProps> = ({
       style
     );
   };
-  
+
   const getTextStyle = (): TextStyle => {
     const baseTextStyle = styles.text as TextStyle;
     const variantTextStyle = styles[`${variant}Text`] as TextStyle;
     const sizeTextStyle = styles[`${size}Text`] as TextStyle;
-    const stateTextStyle = isDisabled ? styles.disabledText as TextStyle : {};
-    
+    const stateTextStyle = isDisabled ? (styles.disabledText as TextStyle) : {};
+
     return combineTextStyles(
       baseTextStyle,
       variantTextStyle,
@@ -79,23 +83,28 @@ export const Button: React.FC<ButtonProps> = ({
       textStyle
     );
   };
-  
+
   const getIconSize = (): number => {
     switch (size) {
-      case 'sm': return 16;
-      case 'md': return 20;
-      case 'lg': return 24;
-      case 'xl': return 28;
-      default: return 20;
+      case 'sm':
+        return 16;
+      case 'md':
+        return 20;
+      case 'lg':
+        return 24;
+      case 'xl':
+        return 28;
+      default:
+        return 20;
     }
   };
-  
+
   const getIconColor = (): string => {
     if (isDisabled) return theme.colors['text-tertiary'];
     if (variant === 'primary') return theme.colors['text-inverse'];
     return theme.colors['accent-focus'];
   };
-  
+
   return (
     <TouchableOpacity
       style={getButtonStyle()}
@@ -104,10 +113,7 @@ export const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={getIconColor()}
-        />
+        <ActivityIndicator size='small' color={getIconColor()} />
       ) : (
         <>
           {leftIcon && (
@@ -141,7 +147,7 @@ const buttonStyles = (theme: any) => ({
     borderRadius: theme.borderRadius.md,
     ...theme.shadows.sm,
   },
-  
+
   // Variants
   primaryButton: {
     backgroundColor: theme.colors['accent-focus'],
@@ -162,7 +168,7 @@ const buttonStyles = (theme: any) => ({
   dangerButton: {
     backgroundColor: theme.colors['accent-error'],
   },
-  
+
   // Sizes
   smButton: {
     paddingHorizontal: theme.spacing[3],
@@ -184,7 +190,7 @@ const buttonStyles = (theme: any) => ({
     paddingVertical: theme.spacing[5],
     minHeight: 60,
   },
-  
+
   // States
   disabledButton: {
     opacity: 0.5,
@@ -192,13 +198,13 @@ const buttonStyles = (theme: any) => ({
   fullWidthButton: {
     width: '100%' as const,
   },
-  
+
   // Text styles
   text: {
     fontFamily: theme.typography.fontFamily.medium,
     textAlign: 'center' as const,
   },
-  
+
   primaryText: {
     color: theme.colors['text-inverse'],
   },
@@ -214,7 +220,7 @@ const buttonStyles = (theme: any) => ({
   dangerText: {
     color: theme.colors['text-inverse'],
   },
-  
+
   smText: {
     fontSize: theme.typography.fontSize.sm,
   },
@@ -227,11 +233,11 @@ const buttonStyles = (theme: any) => ({
   xlText: {
     fontSize: theme.typography.fontSize.xl,
   },
-  
+
   disabledText: {
     opacity: 0.5,
   },
-  
+
   // Icon styles
   leftIcon: {
     marginRight: theme.spacing[2],

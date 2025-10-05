@@ -28,14 +28,14 @@ export const Container: React.FC<ContainerProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(containerStyles, theme);
-  
+
   const getContainerStyle = (): ViewStyle => {
     const baseStyle = styles.container;
     const paddingStyle = styles[`${padding}Padding`];
     const marginStyle = styles[`${margin}Margin`];
     const maxWidthStyle = styles[`${maxWidth}MaxWidth`];
     const centerStyle = center ? styles.center : {};
-    
+
     return combineViewStyles(
       baseStyle,
       paddingStyle,
@@ -45,19 +45,15 @@ export const Container: React.FC<ContainerProps> = ({
       style
     );
   };
-  
-  return (
-    <View style={getContainerStyle()}>
-      {children}
-    </View>
-  );
+
+  return <View style={getContainerStyle()}>{children}</View>;
 };
 
 const containerStyles = (theme: any) => ({
   container: {
     flex: 1,
   },
-  
+
   // Padding variants
   nonePadding: {
     padding: 0,
@@ -74,7 +70,7 @@ const containerStyles = (theme: any) => ({
   xlPadding: {
     padding: theme.spacing[8],
   },
-  
+
   // Margin variants
   noneMargin: {
     margin: 0,
@@ -91,7 +87,7 @@ const containerStyles = (theme: any) => ({
   xlMargin: {
     margin: theme.spacing[8],
   },
-  
+
   // Max width variants
   smMaxWidth: {
     maxWidth: 320,
@@ -108,7 +104,7 @@ const containerStyles = (theme: any) => ({
   fullMaxWidth: {
     maxWidth: '100%' as const,
   },
-  
+
   // Center alignment
   center: {
     alignSelf: 'center',

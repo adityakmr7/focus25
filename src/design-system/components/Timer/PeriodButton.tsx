@@ -7,7 +7,11 @@
 import React from 'react';
 import { TouchableOpacity, Text, ViewStyle, TextStyle } from 'react-native';
 import { useTheme } from '../../themes';
-import { createStyleSheet, combineViewStyles, combineTextStyles } from '../../utils';
+import {
+  createStyleSheet,
+  combineViewStyles,
+  combineTextStyles,
+} from '../../utils';
 
 export interface PeriodButtonProps {
   period: string;
@@ -32,14 +36,14 @@ export const PeriodButton: React.FC<PeriodButtonProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(periodButtonStyles, theme);
-  
+
   const getButtonStyle = (): ViewStyle => {
     const baseStyle = styles.button;
     const sizeStyle = styles[`${size}Button`];
     const variantStyle = styles[`${variant}Button`];
     const stateStyle = isSelected ? styles.selectedButton : {};
     const disabledStyle = disabled ? styles.disabledButton : {};
-    
+
     return combineViewStyles(
       baseStyle,
       sizeStyle,
@@ -49,14 +53,14 @@ export const PeriodButton: React.FC<PeriodButtonProps> = ({
       style
     );
   };
-  
+
   const getTextStyle = (): TextStyle => {
     const baseStyle = styles.text;
     const sizeStyle = styles[`${size}Text`];
     const variantStyle = styles[`${variant}Text`];
     const stateStyle = isSelected ? styles.selectedText : {};
     const disabledStyle = disabled ? styles.disabledText : {};
-    
+
     return combineTextStyles(
       baseStyle,
       sizeStyle,
@@ -66,7 +70,7 @@ export const PeriodButton: React.FC<PeriodButtonProps> = ({
       textStyle
     );
   };
-  
+
   return (
     <TouchableOpacity
       style={getButtonStyle()}
@@ -85,7 +89,7 @@ const periodButtonStyles = (theme: any) => ({
     justifyContent: 'center',
     borderRadius: theme.borderRadius.md,
   },
-  
+
   // Size variants
   smButton: {
     paddingHorizontal: theme.spacing[3],
@@ -102,7 +106,7 @@ const periodButtonStyles = (theme: any) => ({
     paddingVertical: theme.spacing[4],
     minHeight: 52,
   },
-  
+
   // Variant styles
   defaultButton: {
     backgroundColor: theme.colors['bg-secondary'],
@@ -118,7 +122,7 @@ const periodButtonStyles = (theme: any) => ({
     borderRadius: theme.borderRadius.full,
     borderWidth: 0,
   },
-  
+
   // State styles
   selectedButton: {
     backgroundColor: theme.colors['accent-focus'],
@@ -127,13 +131,13 @@ const periodButtonStyles = (theme: any) => ({
   disabledButton: {
     opacity: 0.5,
   },
-  
+
   // Text styles
   text: {
     fontFamily: theme.typography.fontFamily.medium,
     textAlign: 'center',
   },
-  
+
   smText: {
     fontSize: theme.typography.fontSize.sm,
   },
@@ -143,7 +147,7 @@ const periodButtonStyles = (theme: any) => ({
   lgText: {
     fontSize: theme.typography.fontSize.lg,
   },
-  
+
   defaultText: {
     color: theme.colors['text-primary'],
   },
@@ -153,7 +157,7 @@ const periodButtonStyles = (theme: any) => ({
   pillText: {
     color: theme.colors['text-primary'],
   },
-  
+
   selectedText: {
     color: theme.colors['text-inverse'],
   },

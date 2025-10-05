@@ -5,10 +5,21 @@
 // @ts-nocheck
 
 import React from 'react';
-import { TouchableOpacity, View, Text, Switch, ViewStyle, TextStyle } from 'react-native';
+import {
+  TouchableOpacity,
+  View,
+  Text,
+  Switch,
+  ViewStyle,
+  TextStyle,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../themes';
-import { createStyleSheet, combineViewStyles, combineTextStyles } from '../../utils';
+import {
+  createStyleSheet,
+  combineViewStyles,
+  combineTextStyles,
+} from '../../utils';
 
 export interface SettingItemProps {
   title: string;
@@ -45,25 +56,20 @@ export const SettingItem: React.FC<SettingItemProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyleSheet(settingItemStyles, theme);
-  
+
   const getItemStyle = (): ViewStyle => {
     const baseStyle = styles.item;
     const variantStyle = styles[`${variant}Item`];
     const disabledStyle = disabled ? styles.disabledItem : {};
-    
-    return combineViewStyles(
-      baseStyle,
-      variantStyle,
-      disabledStyle,
-      style
-    );
+
+    return combineViewStyles(baseStyle, variantStyle, disabledStyle, style);
   };
-  
+
   const getTitleStyle = (): TextStyle => {
     const baseStyle = styles.title;
     const variantStyle = styles[`${variant}Title`];
     const disabledStyle = disabled ? styles.disabledTitle : {};
-    
+
     return combineTextStyles(
       baseStyle,
       variantStyle,
@@ -71,37 +77,33 @@ export const SettingItem: React.FC<SettingItemProps> = ({
       titleStyle
     );
   };
-  
+
   const getSubtitleStyle = (): TextStyle => {
     const baseStyle = styles.subtitle;
     const disabledStyle = disabled ? styles.disabledSubtitle : {};
-    
-    return combineTextStyles(
-      baseStyle,
-      disabledStyle,
-      subtitleStyle
-    );
+
+    return combineTextStyles(baseStyle, disabledStyle, subtitleStyle);
   };
-  
+
   const getIconColor = (): string => {
     if (disabled) return theme.colors['text-tertiary'];
     switch (variant) {
-      case 'destructive': return theme.colors['accent-error'];
-      case 'warning': return theme.colors['accent-warning'];
-      default: return theme.colors['accent-focus'];
+      case 'destructive':
+        return theme.colors['accent-error'];
+      case 'warning':
+        return theme.colors['accent-warning'];
+      default:
+        return theme.colors['accent-focus'];
     }
   };
-  
+
   const getValueStyle = (): TextStyle => {
     const baseStyle = styles.value;
     const disabledStyle = disabled ? styles.disabledValue : {};
-    
-    return combineTextStyles(
-      baseStyle,
-      disabledStyle
-    );
+
+    return combineTextStyles(baseStyle, disabledStyle);
   };
-  
+
   return (
     <TouchableOpacity
       style={getItemStyle()}
@@ -111,39 +113,35 @@ export const SettingItem: React.FC<SettingItemProps> = ({
     >
       <View style={styles.left}>
         <View style={styles.iconContainer}>
-          <Ionicons
-            name={icon}
-            size={20}
-            color={getIconColor()}
-          />
+          <Ionicons name={icon} size={20} color={getIconColor()} />
         </View>
         <View style={styles.textContainer}>
           <Text style={getTitleStyle()}>{title}</Text>
-          {subtitle && (
-            <Text style={getSubtitleStyle()}>{subtitle}</Text>
-          )}
+          {subtitle && <Text style={getSubtitleStyle()}>{subtitle}</Text>}
         </View>
       </View>
-      
+
       <View style={styles.right}>
-        {value && (
-          <Text style={getValueStyle()}>{value}</Text>
-        )}
+        {value && <Text style={getValueStyle()}>{value}</Text>}
         {hasSwitch && switchValue !== undefined && onSwitchToggle && (
           <Switch
             disabled={disabled}
             value={disabled ? false : switchValue}
             onValueChange={onSwitchToggle}
-            trackColor={{ 
-              false: theme.colors['bg-secondary'], 
-              true: theme.colors['accent-focus'] 
+            trackColor={{
+              false: theme.colors['bg-secondary'],
+              true: theme.colors['accent-focus'],
             }}
-            thumbColor={switchValue ? theme.colors['text-inverse'] : theme.colors['text-secondary']}
+            thumbColor={
+              switchValue
+                ? theme.colors['text-inverse']
+                : theme.colors['text-secondary']
+            }
           />
         )}
         {showArrow && (
           <Ionicons
-            name="chevron-forward"
+            name='chevron-forward'
             size={20}
             color={theme.colors['text-secondary']}
           />
@@ -163,7 +161,7 @@ const settingItemStyles = (theme: any) => ({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors['border-primary'],
   },
-  
+
   // Variant styles
   defaultItem: {},
   destructiveItem: {
@@ -172,12 +170,12 @@ const settingItemStyles = (theme: any) => ({
   warningItem: {
     backgroundColor: theme.colors['bg-warning'],
   },
-  
+
   // State styles
   disabledItem: {
     opacity: 0.5,
   },
-  
+
   // Left section
   left: {
     flexDirection: 'row',
@@ -196,7 +194,7 @@ const settingItemStyles = (theme: any) => ({
   textContainer: {
     flex: 1,
   },
-  
+
   // Title styles
   title: {
     fontSize: theme.typography.fontSize.base,
@@ -215,7 +213,7 @@ const settingItemStyles = (theme: any) => ({
   disabledTitle: {
     color: theme.colors['text-tertiary'],
   },
-  
+
   // Subtitle styles
   subtitle: {
     fontSize: theme.typography.fontSize.sm,
@@ -225,7 +223,7 @@ const settingItemStyles = (theme: any) => ({
   disabledSubtitle: {
     color: theme.colors['text-tertiary'],
   },
-  
+
   // Right section
   right: {
     flexDirection: 'row',
