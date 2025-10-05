@@ -16,7 +16,7 @@ interface TodoState {
     searchQuery: string;
 
     // Actions
-    initializeStore: () => Promise<void>;
+    loadTodos: () => Promise<void>;
     createTodo: (todo: Omit<Todo, 'id' | 'createdAt' | 'isCompleted'>) => Promise<void>;
     updateTodo: (id: string, updates: Partial<Todo>) => Promise<void>;
     toggleTodo: (id: string) => Promise<void>;
@@ -29,14 +29,11 @@ interface TodoState {
     setShowCompleted: (show: boolean) => void;
     setSearchQuery: (query: string) => void;
 
-    // Statistics
-
     // Export/Import
     exportTodosToCSV: () => string;
     syncWithDatabase: () => Promise<void>;
 }
 
-const defaultTodos: Omit<Todo, 'id' | 'createdAt' | 'isCompleted'>[] = [];
 
 export const useTodoStore = create<TodoState>((set, get) => ({
     todos: [],
@@ -45,12 +42,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     isInitialized: false,
 
     // Filters
-    selectedCategory: 'all',
-    selectedPriority: 'all',
     showCompleted: true,
     searchQuery: '',
 
-    initializeStore: async () => {
+    loadTodos: async () => {
         if (get().isInitialized) return;
 
         set({ isLoading: true, error: null });
@@ -65,26 +60,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
             // Load existing todos (filtered by user if authenticated)
             const savedTodos = await databaseService.getTodos(currentUser?.uid);
-            console.log('currentUser', currentUser?.uid);
-            // If no todos exist, create default ones
-            if (savedTodos.length === 0) {
-                const todosToCreate = defaultTodos.map((todo) => ({
-                    id: uuidv4(),
-                    ...todo,
-                    isCompleted: false,
-                    createdAt: new Date().toISOString(),
-                    userId: currentUser?.uid,
-                }));
-
-                await Promise.all(todosToCreate.map((todo) => databaseService.saveTodo(todo)));
-
-                set({ todos: todosToCreate, isInitialized: true });
-            } else {
-                set({ todos: savedTodos, isInitialized: true });
-            }
+            set({ todos: savedTodos, isInitialized: true });
         } catch (error) {
-            console.error('Failed to initialize todos:', error);
-            set({ error: 'Failed to initialize todos' });
+            set({ error: 'Failed to load todos' });
         } finally {
             set({ isLoading: false });
         }
