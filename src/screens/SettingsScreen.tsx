@@ -433,13 +433,12 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
                                     feature={FEATURES.CLOUD_SYNC}
                                     fallback={
                                         <DSSettingItem
-                                            title="Cloud Sync"
-                                            subtitle="Sync your data across devices"
-                                            icon="cloud-outline"
-                                            hasSwitch={true}
-                                            switchValue={dataSync}
-                                            onSwitchToggle={() => toggleSetting('dataSync')}
-                                        />
+                                        title="Upgrade to Pro"
+                                        subtitle="Unlock all premium features"
+                                        icon="diamond-outline"
+                                        showArrow={true}
+                                        onPress={handleUpdateToPro}
+                                    />
                                     }
                                 >
                                     <DSSettingItem
@@ -466,15 +465,6 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
                                     />
                                 </FeatureGate>
 
-                                {!isPro && (
-                                    <DSSettingItem
-                                        title="Upgrade to Pro"
-                                        subtitle="Unlock all premium features"
-                                        icon="diamond-outline"
-                                        showArrow={true}
-                                        onPress={handleUpdateToPro}
-                                    />
-                                )}
                             </Stack>
                         </CardContent>
                     </Card>
