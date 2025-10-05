@@ -579,7 +579,6 @@ const MinimalistTodoScreen: React.FC = () => {
     );
   }
 
-  console.log('MinimalistTodoScreen: todos', groupedTodos);
   // Items added state
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -665,7 +664,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingTop: 40,
+    // paddingTop: 40,
     paddingBottom: 20,
   },
   headerLeft: {
