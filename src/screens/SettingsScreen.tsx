@@ -238,31 +238,9 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
         }
     }, [exportData, showAlert]);
 
-    const handleDeleteData = useCallback((): void => {
-        Alert.alert(
-            'Delete All Data',
-            `Are you sure you want to delete all your focus data? This will permanently remove:\n\n• All statistics and flow metrics\n• Custom settings and themes\n\nThis action cannot be undone.`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await deleteData();
-                            showAlert(
-                                'Data Deleted',
-                                'All your data has been permanently deleted.',
-                            );
-                            setTimeout(calculateStorageUsage, 500);
-                        } catch (error) {
-                            showAlert('Delete Failed', 'Failed to delete data. Please try again.');
-                        }
-                    },
-                },
-            ],
-        );
-    }, [deleteData, showAlert, calculateStorageUsage]);
+   
+    
+    
     const handleUpdateToPro = () => {
         setShowProUpgradeSheet(true);
     };
@@ -510,28 +488,6 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
             </Animated.View>
 
             {/* Pro Status Header */}
-            <Animated.View>
-                {user?.isPro ? (
-                    <View style={styles.proStatusContainer}>
-                        <Text style={[styles.proStatusText, { color: theme.accent }]}>
-                            ✨ Pro User
-                        </Text>
-                        <Text style={[styles.proStatusSubtext, { color: theme.textSecondary }]}>
-                            All features unlocked
-                        </Text>
-                    </View>
-                ) : (
-                    <Button 
-                        variant="ghost"
-                        size="md" 
-                        onPress={handleUpdateToPro}
-                        style={{ alignSelf: 'center', marginHorizontal: 20 }}
-                    >
-                        Upgrade to Pro
-                    </Button>
-                )}
-                <View style={styles.placeholder} />
-            </Animated.View>
 
             <Animated.ScrollView
                 style={[styles.scrollView, sectionsAnimatedStyle]}
@@ -598,26 +554,6 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
                                     onSwitchToggle={handleTheme}
                                 />
                                 
-                                <FeatureGate 
-                                    feature={FEATURES.ADVANCED_THEMES}
-                                    fallback={
-                                        <DSSettingItem
-                                            title="Premium Themes"
-                                            subtitle="Unlock beautiful custom themes"
-                                            icon="color-palette-outline"
-                                            showArrow={true}
-                                            onPress={() => {}}
-                                        />
-                                    }
-                                >
-                                    <DSSettingItem
-                                        title="Theme Customization"
-                                        subtitle="Personalize colors and timer style"
-                                        icon="color-palette"
-                                        showArrow={true}
-                                        onPress={handleThemeCustomization}
-                                    />
-                                </FeatureGate>
                             </Stack>
                         </CardContent>
                     </Card>
@@ -729,48 +665,6 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
                                     />
                                 </FeatureGate>
 
-                                <FeatureGate 
-                                    feature={FEATURES.MUSIC_LIBRARY}
-                                    fallback={
-                                        <DSSettingItem
-                                            title="Focus Music Library"
-                                            subtitle="Unlock premium ambient sounds"
-                                            icon="musical-notes-outline"
-                                            showArrow={true}
-                                            onPress={() => {}}
-                                        />
-                                    }
-                                >
-                                    <DSSettingItem
-                                        title="Focus Music Library"
-                                        subtitle="Access premium ambient sounds and music"
-                                        icon="musical-notes"
-                                        showArrow={true}
-                                        onPress={() => navigation?.navigate('MusicLibrary')}
-                                    />
-                                </FeatureGate>
-
-                                <FeatureGate 
-                                    feature={FEATURES.ADVANCED_ANALYTICS}
-                                    fallback={
-                                        <DSSettingItem
-                                            title="Advanced Analytics"
-                                            subtitle="Unlock detailed productivity insights"
-                                            icon="analytics-outline"
-                                            showArrow={true}
-                                            onPress={() => {}}
-                                        />
-                                    }
-                                >
-                                    <DSSettingItem
-                                        title="Advanced Analytics"
-                                        subtitle="View detailed productivity insights"
-                                        icon="analytics"
-                                        showArrow={true}
-                                        onPress={() => navigation?.navigate('Analytics')}
-                                    />
-                                </FeatureGate>
-
                                 {!isPro && (
                                     <DSSettingItem
                                         title="Upgrade to Pro"
@@ -852,7 +746,7 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
                     </Card>
                 </AnimatedSection>
 
-                <AnimatedSection delay={800}>
+                {/* <AnimatedSection delay={800}>
                     <SectionHeader title="DANGER ZONE" />
                     <Card variant="elevated" padding="md" style={{  marginBottom: 8, borderColor: '#FEE2E2', borderWidth: 1 }}>
 
@@ -869,7 +763,7 @@ const SettingsScreenContent: React.FC<SettingsScreenProps> = ({ navigation }) =>
                             </Stack>
                         </CardContent>
                     </Card>
-                </AnimatedSection>
+                </AnimatedSection> */}
 
                 <Container padding="lg" center>
                     <Stack direction="column" gap="xs" align="center">
