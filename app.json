@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "focus25-app",
-    "slug": "focus25-app",
-    "version": "1.0.0",
+    "name": "Flowzy",
+    "slug": "flowzy",
+    "version": "1.6.0",
     "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "focus25app",
+    "scheme": "flowzy",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
