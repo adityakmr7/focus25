@@ -1,5 +1,13 @@
 import * as SQLite from 'expo-sqlite';
-import { v4 as uuidv4 } from 'uuid';
+
+// Simple UUID v4 generator for React Native
+function generateUUID(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+}
 
 // Database types
 export interface Todo {
@@ -77,6 +85,34 @@ class LocalDatabaseService {
         } catch (error) {
             console.error('Failed to initialize local database:', error);
             return false;
+        }
+    }
+
+    /**
+     * Check if the database is initialized
+     */
+    isDatabaseInitialized(): boolean {
+        return this.isInitialized && this.db !== null;
+    }
+
+    /**
+     * Wait for database initialization
+     */
+    async waitForInitialization(): Promise<void> {
+        if (this.isInitialized) return;
+
+        // Wait up to 5 seconds for initialization
+        const maxWaitTime = 5000;
+        const checkInterval = 100;
+        let waited = 0;
+
+        while (!this.isInitialized && waited < maxWaitTime) {
+            await new Promise((resolve) => setTimeout(resolve, checkInterval));
+            waited += checkInterval;
+        }
+
+        if (!this.isInitialized) {
+            throw new Error('Database initialization timeout');
         }
     }
 
@@ -187,7 +223,7 @@ class LocalDatabaseService {
     async createTodo(todo: Omit<Todo, 'id' | 'createdAt' | 'actualMinutes'>): Promise<string> {
         if (!this.db) throw new Error('Database not initialized');
 
-        const id = uuidv4();
+        const id = generateUUID();
         const now = new Date().toISOString();
 
         await this.db.runAsync(
@@ -211,6 +247,9 @@ class LocalDatabaseService {
                 0,
             ],
         );
+
+        // Log the change for sync
+        await this.logSyncChange('todos', id, 'create');
 
         return id;
     }
@@ -268,12 +307,18 @@ class LocalDatabaseService {
     `,
             values,
         );
+
+        // Log the change for sync
+        await this.logSyncChange('todos', id, 'update');
     }
 
     async deleteTodo(id: string): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
         await this.db.runAsync('DELETE FROM todos WHERE id = ?', [id]);
+
+        // Log the change for sync
+        await this.logSyncChange('todos', id, 'delete');
     }
 
     async getCompletedTodos(): Promise<Todo[]> {
@@ -311,7 +356,7 @@ class LocalDatabaseService {
     async createSession(session: Omit<Session, 'id'>): Promise<string> {
         if (!this.db) throw new Error('Database not initialized');
 
-        const id = uuidv4();
+        const id = generateUUID();
 
         await this.db.runAsync(
             `
@@ -333,6 +378,9 @@ class LocalDatabaseService {
                 session.notes || null,
             ],
         );
+
+        // Log the change for sync
+        await this.logSyncChange('sessions', id, 'create');
 
         return id;
     }
@@ -390,12 +438,18 @@ class LocalDatabaseService {
     `,
             values,
         );
+
+        // Log the change for sync
+        await this.logSyncChange('sessions', id, 'update');
     }
 
     async deleteSession(id: string): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
         await this.db.runAsync('DELETE FROM sessions WHERE id = ?', [id]);
+
+        // Log the change for sync
+        await this.logSyncChange('sessions', id, 'delete');
     }
 
     async getSessionsForTodo(todoId: string): Promise<Session[]> {
@@ -502,6 +556,28 @@ class LocalDatabaseService {
     }
 
     // ===== SYNC OPERATIONS =====
+
+    /**
+     * Log a change to the sync log for tracking
+     */
+    private async logSyncChange(
+        tableName: string,
+        recordId: string,
+        operation: 'create' | 'update' | 'delete',
+    ): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const syncLogId = generateUUID();
+        const timestamp = new Date().toISOString();
+
+        await this.db.runAsync(
+            `
+      INSERT INTO sync_log (id, tableName, recordId, operation, timestamp, synced)
+      VALUES (?, ?, ?, ?, ?, 0)
+    `,
+            [syncLogId, tableName, recordId, operation, timestamp],
+        );
+    }
 
     async getUnsyncedChanges(): Promise<SyncLog[]> {
         if (!this.db) throw new Error('Database not initialized');

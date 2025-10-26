@@ -53,7 +53,7 @@ export default function DataManagementSection() {
                 } else {
                     Alert.alert(
                         'Sync Failed',
-                        'Failed to enable cloud sync. Please check your internet connection and try again.',
+                        'Failed to enable cloud sync. Please make sure you are signed in and try again.',
                         [{ text: 'OK' }],
                     );
                 }
@@ -89,7 +89,7 @@ export default function DataManagementSection() {
             } else {
                 Alert.alert(
                     'Sync Failed',
-                    'Failed to synchronize data. Please check your internet connection and try again.',
+                    'Failed to synchronize data. Please make sure you are signed in and try again.',
                     [{ text: 'OK' }],
                 );
             }
@@ -193,8 +193,8 @@ export default function DataManagementSection() {
             </SettingsSection>
 
             {/* Export/Import Section */}
-            <SettingsSection title="Export & Import">
-                <SettingItem
+            {/* <SettingsSection title="Export & Import"> */}
+            {/* <SettingItem
                     title="Export All Data"
                     subtitle="Export todos, sessions, and settings as JSON"
                     rightElement={
@@ -208,8 +208,8 @@ export default function DataManagementSection() {
                         </Button>
                     }
                 />
-                <Divider />
-                <SettingItem
+                <Divider /> */}
+            {/* <SettingItem
                     title="Export Todos"
                     subtitle="Export only your todos"
                     rightElement={
@@ -223,8 +223,8 @@ export default function DataManagementSection() {
                         </Button>
                     }
                 />
-                <Divider />
-                <SettingItem
+                <Divider /> */}
+            {/* <SettingItem
                     title="Export Sessions"
                     subtitle="Export only your Pomodoro sessions"
                     rightElement={
@@ -237,9 +237,9 @@ export default function DataManagementSection() {
                             Export
                         </Button>
                     }
-                />
-                <Divider />
-                <SettingItem
+                /> */}
+            {/* <Divider /> */}
+            {/* <SettingItem
                     title="Import Data"
                     subtitle="Import previously exported data"
                     rightElement={
@@ -252,11 +252,11 @@ export default function DataManagementSection() {
                             Import
                         </Button>
                     }
-                />
-            </SettingsSection>
+                /> */}
+            {/* </SettingsSection> */}
 
             {/* Danger Zone */}
-            <SettingsSection title="Danger Zone">
+            {/* <SettingsSection title="Danger Zone">
                 <SettingItem
                     title="Clear All Data"
                     subtitle="Permanently delete all todos, sessions, and settings"
@@ -266,7 +266,7 @@ export default function DataManagementSection() {
                         </Button>
                     }
                 />
-            </SettingsSection>
+            </SettingsSection> */}
         </>
     );
 }

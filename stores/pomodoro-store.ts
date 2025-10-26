@@ -454,6 +454,9 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     // ===== Session Management =====
     loadSessions: async () => {
         try {
+            // Wait for database initialization
+            await localDatabaseService.waitForInitialization();
+
             const sessions = await localDatabaseService.getSessions();
             set({ sessions, sessionsLoaded: true });
         } catch (error) {
@@ -462,9 +465,17 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     },
 
     // Getters
-    getTotalTimeForTodo: (todoId) => {
-        // Return a promise for async operation
-        return localDatabaseService.getTotalTimeForTodo(todoId);
+    getTotalTimeForTodo: async (todoId) => {
+        try {
+            // Wait for database initialization
+            await localDatabaseService.waitForInitialization();
+
+            // Return a promise for async operation
+            return await localDatabaseService.getTotalTimeForTodo(todoId);
+        } catch (error) {
+            console.error('Failed to get total time for todo:', error);
+            return 0;
+        }
     },
 
     getSessions: () => {

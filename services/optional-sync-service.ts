@@ -20,6 +20,16 @@ class OptionalSyncService {
         try {
             if (this.isInitialized) return true;
 
+            // Check if user is authenticated
+            const {
+                data: { user },
+                error: authError,
+            } = await supabase.auth.getUser();
+            if (authError || !user) {
+                console.log('User not authenticated, sync disabled');
+                return false;
+            }
+
             // Check if sync is enabled in settings
             const settings = await localDatabaseService.getSettings();
             if (!settings?.syncEnabled) {
@@ -41,6 +51,16 @@ class OptionalSyncService {
      */
     async enableSync(): Promise<boolean> {
         try {
+            // Check if user is authenticated
+            const {
+                data: { user },
+                error: authError,
+            } = await supabase.auth.getUser();
+            if (authError || !user) {
+                console.log('Cannot enable sync: user not authenticated');
+                return false;
+            }
+
             // Update settings to enable sync
             await localDatabaseService.updateSettings({
                 syncEnabled: true,
@@ -154,6 +174,15 @@ class OptionalSyncService {
      * Sync todo changes to Supabase
      */
     private async syncTodoChange(todoId: string, operation: string): Promise<void> {
+        // Get authenticated user
+        const {
+            data: { user },
+            error: authError,
+        } = await supabase.auth.getUser();
+        if (authError || !user) {
+            throw new Error('User not authenticated');
+        }
+
         if (operation === 'create' || operation === 'update') {
             const todo = await localDatabaseService.getTodo(todoId);
             if (!todo) return;
@@ -166,7 +195,7 @@ class OptionalSyncService {
                 isCompleted: todo.isCompleted,
                 created_at: todo.createdAt,
                 completedAt: todo.completedAt || undefined,
-                user_id: 'local-user', // Use a default user ID for local-first
+                user_id: user.id, // Use authenticated user's ID
             });
 
             if (error) throw error;
@@ -181,6 +210,15 @@ class OptionalSyncService {
      * Sync session changes to Supabase
      */
     private async syncSessionChange(sessionId: string, operation: string): Promise<void> {
+        // Get authenticated user
+        const {
+            data: { user },
+            error: authError,
+        } = await supabase.auth.getUser();
+        if (authError || !user) {
+            throw new Error('User not authenticated');
+        }
+
         if (operation === 'create' || operation === 'update') {
             const sessions = await localDatabaseService.getSessions();
             const session = sessions.find((s) => s.id === sessionId);
@@ -191,7 +229,7 @@ class OptionalSyncService {
                 duration: session.duration,
                 type: session.type,
                 completed_at: session.endTime || undefined,
-                user_id: 'local-user', // Use a default user ID for local-first
+                user_id: user.id, // Use authenticated user's ID
             });
 
             if (error) throw error;
@@ -230,7 +268,7 @@ class OptionalSyncService {
             let query = supabase.from('todos').select('*');
 
             if (lastSyncAt) {
-                query = query.gte('updated_at', lastSyncAt);
+                query = query.gte('created_at', lastSyncAt);
             }
 
             const { data: todos, error } = await query;

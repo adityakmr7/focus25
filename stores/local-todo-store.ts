@@ -46,6 +46,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         set({ isLoading: true, error: null });
 
         try {
+            // Wait for database initialization
+            await localDatabaseService.waitForInitialization();
+
             const todos = await localDatabaseService.getTodos();
             set({ todos, isLoading: false, isInitialized: true });
         } catch (error) {
@@ -61,6 +64,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         set({ isLoading: true, error: null });
 
         try {
+            // Wait for database initialization
+            await localDatabaseService.waitForInitialization();
+
             const todoId = await localDatabaseService.createTodo(todoData);
 
             const newTodo: Todo = {
@@ -89,6 +95,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         set({ isLoading: true, error: null });
 
         try {
+            // Wait for database initialization
+            await localDatabaseService.waitForInitialization();
+
             await localDatabaseService.updateTodo(id, updates);
 
             set((state) => ({
@@ -114,6 +123,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         };
 
         try {
+            // Wait for database initialization
+            await localDatabaseService.waitForInitialization();
+
             await localDatabaseService.updateTodo(id, updates);
 
             set((state) => ({
@@ -131,6 +143,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         set({ isLoading: true, error: null });
 
         try {
+            // Wait for database initialization
+            await localDatabaseService.waitForInitialization();
+
             await localDatabaseService.deleteTodo(id);
 
             set((state) => ({
@@ -150,6 +165,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         set({ isLoading: true, error: null });
 
         try {
+            // Wait for database initialization
+            await localDatabaseService.waitForInitialization();
+
             const completedTodos = await localDatabaseService.getCompletedTodos();
 
             for (const todo of completedTodos) {

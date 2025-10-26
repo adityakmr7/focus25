@@ -1,5 +1,5 @@
 import TypographyText from '@/components/TypographyText';
-import { useSupabaseTodoStore } from '@/stores/supabase-todo-store';
+import { useTodoStore } from '@/stores/local-todo-store';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -9,16 +9,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CreateTodoScreen = () => {
     const { theme } = useTheme();
-    const { createTodo, updateTodo, todos } = useSupabaseTodoStore();
+    const { createTodo, updateTodo, todos } = useTodoStore();
     const { todoId } = useLocalSearchParams<{ todoId?: string }>();
 
     // Check if we're editing an existing todo
     const isEditing = Boolean(todoId);
     const existingTodo = isEditing ? todos.find((todo) => todo.id === todoId) : null;
 
-    const [title, setTitle] = useState(existingTodo?.title || '');
-    const [description, setDescription] = useState(existingTodo?.description || '');
-    const [selectedIcon, setSelectedIcon] = useState(existingTodo?.icon || 'checkmark-circle');
+    const [title, setTitle] = useState(existingTodo?.title ?? '');
+    const [description, setDescription] = useState(existingTodo?.description ?? '');
+    const [selectedIcon, setSelectedIcon] = useState(existingTodo?.icon ?? 'checkmark-circle');
     const [isLoading, setIsLoading] = useState(false);
 
     // Available icons for selection
@@ -27,9 +27,9 @@ const CreateTodoScreen = () => {
     // Update form when editing existing todo
     useEffect(() => {
         if (existingTodo) {
-            setTitle(existingTodo.title);
-            setDescription(existingTodo.description);
-            setSelectedIcon(existingTodo.icon);
+            setTitle(existingTodo.title ?? '');
+            setDescription(existingTodo.description ?? '');
+            setSelectedIcon(existingTodo.icon ?? 'checkmark-circle');
         }
     }, [existingTodo]);
 
@@ -51,8 +51,10 @@ const CreateTodoScreen = () => {
                     title: title.trim(),
                     description: description.trim(),
                     icon: selectedIcon,
-                    created_at: new Date().toISOString(),
-                    completedAt: null,
+                    isCompleted: false,
+                    category: undefined,
+                    priority: 0,
+                    estimatedMinutes: undefined,
                 });
             }
 
