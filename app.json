@@ -14,6 +14,7 @@
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.focus25.app",
       "appleTeamId": "PAYP925PPX",
+      "backgroundModes": ["background-processing", "background-fetch", "audio"],
       "icon": {
         "light": "./assets/images/ios-light.png",
         "dark": "./assets/images/ios-dark.png",
@@ -28,7 +29,9 @@
       "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.WAKE_LOCK",
+        "android.permission.FOREGROUND_SERVICE"
       ]
     },
     "web": {
