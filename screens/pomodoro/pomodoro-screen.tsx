@@ -1,5 +1,4 @@
 import { usePomodoroTimer } from '@/hooks/usePomodoroTimer';
-import { useAppLifecycle } from '@/hooks/useAppLifecycle';
 import { usePomodoroStore } from '@/stores/pomodoro-store';
 import { useSettingsStore } from '@/stores/setting-store';
 import { useTodoStore } from '@/stores/todo-store';
@@ -44,9 +43,6 @@ export default function PomodoroScreen() {
 
     // Start the timer interval with sound settings
     usePomodoroTimer(soundEffects);
-
-    // Handle app lifecycle events for background timer support
-    useAppLifecycle();
 
     // Bottom sheet ref
     const bottomSheetRef = useRef<BottomSheet>(null);
