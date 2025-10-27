@@ -1,5 +1,5 @@
 import TypographyText from '@/components/TypographyText';
-import { useSettingsStore } from '@/stores/setting-store';
+import { useSettingsStore } from '@/stores/local-settings-store';
 import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { HStack, SPACING, VStack, useTheme } from 'react-native-heroui';
@@ -27,6 +27,16 @@ const SettingsScreen = () => {
     // Handler functions
     const handleTextSizePress = () => {
         console.log('Open text size picker');
+    };
+
+    const handleFocusDurationSelect = (duration: number) => {
+        console.log('Setting focus duration to:', duration);
+        setFocusDuration(duration);
+    };
+
+    const handleBreakDurationSelect = (duration: number) => {
+        console.log('Setting break duration to:', duration);
+        setBreakDuration(duration);
     };
 
     return (
@@ -70,14 +80,14 @@ const SettingsScreen = () => {
                 onClose={() => setFocusDurationModalVisible(false)}
                 title="Focus Duration"
                 selectedDuration={focusDuration}
-                onSelectDuration={setFocusDuration}
+                onSelectDuration={handleFocusDurationSelect}
             />
             <DurationPickerModal
                 visible={breakDurationModalVisible}
                 onClose={() => setBreakDurationModalVisible(false)}
                 title="Break Duration"
                 selectedDuration={breakDuration}
-                onSelectDuration={setBreakDuration}
+                onSelectDuration={handleBreakDurationSelect}
             />
 
             {/* Theme Selection Modal */}

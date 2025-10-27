@@ -14,7 +14,7 @@
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.focus25.app",
       "appleTeamId": "PAYP925PPX",
-      "backgroundModes": ["background-processing", "background-fetch", "audio"],
+      "backgroundModes": ["background-fetch", "audio"],
       "icon": {
         "light": "./assets/images/ios-light.png",
         "dark": "./assets/images/ios-dark.png",

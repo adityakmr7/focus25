@@ -5,6 +5,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { notificationService } from '@/services/notification-service';
 import { localDatabaseService } from '@/services/local-database-service';
 import { optionalSyncService } from '@/services/optional-sync-service';
+import { backgroundMetronomeService } from '@/services/background-metronome-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useSettingsStore } from '@/stores/local-settings-store';
 import { useFonts } from 'expo-font';
@@ -16,6 +17,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { HeroUIProvider } from 'react-native-heroui';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Notifications from 'expo-notifications';
 // Inner component that uses the theme hook
 function AppContent() {
     const { resolvedTheme } = useTheme();
@@ -40,6 +42,9 @@ function AppContent() {
                 // Initialize notification service
                 await notificationService.initialize();
 
+                // Initialize background metronome service
+                await backgroundMetronomeService.initialize();
+
                 // Initialize optional sync service
                 await optionalSyncService.initialize();
 
@@ -53,6 +58,13 @@ function AppContent() {
 
         initializeServices();
 
+        // Set up notification response listener
+        const notificationListener = Notifications.addNotificationResponseReceivedListener(
+            (response) => {
+                notificationService.handleNotificationResponse(response);
+            },
+        );
+
         // Cleanup function
         return () => {
             if (authCleanup) {
@@ -60,6 +72,10 @@ function AppContent() {
             }
             // Close local database
             localDatabaseService.close();
+            // Cleanup background metronome service
+            backgroundMetronomeService.cleanup();
+            // Remove notification listener
+            notificationListener.remove();
         };
     }, [initializeAuth]);
 

@@ -1,7 +1,8 @@
-import { usePomodoroStore } from "@/stores/pomodoro-store";
-import { useSettingsStore } from "@/stores/setting-store";
-import { createAudioPlayer, type AudioPlayer } from "expo-audio";
-import { useEffect, useRef } from "react";
+import { usePomodoroStore } from '@/stores/pomodoro-store';
+import { useSettingsStore } from '@/stores/local-settings-store';
+import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
+import { backgroundMetronomeService } from '@/services/background-metronome-service';
+import { useEffect, useRef } from 'react';
 
 /**
  * Custom hook to manage the pomodoro timer interval
@@ -9,118 +10,118 @@ import { useEffect, useRef } from "react";
  * Also handles metronome tick sounds
  */
 export function usePomodoroTimer(soundEnabled: boolean) {
-  const { timerStatus, tick } = usePomodoroStore();
-  const { metronome, focusDuration, breakDuration, notifications } =
-    useSettingsStore();
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const soundEnabledRef = useRef(soundEnabled);
-  const metronomeEnabledRef = useRef(metronome);
-  const metronomePlayerRef = useRef<AudioPlayer | null>(null);
+    const { timerStatus, tick } = usePomodoroStore();
+    const { metronome, focusDuration, breakDuration, notifications } = useSettingsStore();
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const soundEnabledRef = useRef(soundEnabled);
+    const metronomeEnabledRef = useRef(metronome);
+    const metronomePlayerRef = useRef<AudioPlayer | null>(null);
 
-  // Update refs when settings change
-  useEffect(() => {
-    soundEnabledRef.current = soundEnabled;
-  }, [soundEnabled]);
+    // Update refs when settings change
+    useEffect(() => {
+        soundEnabledRef.current = soundEnabled;
+    }, [soundEnabled]);
 
-  useEffect(() => {
-    metronomeEnabledRef.current = metronome;
-  }, [metronome]);
+    useEffect(() => {
+        metronomeEnabledRef.current = metronome;
+    }, [metronome]);
 
-  // Pre-load metronome sound for better performance
-  useEffect(() => {
-    const loadMetronome = async () => {
-      if (metronome && !metronomePlayerRef.current) {
-        try {
-          const player = await createAudioPlayer(
-            require("@/assets/sounds/metronome.mp3")
-          );
-          metronomePlayerRef.current = player;
-        } catch (error) {
-          console.error("Failed to load metronome sound:", error);
+    // Pre-load metronome sound for better performance
+    useEffect(() => {
+        const loadMetronome = async () => {
+            if (metronome && !metronomePlayerRef.current) {
+                try {
+                    const player = await createAudioPlayer(
+                        require('@/assets/sounds/metronome.mp3'),
+                    );
+                    metronomePlayerRef.current = player;
+                } catch (error) {
+                    console.error('Failed to load metronome sound:', error);
+                }
+            }
+        };
+
+        loadMetronome();
+
+        // Cleanup metronome player when disabled
+        if (!metronome && metronomePlayerRef.current) {
+            metronomePlayerRef.current.remove();
+            metronomePlayerRef.current = null;
         }
-      }
+    }, [metronome]);
+
+    // Play metronome tick
+    const playMetronomeTick = async () => {
+        if (!metronomeEnabledRef.current || !soundEnabledRef.current) return;
+
+        try {
+            if (metronomePlayerRef.current) {
+                // Reset to beginning and play
+                metronomePlayerRef.current.seekTo(0);
+                metronomePlayerRef.current.play();
+            }
+        } catch (error) {
+            console.error('Error playing metronome tick:', error);
+        }
     };
 
-    loadMetronome();
-
-    // Cleanup metronome player when disabled
-    if (!metronome && metronomePlayerRef.current) {
-      metronomePlayerRef.current.remove();
-      metronomePlayerRef.current = null;
-    }
-  }, [metronome]);
-
-  // Play metronome tick
-  const playMetronomeTick = async () => {
-    if (!metronomeEnabledRef.current || !soundEnabledRef.current) return;
-
-    try {
-      if (metronomePlayerRef.current) {
-        // Reset to beginning and play
-        metronomePlayerRef.current.seekTo(0);
-        metronomePlayerRef.current.play();
-      }
-    } catch (error) {
-      console.error("Error playing metronome tick:", error);
-    }
-  };
-
-  // Stop metronome sound instantly
-  const stopMetronomeSound = () => {
-    try {
-      if (metronomePlayerRef.current) {
-        metronomePlayerRef.current.pause();
-        metronomePlayerRef.current.seekTo(0);
-      }
-    } catch (error) {
-      console.error("Error stopping metronome sound:", error);
-    }
-  };
-
-  useEffect(() => {
-    // Clear any existing interval
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-
-    // Stop metronome sound when timer is not running
-    if (timerStatus !== "running") {
-      stopMetronomeSound();
-    }
-
-    // Start interval if timer is running
-    if (timerStatus === "running") {
-      intervalRef.current = setInterval(() => {
-        // Play metronome tick before calling tick
-        playMetronomeTick();
-        tick(
-          soundEnabledRef.current,
-          focusDuration,
-          breakDuration,
-          notifications
-        );
-      }, 1000);
-    }
-
-    // Cleanup on unmount or status change
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      // Stop metronome sound on cleanup
-      stopMetronomeSound();
+    // Stop metronome sound instantly
+    const stopMetronomeSound = async () => {
+        try {
+            if (metronomePlayerRef.current) {
+                metronomePlayerRef.current.pause();
+                metronomePlayerRef.current.seekTo(0);
+            }
+            // Also stop background metronome
+            await backgroundMetronomeService.stopBackgroundMetronome();
+        } catch (error) {
+            console.error('Error stopping metronome sound:', error);
+        }
     };
-  }, [timerStatus, tick]);
 
-  // Cleanup metronome player on unmount
-  useEffect(() => {
-    return () => {
-      if (metronomePlayerRef.current) {
-        metronomePlayerRef.current.remove();
-        metronomePlayerRef.current = null;
-      }
-    };
-  }, []);
+    useEffect(() => {
+        const handleTimerStatusChange = async () => {
+            // Clear any existing interval
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+
+            // Stop metronome sound when timer is not running
+            if (timerStatus !== 'running') {
+                await stopMetronomeSound();
+            }
+
+            // Start interval if timer is running
+            if (timerStatus === 'running') {
+                intervalRef.current = setInterval(() => {
+                    // Play metronome tick before calling tick
+                    playMetronomeTick();
+                    tick(soundEnabledRef.current, focusDuration, breakDuration, notifications);
+                }, 1000);
+            }
+        };
+
+        handleTimerStatusChange();
+
+        // Cleanup on unmount or status change
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+            // Stop metronome sound on cleanup (async but no await in cleanup)
+            stopMetronomeSound().catch(console.error);
+        };
+    }, [timerStatus, tick]);
+
+    // Cleanup metronome player on unmount
+    useEffect(() => {
+        return () => {
+            if (metronomePlayerRef.current) {
+                metronomePlayerRef.current.remove();
+                metronomePlayerRef.current = null;
+            }
+        };
+    }, []);
 }

@@ -66,6 +66,28 @@ class NotificationService {
                 });
             }
 
+            // Configure notification categories for iOS
+            if (Platform.OS === 'ios') {
+                await Notifications.setNotificationCategoryAsync('TIMER_COMPLETION', [
+                    {
+                        identifier: 'CONTINUE_BREAK',
+                        buttonTitle: 'Start Break',
+                        options: {
+                            isDestructive: false,
+                            isAuthenticationRequired: false,
+                        },
+                    },
+                    {
+                        identifier: 'CONTINUE_FOCUS',
+                        buttonTitle: 'Continue Focus',
+                        options: {
+                            isDestructive: false,
+                            isAuthenticationRequired: false,
+                        },
+                    },
+                ]);
+            }
+
             // Register background task
             this.registerBackgroundTask();
 
@@ -123,7 +145,7 @@ class NotificationService {
             const title = this.getNotificationTitle(timerPhase, sessionNumber);
             const body = this.getNotificationBody(timerPhase, todoTitle);
 
-            // Schedule the notification
+            // Schedule the notification with high priority
             const notificationId = await Notifications.scheduleNotificationAsync({
                 content: {
                     title,
@@ -133,9 +155,11 @@ class NotificationService {
                         sessionNumber,
                         todoTitle,
                         type: 'timer_completion',
+                        completionTime: notificationTime.getTime(),
                     },
                     sound: 'default',
                     priority: Notifications.AndroidNotificationPriority.HIGH,
+                    categoryIdentifier: 'TIMER_COMPLETION',
                 },
                 trigger: {
                     type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -306,6 +330,28 @@ class NotificationService {
         } catch (error) {
             console.error('Failed to request notification permissions:', error);
             return false;
+        }
+    }
+
+    // Handle notification responses (iOS action buttons)
+    async handleNotificationResponse(response: Notifications.NotificationResponse): Promise<void> {
+        try {
+            const { actionIdentifier, notification } = response;
+            const data = notification.request.content.data;
+
+            console.log('Notification response:', actionIdentifier, data);
+
+            if (actionIdentifier === 'CONTINUE_BREAK') {
+                // User tapped "Start Break" button
+                console.log('User wants to start break');
+                // You can emit an event or call a callback here
+            } else if (actionIdentifier === 'CONTINUE_FOCUS') {
+                // User tapped "Continue Focus" button
+                console.log('User wants to continue focus');
+                // You can emit an event or call a callback here
+            }
+        } catch (error) {
+            console.error('Failed to handle notification response:', error);
         }
     }
 }
