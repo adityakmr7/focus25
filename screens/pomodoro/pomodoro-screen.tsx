@@ -1,6 +1,6 @@
 import { usePomodoroTimer } from '@/hooks/usePomodoroTimer';
 import { usePomodoroStore } from '@/stores/pomodoro-store';
-import { useSettingsStore } from '@/stores/setting-store';
+import { useSettingsStore } from '@/stores/local-settings-store';
 import { useTodoStore } from '@/stores/todo-store';
 import BottomSheet from '@gorhom/bottom-sheet';
 import React, { useEffect, useRef } from 'react';

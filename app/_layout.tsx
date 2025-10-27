@@ -6,7 +6,7 @@ import { notificationService } from '@/services/notification-service';
 import { localDatabaseService } from '@/services/local-database-service';
 import { optionalSyncService } from '@/services/optional-sync-service';
 import { useAuthStore } from '@/stores/auth-store';
-import { useSettingsStore } from '@/stores/setting-store';
+import { useSettingsStore } from '@/stores/local-settings-store';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -42,6 +42,10 @@ function AppContent() {
 
                 // Initialize optional sync service
                 await optionalSyncService.initialize();
+
+                // Load settings from database
+                await useSettingsStore.getState().loadSettings();
+                console.log('Settings loaded from database');
             } catch (error) {
                 console.error('Failed to initialize services:', error);
             }

@@ -1,7 +1,7 @@
 import TypographyText from "@/components/TypographyText";
 import { AppleAuthService } from "@/services/apple-auth-service";
 import { useAuthStore } from "@/stores/auth-store";
-import { useSettingsStore } from "@/stores/setting-store";
+import { useSettingsStore } from "@/stores/local-settings-store";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
