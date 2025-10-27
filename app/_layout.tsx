@@ -6,6 +6,7 @@ import { notificationService } from '@/services/notification-service';
 import { localDatabaseService } from '@/services/local-database-service';
 import { optionalSyncService } from '@/services/optional-sync-service';
 import { backgroundMetronomeService } from '@/services/background-metronome-service';
+import { liveActivityService } from '@/services/live-activity-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useSettingsStore } from '@/stores/local-settings-store';
 import { useFonts } from 'expo-font';
@@ -45,6 +46,9 @@ function AppContent() {
                 // Initialize background metronome service
                 await backgroundMetronomeService.initialize();
 
+                // Initialize Live Activity service
+                await liveActivityService.initialize();
+
                 // Initialize optional sync service
                 await optionalSyncService.initialize();
 
@@ -74,6 +78,8 @@ function AppContent() {
             localDatabaseService.close();
             // Cleanup background metronome service
             backgroundMetronomeService.cleanup();
+            // Cleanup Live Activity service
+            liveActivityService.cleanup();
             // Remove notification listener
             notificationListener.remove();
         };

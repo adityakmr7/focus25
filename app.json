@@ -15,6 +15,9 @@
       "bundleIdentifier": "com.focus25.app",
       "appleTeamId": "PAYP925PPX",
       "backgroundModes": ["background-fetch", "audio"],
+      "infoPlist": {
+        "NSSupportsLiveActivities": true
+      },
       "icon": {
         "light": "./assets/images/ios-light.png",
         "dark": "./assets/images/ios-dark.png",
@@ -59,7 +62,13 @@
           ]
         }
       ],
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-live-activity",
+        {
+          "enablePushNotifications": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

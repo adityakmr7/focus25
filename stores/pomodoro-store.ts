@@ -1,5 +1,6 @@
 import { notificationService } from '@/services/notification-service';
 import { localDatabaseService, Session } from '@/services/local-database-service';
+import { liveActivityService } from '@/services/live-activity-service';
 import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 import { create } from 'zustand';
 
@@ -180,6 +181,22 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                 console.error('Failed to schedule timer notification:', error);
             }
         }
+
+        // Start Live Activity
+        try {
+            await liveActivityService.startTimerActivity({
+                phase: timerPhase,
+                remainingTime: duration,
+                totalTime: duration,
+                todoTitle: currentTodoTitle || undefined,
+                sessionNumber: currentSession,
+                totalSessions: get().totalSessions,
+                isRunning: true,
+                startTime: new Date().toISOString(),
+            });
+        } catch (error) {
+            console.error('Failed to start Live Activity:', error);
+        }
     },
 
     pauseTimer: async () => {
@@ -191,10 +208,58 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
         } catch (error) {
             console.error('Failed to cancel timer notifications:', error);
         }
+
+        // Update Live Activity
+        try {
+            const {
+                timerPhase,
+                timeLeft,
+                initialTime,
+                currentSession,
+                currentTodoTitle,
+                totalSessions,
+            } = get();
+            await liveActivityService.updateTimerActivity({
+                phase: timerPhase,
+                remainingTime: timeLeft,
+                totalTime: initialTime,
+                todoTitle: currentTodoTitle || undefined,
+                sessionNumber: currentSession,
+                totalSessions,
+                isRunning: false,
+                startTime: get().sessionStartTime?.toISOString() || new Date().toISOString(),
+            });
+        } catch (error) {
+            console.error('Failed to update Live Activity on pause:', error);
+        }
     },
 
-    resumeTimer: () => {
+    resumeTimer: async () => {
         set({ timerStatus: 'running' });
+
+        // Update Live Activity
+        try {
+            const {
+                timerPhase,
+                timeLeft,
+                initialTime,
+                currentSession,
+                currentTodoTitle,
+                totalSessions,
+            } = get();
+            await liveActivityService.updateTimerActivity({
+                phase: timerPhase,
+                remainingTime: timeLeft,
+                totalTime: initialTime,
+                todoTitle: currentTodoTitle || undefined,
+                sessionNumber: currentSession,
+                totalSessions,
+                isRunning: true,
+                startTime: get().sessionStartTime?.toISOString() || new Date().toISOString(),
+            });
+        } catch (error) {
+            console.error('Failed to update Live Activity on resume:', error);
+        }
     },
 
     resetTimer: async () => {
@@ -356,6 +421,13 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
             timerStatus: 'completed',
             timeLeft: 0,
         });
+
+        // Stop Live Activity
+        try {
+            await liveActivityService.stopTimerActivity();
+        } catch (error) {
+            console.error('Failed to stop Live Activity on completion:', error);
+        }
 
         // Auto-switch to break phase after a short delay if durations are provided
         if (focusDuration && breakDuration) {
