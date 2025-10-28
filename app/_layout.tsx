@@ -171,7 +171,10 @@ function AppContent() {
                     <Stack>
                         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
                         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                        <Stack.Screen name="(create-todo)" options={{ headerShown: false }} />
+                        <Stack.Screen
+                            name="(create-todo)"
+                            options={{ headerShown: false, presentation: 'modal' }}
+                        />
                         <Stack.Screen name="+not-found" />
                     </Stack>
                     <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />

@@ -68,8 +68,8 @@ const SettingsScreen = () => {
                         onThemePress={() => setThemeModalVisible(true)}
                     />
                     <AppManagementSection />
-                    <LegalSection />
-                    <SupportSection />
+                    {/* <LegalSection /> */}
+                    {/* <SupportSection /> */}
                     <DataManagementSection />
                 </VStack>
             </ScrollView>
