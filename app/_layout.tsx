@@ -14,7 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { HeroUIProvider } from 'react-native-heroui';
+import { HeroUIProvider, ToastProvider } from 'react-native-heroui';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
@@ -167,18 +167,20 @@ function AppContent() {
     return (
         <AuthErrorBoundary>
             <HeroUIProvider key={resolvedTheme} initialTheme={resolvedTheme}>
-                <SafeAreaProvider>
-                    <Stack>
-                        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                        <Stack.Screen
-                            name="(create-todo)"
-                            options={{ headerShown: false, presentation: 'modal' }}
-                        />
-                        <Stack.Screen name="+not-found" />
-                    </Stack>
-                    <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
-                </SafeAreaProvider>
+                <ToastProvider>
+                    <SafeAreaProvider>
+                        <Stack>
+                            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+                            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                            <Stack.Screen
+                                name="(create-todo)"
+                                options={{ headerShown: false, presentation: 'modal' }}
+                            />
+                            <Stack.Screen name="+not-found" />
+                        </Stack>
+                        <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
+                    </SafeAreaProvider>
+                </ToastProvider>
             </HeroUIProvider>
         </AuthErrorBoundary>
     );
