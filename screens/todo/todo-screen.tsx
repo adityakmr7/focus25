@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import HeaderSection from './components/header-section';
 import TodoSectionComponent from './components/todo-section';
 import ViewToggle from './components/view-toggle';
+import EmptyState from './components/empty-state';
 
 const TodoScreen: React.FC = () => {
     const { theme } = useTheme();
@@ -73,24 +74,32 @@ const TodoScreen: React.FC = () => {
                     {/* Header Section */}
                     <HeaderSection
                         greeting={getCurrentGreeting()}
-                        subtitle="Here are your plan for today"
+                        subtitle={
+                            todos.length > 0
+                                ? 'Here are your plan for today'
+                                : 'Ready to get organized?'
+                        }
                     />
 
                     {/* View Toggle */}
                     <ViewToggle viewMode={viewMode} onViewModeChange={handleViewModeChange} />
 
-                    {/* Todo Sections */}
-                    <View style={styles.todoSections}>
-                        {todoSections.map((section) => (
-                            <TodoSectionComponent
-                                key={section.title}
-                                section={section}
-                                viewMode={viewMode}
-                                onToggleTodo={handleToggleTodo}
-                                onEditTodo={handleEditTodo}
-                            />
-                        ))}
-                    </View>
+                    {/* Todo Sections or Empty State */}
+                    {todoSections.length > 0 ? (
+                        <View style={styles.todoSections}>
+                            {todoSections.map((section) => (
+                                <TodoSectionComponent
+                                    key={section.title}
+                                    section={section}
+                                    viewMode={viewMode}
+                                    onToggleTodo={handleToggleTodo}
+                                    onEditTodo={handleEditTodo}
+                                />
+                            ))}
+                        </View>
+                    ) : (
+                        <EmptyState viewMode={viewMode} />
+                    )}
                 </View>
             </ScrollView>
         </SafeAreaView>
