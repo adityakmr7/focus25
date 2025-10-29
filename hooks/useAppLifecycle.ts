@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { usePomodoroStore } from '@/stores/pomodoro-store';
 import { useSettingsStore } from '@/stores/local-settings-store';
@@ -47,7 +47,7 @@ export function useAppLifecycle() {
         useSettingsStore();
 
     // Save timer state to AsyncStorage
-    const saveTimerState = async () => {
+    const saveTimerState = useCallback(async () => {
         try {
             const timerState: TimerState = {
                 timerStatus,
@@ -79,10 +79,22 @@ export function useAppLifecycle() {
         } catch (error) {
             console.error('Failed to save timer state:', error);
         }
-    };
+    }, [
+        timerStatus,
+        timerPhase,
+        timeLeft,
+        initialTime,
+        sessionStartTime,
+        currentSession,
+        totalSessions,
+        currentTodoId,
+        currentTodoTitle,
+        metronome,
+        soundEffects,
+    ]);
 
     // Load and restore timer state from AsyncStorage
-    const restoreTimerState = async () => {
+    const restoreTimerState = useCallback(async () => {
         try {
             const savedState = await AsyncStorage.getItem(TIMER_STATE_KEY);
             if (!savedState) return;
@@ -151,7 +163,7 @@ export function useAppLifecycle() {
         } catch (error) {
             console.error('Failed to restore timer state:', error);
         }
-    };
+    }, [completeTimer, completeBreak, soundEffects, focusDuration, breakDuration, notifications]);
 
     useEffect(() => {
         const handleAppStateChange = async (nextAppState: AppStateStatus) => {
@@ -175,23 +187,7 @@ export function useAppLifecycle() {
         return () => {
             subscription?.remove();
         };
-    }, [
-        timerStatus,
-        timerPhase,
-        timeLeft,
-        initialTime,
-        sessionStartTime,
-        currentSession,
-        totalSessions,
-        currentTodoId,
-        currentTodoTitle,
-        completeTimer,
-        completeBreak,
-        soundEffects,
-        focusDuration,
-        breakDuration,
-        notifications,
-    ]);
+    }, [saveTimerState, restoreTimerState]);
 
     // Clean up saved state on unmount
     useEffect(() => {

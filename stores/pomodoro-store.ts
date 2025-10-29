@@ -29,6 +29,9 @@ interface PomodoroState {
     sessions: PomodoroSession[];
     sessionsLoaded: boolean;
 
+    // Edge case handling
+    isProcessing: boolean; // Prevents race conditions
+
     // Actions - Todo
     selectTodo: (todoId: string | null, todoTitle: string | null) => void;
     clearSelection: () => void;
@@ -40,7 +43,7 @@ interface PomodoroState {
         notificationsEnabled?: boolean,
     ) => void;
     pauseTimer: () => void;
-    resumeTimer: () => void;
+    resumeTimer: () => Promise<void>;
     resetTimer: () => void;
     updateTimerDuration: (focusDuration: number, breakDuration: number) => void;
     tick: (
@@ -136,6 +139,9 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
     currentSession: 1,
     totalSessions: 4,
 
+    // Initial state - Edge case handling
+    isProcessing: false,
+
     // ===== Todo Actions =====
     selectTodo: (todoId, todoTitle) => {
         set({
@@ -157,43 +163,70 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
         breakDuration: number,
         notificationsEnabled?: boolean,
     ) => {
-        const { timerPhase, currentSession, currentTodoTitle } = get();
-        const duration = getTimerDuration(timerPhase, focusDuration, breakDuration);
+        const state = get();
 
-        set({
-            timerStatus: 'running',
-            sessionStartTime: new Date(),
-            timeLeft: duration,
-            initialTime: duration,
-        });
+        // Prevent race conditions
+        if (state.isProcessing) {
+            console.warn('Timer is already processing, ignoring start request');
+            return;
+        }
 
-        // Schedule background notification if notifications are enabled
-        if (notificationsEnabled) {
-            try {
-                await notificationService.scheduleTimerNotification({
-                    timerPhase,
-                    timeLeft: duration,
-                    sessionNumber: currentSession,
-                    todoTitle: currentTodoTitle || undefined,
-                });
-            } catch (error) {
-                console.error('Failed to schedule timer notification:', error);
+        set({ isProcessing: true });
+
+        try {
+            const { timerPhase, currentSession, currentTodoTitle } = state;
+            const duration = getTimerDuration(timerPhase, focusDuration, breakDuration);
+
+            set({
+                timerStatus: 'running',
+                sessionStartTime: new Date(),
+                timeLeft: duration,
+                initialTime: duration,
+            });
+
+            // Schedule background notification if notifications are enabled
+            if (notificationsEnabled) {
+                try {
+                    await notificationService.scheduleTimerNotification({
+                        timerPhase,
+                        timeLeft: duration,
+                        sessionNumber: currentSession,
+                        todoTitle: currentTodoTitle || undefined,
+                    });
+                } catch (error) {
+                    console.error('Failed to schedule timer notification:', error);
+                }
             }
+        } catch (error) {
+            console.error('Failed to start timer:', error);
+        } finally {
+            set({ isProcessing: false });
         }
     },
 
     pauseTimer: async () => {
-        set({ timerStatus: 'paused' });
+        const state = get();
 
-        // Cancel scheduled notifications when paused
+        if (state.isProcessing) {
+            console.warn('Timer is already processing, ignoring pause request');
+            return;
+        }
+
+        set({ isProcessing: true });
+
         try {
+            set({ timerStatus: 'paused' });
+
+            // Cancel scheduled notifications when paused
             await notificationService.cancelTimerNotifications();
         } catch (error) {
-            console.error('Failed to cancel timer notifications:', error);
+            console.error('Failed to pause timer:', error);
+        } finally {
+            set({ isProcessing: false });
         }
     },
 
-    resumeTimer: () => {
+    resumeTimer: async () => {
         set({ timerStatus: 'running' });
     },
 
