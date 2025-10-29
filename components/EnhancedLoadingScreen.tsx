@@ -1,7 +1,7 @@
 import TypographyText from '@/components/TypographyText';
 import { splashScreenService } from '@/services/splash-screen-service';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
 import { useTheme } from 'react-native-heroui';
 
 interface EnhancedLoadingScreenProps {
@@ -10,7 +10,7 @@ interface EnhancedLoadingScreenProps {
 }
 
 const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
-    message = 'Initializing app...',
+    message = 'App is getting ready.',
     showProgress = false,
 }) => {
     const { theme } = useTheme();
@@ -39,21 +39,11 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
         <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             {/* App Logo/Icon */}
             <View style={styles.logoContainer}>
-                <View
-                    style={[
-                        styles.logo,
-                        {
-                            backgroundColor: theme.colors.primary,
-                            shadowColor: theme.colors.primary,
-                        },
-                    ]}
-                >
-                    <TypographyText
-                        variant="title"
-                        style={[styles.logoText, { color: theme.colors.background }]}
-                    >
-                        🍅
-                    </TypographyText>
+                <View style={[styles.logo, {}]}>
+                    <Image
+                        source={require('@/assets/images/splash-icon.png')}
+                        style={styles.logoImage}
+                    />
                 </View>
             </View>
 
@@ -104,7 +94,7 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
             {/* App Name */}
             <View style={styles.appNameContainer}>
                 <TypographyText variant="title" color="default" style={styles.appName}>
-                    Focus25
+                    Flowzy
                 </TypographyText>
                 <TypographyText variant="caption" color="secondary" style={styles.tagline}>
                     Stay focused, stay productive
@@ -115,6 +105,17 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
+    logoImage: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 8,
+    },
     container: {
         flex: 1,
         justifyContent: 'center',
