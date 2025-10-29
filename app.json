@@ -19,6 +19,15 @@
         "light": "./assets/images/ios-light.png",
         "dark": "./assets/images/ios-dark.png",
         "tinted": "./assets/images/ios-tinted.png"
+      },
+      "splash": {
+        "image": "./assets/images/splash-ios.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff",
+        "dark": {
+          "image": "./assets/images/splash-ios.png",
+          "backgroundColor": "#000000"
+        }
       }
     },
     "android": {
@@ -44,10 +53,24 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icon.png",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "image": "./assets/images/splash-icon.png",
+            "backgroundColor": "#000000"
+          },
+          "ios": {
+            "image": "./assets/images/splash-ios.png",
+            "imageWidth": 200,
+            "resizeMode": "contain",
+            "backgroundColor": "#ffffff",
+            "dark": {
+              "image": "./assets/images/splash-ios.png",
+              "backgroundColor": "#000000"
+            }
+          }
         }
       ],
       [
