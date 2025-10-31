@@ -3,7 +3,15 @@ import { useTodoStore } from '@/stores/local-todo-store';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+    KeyboardAvoidingView,
+    Platform,
+    TextInput,
+    TouchableOpacity,
+    View,
+    StyleSheet,
+    Text,
+} from 'react-native';
 import { Button, HStack, SPACING, VStack, useTheme } from 'react-native-heroui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -96,17 +104,26 @@ const CreateTodoScreen = () => {
                         <TouchableOpacity onPress={handleCancel}>
                             <Ionicons name="close" size={24} color={theme.colors.foreground} />
                         </TouchableOpacity>
-                        <TypographyText variant="title" color="default">
-                            {isEditing ? 'Edit Todo' : 'Create Todo'}
-                        </TypographyText>
                         <View style={{ width: 24 }} />
                     </HStack>
+                    <VStack mb="xl">
+                        <Text
+                            style={[
+                                styles.title,
+                                {
+                                    color: theme.colors['default-900'],
+                                },
+                            ]}
+                        >
+                            {isEditing ? 'Edit Task' : 'New Task'}
+                        </Text>
+                    </VStack>
 
                     {/* Form */}
                     <VStack gap="lg" style={{ flex: 1 }}>
                         {/* Title Input */}
                         <VStack gap="xs">
-                            <TypographyText variant="body" color="default">
+                            <TypographyText variant="label" color="default">
                                 Title *
                             </TypographyText>
                             <TextInput
@@ -116,7 +133,7 @@ const CreateTodoScreen = () => {
                                 placeholderTextColor={theme.colors.content3}
                                 style={{
                                     backgroundColor: theme.colors.content2,
-                                    borderRadius: 12,
+                                    borderRadius: 24,
                                     paddingHorizontal: 16,
                                     paddingVertical: 12,
                                     fontSize: 16,
@@ -131,7 +148,7 @@ const CreateTodoScreen = () => {
 
                         {/* Description Input */}
                         <VStack gap="xs">
-                            <TypographyText variant="body" color="default">
+                            <TypographyText variant="label" color="default">
                                 Description
                             </TypographyText>
                             <TextInput
@@ -141,14 +158,14 @@ const CreateTodoScreen = () => {
                                 placeholderTextColor={theme.colors.content3}
                                 style={{
                                     backgroundColor: theme.colors.content2,
-                                    borderRadius: 12,
+                                    borderRadius: 24,
                                     paddingHorizontal: 16,
                                     paddingVertical: 12,
                                     fontSize: 16,
                                     color: theme.colors.foreground,
                                     borderWidth: 1,
                                     borderColor: theme.colors.content3,
-                                    minHeight: 100,
+                                    minHeight: 20,
                                     textAlignVertical: 'top',
                                 }}
                                 multiline={true}
@@ -159,10 +176,10 @@ const CreateTodoScreen = () => {
 
                         {/* Icon Selection */}
                         <VStack gap="xs">
-                            <TypographyText variant="body" color="default">
+                            <TypographyText variant="label" color="default">
                                 Icon
                             </TypographyText>
-                            <HStack gap="md" style={{ flexWrap: 'wrap' }}>
+                            <HStack mt="md" gap="md" style={{ flexWrap: 'wrap' }}>
                                 {availableIcons.map((iconName) => (
                                     <TouchableOpacity
                                         key={iconName}
@@ -174,8 +191,8 @@ const CreateTodoScreen = () => {
                                             backgroundColor:
                                                 selectedIcon === iconName
                                                     ? theme.colors['secondary-400']
-                                                    : theme.colors.content2,
-                                            borderWidth: 2,
+                                                    : theme.colors.background,
+                                            borderWidth: 1,
                                             borderColor:
                                                 selectedIcon === iconName
                                                     ? theme.colors['secondary-400']
@@ -203,25 +220,10 @@ const CreateTodoScreen = () => {
                     <HStack gap="md" style={{ marginBottom: 20 }}>
                         <View style={{ flex: 1 }}>
                             <Button
-                                variant="outline"
-                                onPress={handleCancel}
-                                disabled={isLoading}
-                                style={{
-                                    borderColor: theme.colors.content3,
-                                    paddingVertical: SPACING['unit-3'],
-                                }}
-                            >
-                                <TypographyText variant="body" color="default">
-                                    Cancel
-                                </TypographyText>
-                            </Button>
-                        </View>
-
-                        <View style={{ flex: 1 }}>
-                            <Button
                                 onPress={handleSaveTodo}
                                 disabled={!title.trim() || isLoading}
                                 style={{
+                                    borderRadius: 24,
                                     backgroundColor: theme.colors['secondary-400'],
                                     paddingVertical: SPACING['unit-3'],
                                 }}
@@ -244,4 +246,10 @@ const CreateTodoScreen = () => {
     );
 };
 
+const styles = StyleSheet.create({
+    title: {
+        fontSize: 32,
+        fontWeight: 'bold',
+    },
+});
 export default CreateTodoScreen;
