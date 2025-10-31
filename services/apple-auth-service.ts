@@ -27,7 +27,7 @@ export class AppleAuthService {
             const fullName = appleAuthRequestResponse.fullName;
             const displayName = fullName
                 ? `${fullName.givenName || ''} ${fullName.familyName || ''}`.trim()
-                : 'Apple User';
+                : '';
 
             // Sign in with Supabase using Apple OAuth
             const { data, error } = await supabase.auth.signInWithIdToken({
@@ -40,7 +40,7 @@ export class AppleAuthService {
             }
 
             // Update user metadata with display name if we have it
-            if (displayName && displayName !== 'Apple User' && data.user) {
+            if (displayName && data.user) {
                 await supabase.auth.updateUser({
                     data: { display_name: displayName },
                 });
@@ -48,7 +48,7 @@ export class AppleAuthService {
 
             return {
                 user: data.user,
-                displayName: displayName || data.user?.user_metadata?.display_name || 'Apple User',
+                displayName: displayName || data.user?.user_metadata?.display_name || '',
             };
         } catch (error) {
             console.error('Apple Sign-In error:', error);

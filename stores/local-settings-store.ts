@@ -98,7 +98,7 @@ export const useSettingsStore = create<SettingsState>()(
             },
 
             // Account settings
-            userName: 'User',
+            userName: '',
             userEmail: '',
             isAccountBackedUp: false,
             onboardingCompleted: false,
@@ -131,7 +131,7 @@ export const useSettingsStore = create<SettingsState>()(
                 try {
                     // Wait for database initialization
                     await localDatabaseService.waitForInitialization();
-                    
+
                     const settings = await localDatabaseService.getSettings();
                     if (settings) {
                         set({

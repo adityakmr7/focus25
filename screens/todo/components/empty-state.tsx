@@ -3,7 +3,8 @@ import { router } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import TypographyText from '@/components/TypographyText';
-
+import { TaskAdd01Icon } from '@hugeicons/core-free-icons';
+import HugeIconView from '@/components/ui/huge-icon-view';
 interface EmptyStateProps {
     viewMode?: 'grid' | 'list';
 }
@@ -17,13 +18,13 @@ const EmptyState: React.FC<EmptyStateProps> = ({ viewMode = 'grid' }) => {
 
     return (
         <View style={styles.container}>
-            <Card style={[styles.card, { backgroundColor: theme.colors.background }]}>
+            <Card
+                onPress={handleCreateTodo}
+                variant="flat"
+                style={[{ backgroundColor: theme.colors.background }]}
+            >
                 <CardHeader style={styles.header}>
-                    <View style={styles.iconContainer}>
-                        <TypographyText variant="heading" style={styles.icon}>
-                            📝
-                        </TypographyText>
-                    </View>
+                    <HugeIconView size={40} icon={TaskAdd01Icon} />
                 </CardHeader>
 
                 <CardBody style={styles.body}>
@@ -42,20 +43,6 @@ const EmptyState: React.FC<EmptyStateProps> = ({ viewMode = 'grid' }) => {
                             ? 'Start organizing your day by creating your first todo. Break down your goals into manageable tasks and stay productive!'
                             : 'Create your first todo to get started. You can organize them by priority, due date, or category.'}
                     </TypographyText>
-
-                    <View style={styles.buttonContainer}>
-                        <Button
-                            onPress={handleCreateTodo}
-                            style={[styles.createButton, { backgroundColor: theme.colors.primary }]}
-                        >
-                            <TypographyText
-                                variant="body"
-                                style={[styles.buttonText, { color: 'white' }]}
-                            >
-                                Create Your First Todo
-                            </TypographyText>
-                        </Button>
-                    </View>
                 </CardBody>
             </Card>
         </View>
@@ -70,31 +57,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 40,
     },
-    card: {
-        width: '100%',
-        maxWidth: 400,
-        borderRadius: 16,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-    },
     header: {
         alignItems: 'center',
         paddingBottom: 0,
-    },
-    iconContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: 'rgba(0, 122, 255, 0.1)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 16,
     },
     icon: {
         fontSize: 40,
