@@ -32,6 +32,8 @@ export default function PomodoroTimer({ timeLeft, progressValue }: PomodoroTimer
 const styles = StyleSheet.create({
     timerContainer: {
         flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     timerText: {

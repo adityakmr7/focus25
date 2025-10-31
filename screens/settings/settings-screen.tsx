@@ -30,12 +30,10 @@ const SettingsScreen = () => {
     };
 
     const handleFocusDurationSelect = (duration: number) => {
-        console.log('Setting focus duration to:', duration);
         setFocusDuration(duration);
     };
 
     const handleBreakDurationSelect = (duration: number) => {
-        console.log('Setting break duration to:', duration);
         setBreakDuration(duration);
     };
 

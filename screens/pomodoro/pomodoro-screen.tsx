@@ -118,11 +118,11 @@ export default function PomodoroScreen() {
             <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
                 <View style={styles.content}>
                     <PomodoroHeader />
-
+                    {/* 
                     <TodoSelectionButton
                         selectedTodoTitle={currentTodoTitle}
                         onPress={handleOpenBottomSheet}
-                    />
+                    /> */}
 
                     <PomodoroTimer timeLeft={timeLeft} progressValue={progressValue} />
 
