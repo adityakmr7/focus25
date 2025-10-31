@@ -34,13 +34,7 @@ const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({
                 }
             />
             <Divider />
-            {/* <SettingItem
-                title="Text Size"
-                subtitle={textSize.charAt(0).toUpperCase() + textSize.slice(1)}
-                rightElement={<ChevronRight />}
-                onPress={onTextSizePress}
-            />
-            <Divider /> */}
+
             <SettingItem
                 title="Theme"
                 subtitle={

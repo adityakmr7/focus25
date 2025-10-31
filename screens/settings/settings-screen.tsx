@@ -56,9 +56,6 @@ const SettingsScreen = () => {
                 style={{ flex: 1 }}
             >
                 <VStack px="md" gap="lg">
-                    {/* <UpgradeToPro /> */}
-                    {/* <AccountSection /> */}
-                    {/* <DeviceSection /> */}
                     <FocusSettingsSection
                         onFocusDurationPress={() => setFocusDurationModalVisible(true)}
                         onBreakDurationPress={() => setBreakDurationModalVisible(true)}
@@ -68,13 +65,10 @@ const SettingsScreen = () => {
                         onThemePress={() => setThemeModalVisible(true)}
                     />
                     <AppManagementSection />
-                    {/* <LegalSection /> */}
-                    {/* <SupportSection /> */}
                     <DataManagementSection />
                 </VStack>
             </ScrollView>
 
-            {/* Duration Picker Modals */}
             <DurationPickerModal
                 visible={focusDurationModalVisible}
                 onClose={() => setFocusDurationModalVisible(false)}
@@ -90,7 +84,6 @@ const SettingsScreen = () => {
                 onSelectDuration={handleBreakDurationSelect}
             />
 
-            {/* Theme Selection Modal */}
             <ThemeSelectionModal
                 visible={themeModalVisible}
                 onClose={() => setThemeModalVisible(false)}
