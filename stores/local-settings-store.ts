@@ -120,7 +120,7 @@ export const useSettingsStore = create<SettingsState>()(
             },
 
             // Device settings
-            deviceName: 'Focus25 Device',
+            deviceName: 'Flowzy Device',
             setDeviceName: (deviceName) => {
                 set({ deviceName });
                 get().saveSettings();
@@ -188,7 +188,7 @@ export const useSettingsStore = create<SettingsState>()(
                     userEmail: '',
                     isAccountBackedUp: false,
                     onboardingCompleted: false,
-                    deviceName: 'Focus25 Device',
+                    deviceName: 'Flowzy Device',
                 }),
         }),
         {

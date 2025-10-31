@@ -1,6 +1,6 @@
 # Database Migrations
 
-This directory contains database migration files for the Focus25 Pomodoro app.
+This directory contains database migration files for the Flowzy Pomodoro app.
 
 ## 📁 File Structure
 

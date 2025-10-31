@@ -36,7 +36,7 @@ class ExportImportService {
 
             // Create filename with timestamp
             const timestamp = new Date().toISOString().split('T')[0];
-            const filename = `focus25-backup-${timestamp}.json`;
+            const filename = `flowzy-backup-${timestamp}.json`;
             const fileUri = `/tmp/${filename}`;
 
             // Write file
@@ -49,7 +49,7 @@ class ExportImportService {
             if (isAvailable) {
                 await Sharing.shareAsync(fileUri, {
                     mimeType: 'application/json',
-                    dialogTitle: 'Export Focus25 Data',
+                    dialogTitle: 'Export Flowzy Data',
                 });
             } else {
                 Alert.alert('Export Complete', `Data exported to: ${filename}`, [{ text: 'OK' }]);
@@ -92,7 +92,7 @@ class ExportImportService {
 
             // Validate data structure
             if (!this.validateImportData(importData)) {
-                Alert.alert('Invalid File', 'The selected file is not a valid Focus25 backup.', [
+                Alert.alert('Invalid File', 'The selected file is not a valid Flowzy backup.', [
                     { text: 'OK' },
                 ]);
                 return false;
@@ -195,7 +195,7 @@ class ExportImportService {
             };
 
             const timestamp = new Date().toISOString().split('T')[0];
-            const filename = `focus25-todos-${timestamp}.json`;
+            const filename = `flowzy-todos-${timestamp}.json`;
             const fileUri = `/tmp/${filename}`;
 
             await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(exportData, null, 2));
@@ -204,7 +204,7 @@ class ExportImportService {
             if (isAvailable) {
                 await Sharing.shareAsync(fileUri, {
                     mimeType: 'application/json',
-                    dialogTitle: 'Export Focus25 Todos',
+                    dialogTitle: 'Export Flowzy Todos',
                 });
             }
 
@@ -232,7 +232,7 @@ class ExportImportService {
             };
 
             const timestamp = new Date().toISOString().split('T')[0];
-            const filename = `focus25-sessions-${timestamp}.json`;
+            const filename = `flowzy-sessions-${timestamp}.json`;
             const fileUri = `/tmp/${filename}`;
 
             await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(exportData, null, 2));
@@ -241,7 +241,7 @@ class ExportImportService {
             if (isAvailable) {
                 await Sharing.shareAsync(fileUri, {
                     mimeType: 'application/json',
-                    dialogTitle: 'Export Focus25 Sessions',
+                    dialogTitle: 'Export Flowzy Sessions',
                 });
             }
 

@@ -14,7 +14,7 @@ export const mockTodos: Todo[] = [
     id: "1",
     title: "Complete project documentation",
     description:
-      "Write comprehensive documentation for the Focus25 app including setup instructions and feature descriptions",
+      "Write comprehensive documentation for the Flowzy app including setup instructions and feature descriptions",
     icon: "bookmark",
     isCompleted: false,
     createdAt: getDate(0, 9), // Today 9 AM

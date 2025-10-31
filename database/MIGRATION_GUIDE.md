@@ -47,4 +47,4 @@ When you need to make changes:
 
 **Created:** 2024-01-26  
 **Author:** Aditya Kumar  
-**Purpose:** Focus25 Pomodoro App Database Schema
+**Purpose:** Flowzy Pomodoro App Database Schema

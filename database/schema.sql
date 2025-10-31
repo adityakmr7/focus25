@@ -2,7 +2,7 @@
 -- Description: Current database schema snapshot
 -- Date: 2024-01-26
 -- Author: Aditya Kumar
--- Purpose: Reference schema for Focus25 Pomodoro app
+-- Purpose: Reference schema for Flowzy Pomodoro app
 
 -- =============================================
 -- DATABASE SCHEMA OVERVIEW

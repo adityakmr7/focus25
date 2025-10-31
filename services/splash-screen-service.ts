@@ -14,7 +14,7 @@
  * - Error handling and recovery
  * - Performance optimization
  *
- * @author Focus25 Team
+ * @author Flowzy Team
  * @version 1.0.0
  */
 

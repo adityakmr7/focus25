@@ -73,7 +73,7 @@ class LocalDatabaseService {
             if (this.isInitialized) return true;
 
             // Open database
-            this.db = await SQLite.openDatabaseAsync('focus25.db');
+            this.db = await SQLite.openDatabaseAsync('flowzy.db');
 
             // Read and execute schema
             const schema = await this.loadSchema();
@@ -120,7 +120,7 @@ class LocalDatabaseService {
         // In a real app, you'd load this from a file
         // For now, we'll include the schema inline
         return `
-      -- SQLite Database Schema for Focus25 Local-First App
+      -- SQLite Database Schema for Flowzy Local-First App
       CREATE TABLE IF NOT EXISTS todos (
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
