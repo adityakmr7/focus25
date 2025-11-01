@@ -1,4 +1,5 @@
 import { localDatabaseService, Todo } from '@/services/local-database-service';
+import { optionalSyncService } from '@/services/optional-sync-service';
 import { create } from 'zustand';
 
 interface TodoState {
@@ -41,14 +42,25 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     searchQuery: '',
 
     loadTodos: async () => {
-        if (get().isInitialized) return;
-
         set({ isLoading: true, error: null });
 
         try {
             // Wait for database initialization
             await localDatabaseService.waitForInitialization();
 
+            // Check if sync is enabled - if so, sync before loading
+            const settings = await localDatabaseService.getSettings();
+            if (settings?.syncEnabled) {
+                try {
+                    // Perform sync to get latest todos from Supabase
+                    await optionalSyncService.performSync();
+                } catch (syncError) {
+                    console.error('Failed to sync before loading todos:', syncError);
+                    // Continue loading local todos even if sync fails
+                }
+            }
+
+            // Load todos from local database (which now includes synced todos)
             const todos = await localDatabaseService.getTodos();
             set({ todos, isLoading: false, isInitialized: true });
         } catch (error) {
@@ -78,10 +90,22 @@ export const useTodoStore = create<TodoState>((set, get) => ({
                 actualMinutes: 0,
             };
 
-            set((state) => ({
-                todos: [newTodo, ...state.todos],
-                isLoading: false,
-            }));
+            // Check if sync is enabled and sync to Supabase
+            const settings = await localDatabaseService.getSettings();
+            if (settings?.syncEnabled) {
+                try {
+                    // Sync will happen automatically via sync log trigger, but we can trigger immediate sync
+                    // The sync log will be processed during next sync cycle
+                    await optionalSyncService.performSync();
+                } catch (syncError) {
+                    console.error('Failed to sync todo to Supabase:', syncError);
+                    // Don't fail the operation if sync fails
+                }
+            }
+
+            // Reload todos to get latest state (in case sync brought in other todos)
+            const todos = await localDatabaseService.getTodos();
+            set({ todos, isLoading: false });
         } catch (error) {
             console.error('Error creating todo:', error);
             set({
@@ -100,10 +124,21 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
             await localDatabaseService.updateTodo(id, updates);
 
-            set((state) => ({
-                todos: state.todos.map((todo) => (todo.id === id ? { ...todo, ...updates } : todo)),
-                isLoading: false,
-            }));
+            // Check if sync is enabled and sync to Supabase
+            const settings = await localDatabaseService.getSettings();
+            if (settings?.syncEnabled) {
+                try {
+                    // Sync will happen automatically via sync log trigger
+                    await optionalSyncService.performSync();
+                } catch (syncError) {
+                    console.error('Failed to sync todo update to Supabase:', syncError);
+                    // Don't fail the operation if sync fails
+                }
+            }
+
+            // Reload todos to get latest state
+            const todos = await localDatabaseService.getTodos();
+            set({ todos, isLoading: false });
         } catch (error) {
             console.error('Failed to update todo:', error);
             set({
@@ -128,9 +163,21 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
             await localDatabaseService.updateTodo(id, updates);
 
-            set((state) => ({
-                todos: state.todos.map((todo) => (todo.id === id ? { ...todo, ...updates } : todo)),
-            }));
+            // Check if sync is enabled and sync to Supabase
+            const settings = await localDatabaseService.getSettings();
+            if (settings?.syncEnabled) {
+                try {
+                    // Sync will happen automatically via sync log trigger
+                    await optionalSyncService.performSync();
+                } catch (syncError) {
+                    console.error('Failed to sync todo toggle to Supabase:', syncError);
+                    // Don't fail the operation if sync fails
+                }
+            }
+
+            // Reload todos to get latest state
+            const todos = await localDatabaseService.getTodos();
+            set({ todos });
         } catch (error) {
             console.error('Failed to toggle todo:', error);
             set({
@@ -148,10 +195,21 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
             await localDatabaseService.deleteTodo(id);
 
-            set((state) => ({
-                todos: state.todos.filter((todo) => todo.id !== id),
-                isLoading: false,
-            }));
+            // Check if sync is enabled and sync to Supabase
+            const settings = await localDatabaseService.getSettings();
+            if (settings?.syncEnabled) {
+                try {
+                    // Sync will happen automatically via sync log trigger
+                    await optionalSyncService.performSync();
+                } catch (syncError) {
+                    console.error('Failed to sync todo delete to Supabase:', syncError);
+                    // Don't fail the operation if sync fails
+                }
+            }
+
+            // Reload todos to get latest state
+            const todos = await localDatabaseService.getTodos();
+            set({ todos, isLoading: false });
         } catch (error) {
             console.error('Failed to delete todo:', error);
             set({
@@ -174,10 +232,24 @@ export const useTodoStore = create<TodoState>((set, get) => ({
                 await localDatabaseService.deleteTodo(todo.id);
             }
 
-            set((state) => ({
-                todos: state.todos.filter((todo) => !todo.isCompleted),
-                isLoading: false,
-            }));
+            // Check if sync is enabled and sync to Supabase
+            const settings = await localDatabaseService.getSettings();
+            if (settings?.syncEnabled) {
+                try {
+                    // Sync will happen automatically via sync log trigger
+                    await optionalSyncService.performSync();
+                } catch (syncError) {
+                    console.error(
+                        'Failed to sync completed todos deletion to Supabase:',
+                        syncError,
+                    );
+                    // Don't fail the operation if sync fails
+                }
+            }
+
+            // Reload todos to get latest state
+            const todos = await localDatabaseService.getTodos();
+            set({ todos, isLoading: false });
         } catch (error) {
             console.error('Failed to delete completed todos:', error);
             set({

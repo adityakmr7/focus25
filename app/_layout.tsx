@@ -1,5 +1,4 @@
 import AuthErrorBoundary from '@/components/AuthErrorBoundary';
-import AuthLoadingScreen from '@/components/AuthLoadingScreen';
 import EnhancedLoadingScreen from '@/components/EnhancedLoadingScreen';
 import TypographyText from '@/components/TypographyText';
 import { useTheme } from '@/hooks/useTheme';
@@ -20,7 +19,7 @@ import * as Notifications from 'expo-notifications';
 function AppContent() {
     const { resolvedTheme } = useTheme();
     const { onboardingCompleted } = useSettingsStore();
-    const { initializeAuth, isInitialized, loading, error } = useAuthStore();
+    const { initializeAuth, error } = useAuthStore();
     const router = useRouter();
     const segments = useSegments();
     const [isSplashScreenReady, setIsSplashScreenReady] = useState(false);
@@ -71,39 +70,30 @@ function AppContent() {
         };
     }, [initializeAuth]);
 
-    // Handle onboarding navigation (authentication is now handled by ProtectedRoute)
+    // Handle onboarding navigation (NO authentication required for basic app usage)
     useEffect(() => {
-        const { user } = useAuthStore.getState();
         const inAuthGroup = segments[0] === 'onboarding';
 
-        // If user is authenticated and has completed onboarding but is on onboarding screen
-        if (user && onboardingCompleted && inAuthGroup) {
-            router.replace('/(tabs)');
+        // If user hasn't completed onboarding, show onboarding screen
+        if (!onboardingCompleted && !inAuthGroup) {
+            router.replace('/onboarding');
             return;
         }
 
-        // If user is authenticated but hasn't completed onboarding and not on onboarding screen
-        if (user && !onboardingCompleted && !inAuthGroup) {
-            router.replace('/onboarding');
+        // If user completed onboarding but is still on onboarding screen, go to main app
+        if (onboardingCompleted && inAuthGroup) {
+            router.replace('/(tabs)');
             return;
         }
     }, [onboardingCompleted, segments, router]);
 
-    // Show loading screen while splash screen is not ready or auth is initializing
-    if (!isSplashScreenReady || !isInitialized || loading) {
+    // Show loading screen only while splash screen is not ready
+    // Auth initialization is non-blocking - app can function without auth
+    if (!isSplashScreenReady) {
         return (
             <HeroUIProvider key={resolvedTheme} initialTheme={resolvedTheme}>
                 <SafeAreaProvider>
-                    <EnhancedLoadingScreen
-                        message={
-                            !isSplashScreenReady
-                                ? 'Initializing app...'
-                                : loading
-                                  ? 'Signing in...'
-                                  : 'Initializing authentication...'
-                        }
-                        showProgress={!isSplashScreenReady}
-                    />
+                    <EnhancedLoadingScreen message="Initializing app..." showProgress={true} />
                 </SafeAreaProvider>
             </HeroUIProvider>
         );
@@ -145,7 +135,7 @@ function AppContent() {
                             style={{
                                 paddingHorizontal: 24,
                                 paddingVertical: 12,
-                                backgroundColor: '#007AFF',
+                                backgroundColor: resolvedTheme === 'dark' ? '#007AFF' : '#007AFF',
                                 borderRadius: 8,
                                 marginTop: 16,
                             }}
@@ -173,6 +163,10 @@ function AppContent() {
                             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                             <Stack.Screen
                                 name="(create-todo)"
+                                options={{ headerShown: false, presentation: 'modal' }}
+                            />
+                            <Stack.Screen
+                                name="subscription"
                                 options={{ headerShown: false, presentation: 'modal' }}
                             />
                             <Stack.Screen name="+not-found" />

@@ -95,7 +95,13 @@ const TodoItem: React.FC<TodoItemProps> = ({
 
   return (
     <View style={styles.todoContainer}>
-      <Animated.View style={[styles.deleteBackground, deleteBackgroundStyle]}>
+      <Animated.View 
+        style={[
+          styles.deleteBackground, 
+          { backgroundColor: theme.colors.danger },
+          deleteBackgroundStyle
+        ]}
+      >
         <View style={styles.deleteContent}>
           <Ionicons name="trash" size={24} color={theme.colors.foreground} />
           <Text style={[styles.deleteText, { color: theme.colors.foreground }]}>
@@ -164,7 +170,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: "#EF4444",
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "flex-end",

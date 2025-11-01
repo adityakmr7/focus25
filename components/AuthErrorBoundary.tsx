@@ -1,6 +1,5 @@
-import TypographyText from "@/components/TypographyText";
 import React, { Component, ReactNode } from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface Props {
   children: ReactNode;
@@ -10,6 +9,34 @@ interface State {
   hasError: boolean;
   error: Error | null;
 }
+
+interface ErrorDisplayProps {
+  error: Error | null;
+  onRetry: () => void;
+}
+
+const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onRetry }) => {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>
+        Authentication Error
+      </Text>
+      <Text style={styles.message}>
+        {error?.message || "An unexpected error occurred"}
+      </Text>
+      <TouchableOpacity
+        onPress={onRetry}
+        style={styles.button}
+      >
+        <Text
+          style={{ color: "white", textAlign: "center" }}
+        >
+          Try Again
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 class AuthErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
@@ -28,27 +55,10 @@ class AuthErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <View style={styles.container}>
-          <TypographyText variant="title" style={styles.title}>
-            Authentication Error
-          </TypographyText>
-          <TypographyText variant="body" style={styles.message}>
-            {this.state.error?.message || "An unexpected error occurred"}
-          </TypographyText>
-          <TouchableOpacity
-            onPress={() => {
-              this.setState({ hasError: false, error: null });
-            }}
-            style={styles.button}
-          >
-            <TypographyText
-              variant="body"
-              style={{ color: "white", textAlign: "center" }}
-            >
-              Try Again
-            </TypographyText>
-          </TouchableOpacity>
-        </View>
+        <ErrorDisplay
+          error={this.state.error}
+          onRetry={() => this.setState({ hasError: false, error: null })}
+        />
       );
     }
 
@@ -64,10 +74,14 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
+    fontSize: 24,
+    fontWeight: '600',
     marginBottom: 16,
     textAlign: "center",
   },
   message: {
+    fontSize: 16,
+    fontWeight: '400',
     marginBottom: 24,
     textAlign: "center",
     opacity: 0.7,
@@ -75,9 +89,9 @@ const styles = StyleSheet.create({
   button: {
     paddingHorizontal: 24,
     paddingVertical: 12,
-    backgroundColor: "#007AFF",
     borderRadius: 8,
     marginTop: 16,
+    backgroundColor: '#007AFF',
   },
 });
 

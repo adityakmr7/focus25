@@ -1,15 +1,15 @@
 import TypographyText from '@/components/TypographyText';
+import UpgradeToProBanner from '@/components/UpgradeToProBanner';
 import { useSettingsStore } from '@/stores/local-settings-store';
 import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { HStack, SPACING, VStack, useTheme } from 'react-native-heroui';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AccountSection from './components/account-section';
 import AppManagementSection from './components/app-management-section';
 import AppSettingsSection from './components/app-settings-section';
 import DurationPickerModal from './components/duration-picker-modal';
 import FocusSettingsSection from './components/focus-settings-section';
-import LegalSection from './components/legal-section';
-import SupportSection from './components/support-section';
 import ThemeSelectionModal from './components/theme-selection-modal';
 import DataManagementSection from './components/data-management-section';
 
@@ -54,6 +54,8 @@ const SettingsScreen = () => {
                 style={{ flex: 1 }}
             >
                 <VStack px="md" gap="lg">
+                    <UpgradeToProBanner />
+                    <AccountSection />
                     <FocusSettingsSection
                         onFocusDurationPress={() => setFocusDurationModalVisible(true)}
                         onBreakDurationPress={() => setBreakDurationModalVisible(true)}

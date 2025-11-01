@@ -67,13 +67,14 @@ class OptionalSyncService {
                 return false;
             }
 
-            // Update settings to enable sync
+            // Enable sync but don't set lastSyncAt yet - we'll set it after sync completes
+            // This ensures we fetch ALL todos on first sync
             await localDatabaseService.updateSettings({
                 syncEnabled: true,
-                lastSyncAt: new Date().toISOString(),
+                // Don't set lastSyncAt here - let it be undefined so we fetch all todos
             });
 
-            // Perform initial sync
+            // Perform initial sync (will fetch all todos since lastSyncAt is undefined)
             const success = await this.performSync();
 
             if (success) {
@@ -125,6 +126,16 @@ class OptionalSyncService {
             const settings = await localDatabaseService.getSettings();
             if (!settings?.syncEnabled) {
                 console.log('Sync is disabled, skipping');
+                return false;
+            }
+
+            // Check if user is authenticated before attempting sync
+            const {
+                data: { user },
+                error: authError,
+            } = await supabase.auth.getUser();
+            if (authError || !user) {
+                console.log('User not authenticated, skipping sync');
                 return false;
             }
 
@@ -274,7 +285,18 @@ class OptionalSyncService {
      */
     private async syncTodosFromSupabase(lastSyncAt?: string): Promise<void> {
         try {
-            let query = supabase.from('todos').select('*');
+            // Get authenticated user (RLS will automatically filter by user_id)
+            const {
+                data: { user },
+                error: authError,
+            } = await supabase.auth.getUser();
+            if (authError || !user) {
+                throw new Error('User not authenticated');
+            }
+
+            // On first sync (no lastSyncAt), fetch all todos
+            // Otherwise, fetch only todos created/updated since last sync
+            let query = supabase.from('todos').select('*').order('created_at', { ascending: false });
 
             if (lastSyncAt) {
                 query = query.gte('created_at', lastSyncAt);

@@ -35,8 +35,13 @@ const OnboardingScreen: React.FC = () => {
         checkAppleSignIn();
     }, []);
 
-    // Validate name - alphabets only
+    // Handle skipping authentication - allow free tier usage
+    const handleSkipOnboarding = () => {
+        setOnboardingCompleted(true);
+        router.replace('/(tabs)');
+    };
 
+    // Handle Apple Sign-In - optional, for Pro users later
     const handleAppleSignIn = async () => {
         if (!isAppleSignInAvailable) {
             Alert.alert('Not Available', 'Apple Sign-In is not available on this device.');
@@ -54,9 +59,13 @@ const OnboardingScreen: React.FC = () => {
 
             // Navigate to main app
             router.replace('/(tabs)');
-        } catch (error) {
-            console.error('Apple Sign-In failed:', error);
-            Alert.alert('Sign-In Failed', 'Apple Sign-In failed. Please try again.');
+        } catch (error: any) {
+            // Don't show alert for user cancellation - it's expected behavior
+            const isUserCancellation = error?.message?.toLowerCase().includes('cancel');
+            if (!isUserCancellation) {
+                console.error('Apple Sign-In failed:', error);
+                Alert.alert('Sign-In Failed', 'Apple Sign-In failed. Please try again.');
+            }
         }
     };
 
@@ -125,22 +134,41 @@ const OnboardingScreen: React.FC = () => {
                         {/* Title and Description */}
                         <VStack gap="sm" style={styles.textSection}>
                             <TypographyText variant="title" color="default" style={styles.title}>
-                                Now it's easy to manage your tasks
+                                Welcome to Flowzy
                             </TypographyText>
                             <TypographyText
                                 variant="body"
                                 color="secondary"
                                 style={styles.description}
                             >
-                                Sign in with Apple to get started with your personalized focus
-                                journey
+                                Get started with local task management. Sign in later to unlock
+                                cloud sync.
                             </TypographyText>
                         </VStack>
                     </VStack>
 
-                    {/* Apple Sign-In Button */}
-                    {isAppleSignInAvailable && (
-                        <View style={styles.appleSignInContainer}>
+                    {/* Action Buttons */}
+                    <VStack gap="md" style={styles.buttonContainer}>
+                        {/* Skip button for free tier */}
+                        <TouchableOpacity
+                            onPress={handleSkipOnboarding}
+                            style={[
+                                styles.skipButton,
+                                {
+                                    borderColor: theme.colors.border,
+                                },
+                            ]}
+                        >
+                            <TypographyText
+                                variant="body"
+                                style={[styles.skipButtonText, { color: theme.colors.foreground }]}
+                            >
+                                Continue Without Account
+                            </TypographyText>
+                        </TouchableOpacity>
+
+                        {/* Apple Sign-In button (optional) */}
+                        {isAppleSignInAvailable && (
                             <TouchableOpacity
                                 onPress={handleAppleSignIn}
                                 disabled={loading}
@@ -165,11 +193,11 @@ const OnboardingScreen: React.FC = () => {
                                         { color: theme.colors.background },
                                     ]}
                                 >
-                                    Continue with Apple
+                                    Sign In with Apple
                                 </TypographyText>
                             </TouchableOpacity>
-                        </View>
-                    )}
+                        )}
+                    </VStack>
                 </VStack>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -295,7 +323,20 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
         alignItems: 'center',
-        paddingTop: 20,
+        paddingHorizontal: 20,
+    },
+    skipButton: {
+        width: '100%',
+        borderWidth: 2,
+        borderRadius: 12,
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    skipButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
     },
     continueButton: {
         width: 60,

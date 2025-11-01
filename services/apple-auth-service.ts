@@ -50,7 +50,15 @@ export class AppleAuthService {
                 user: data.user,
                 displayName: displayName || data.user?.user_metadata?.display_name || '',
             };
-        } catch (error) {
+        } catch (error: any) {
+            // Don't log user cancellation as an error - it's expected behavior
+            const isUserCancellation = error?.message?.toLowerCase().includes('cancel');
+            if (isUserCancellation) {
+                console.log('Apple Sign-In cancelled by user');
+                throw error;
+            }
+
+            // Log actual errors
             console.error('Apple Sign-In error:', error);
             throw error;
         }

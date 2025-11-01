@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
-import { Switch, Button } from 'react-native-heroui';
+import { Switch, Button, Badge } from 'react-native-heroui';
 import { useSettingsStore } from '@/stores/local-settings-store';
+import { useAuthStore } from '@/stores/auth-store';
+import { useSubscriptionStore } from '@/stores/subscription-store';
 import { optionalSyncService } from '@/services/optional-sync-service';
 import { exportImportService } from '@/services/export-import-service';
+import { router } from 'expo-router';
 import SettingsSection from './settings-section';
 import SettingItem from './setting-item';
 import Divider from './divider';
@@ -16,6 +19,8 @@ interface SyncStatus {
 
 export default function DataManagementSection() {
     const { syncWithCloud, setSyncWithCloud } = useSettingsStore();
+    const { user } = useAuthStore();
+    const { isPro } = useSubscriptionStore();
     const [syncStatus, setSyncStatus] = useState<SyncStatus>({
         enabled: false,
         unsyncedChanges: 0,
@@ -38,6 +43,46 @@ export default function DataManagementSection() {
     };
 
     const handleSyncToggle = async (enabled: boolean) => {
+        // Check if user is authenticated
+        if (enabled && !user) {
+            Alert.alert(
+                'Sign In Required',
+                'Please sign in with Apple to enable cloud sync.',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { 
+                        text: 'Sign In', 
+                        onPress: async () => {
+                            try {
+                                await useAuthStore.getState().signInWithApple();
+                                // After successful sign-in, check Pro status
+                                await useSubscriptionStore.getState().checkProStatus();
+                            } catch (error) {
+                                Alert.alert('Sign In Failed', 'Please try again.');
+                            }
+                        }
+                    }
+                ]
+            );
+            return;
+        }
+
+        // Check if user is Pro
+        if (enabled && !isPro) {
+            Alert.alert(
+                'Pro Feature',
+                'Cloud sync is available for Pro users. Upgrade for $4.99/month to unlock cloud sync across all your devices.',
+                [
+                    { text: 'Maybe Later', style: 'cancel' },
+                    { 
+                        text: 'Upgrade to Pro', 
+                        onPress: () => router.push('/subscription')
+                    }
+                ]
+            );
+            return;
+        }
+
         setIsLoading(true);
         try {
             if (enabled) {
@@ -155,15 +200,24 @@ export default function DataManagementSection() {
             <SettingsSection title="Cloud Sync">
                 <SettingItem
                     title="Enable Cloud Sync"
-                    subtitle="Sync your data with the cloud for backup and cross-device access"
-                    rightElement={
-                        <Switch
-                            size="md"
-                            value={syncWithCloud}
-                            onChange={handleSyncToggle}
-                            isDisabled={isLoading}
-                        />
+                    subtitle={
+                        isPro 
+                            ? "Sync your data across all devices" 
+                            : "Pro feature - Upgrade to unlock"
                     }
+                    rightElement={
+                        isPro ? (
+                            <Switch
+                                size="md"
+                                value={syncWithCloud}
+                                onChange={handleSyncToggle}
+                                isDisabled={isLoading}
+                            />
+                        ) : (
+                            <Badge variant="solid" content="PRO" color="primary" />
+                        )
+                    }
+                    onPress={() => !isPro && router.push('/subscription')}
                 />
 
                 {syncWithCloud && (
