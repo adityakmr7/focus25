@@ -53,43 +53,85 @@ export const useSettingsStore = create<SettingsState>()(
         (set, get) => ({
             // Theme settings
             themeMode: 'system',
-            setThemeMode: (themeMode) => set({ themeMode }),
+            setThemeMode: (themeMode) => {
+                set({ themeMode });
+                get().saveSettings();
+            },
 
             // Focus settings
             focusDuration: 25,
             breakDuration: 5,
             soundEffects: true,
             metronome: false,
-            setFocusDuration: (focusDuration) => set({ focusDuration }),
-            setBreakDuration: (breakDuration) => set({ breakDuration }),
-            setSoundEffects: (soundEffects) => set({ soundEffects }),
-            setMetronome: (metronome) => set({ metronome }),
+            setFocusDuration: (focusDuration) => {
+                set({ focusDuration });
+                get().saveSettings();
+            },
+            setBreakDuration: (breakDuration) => {
+                set({ breakDuration });
+                get().saveSettings();
+            },
+            setSoundEffects: (soundEffects) => {
+                set({ soundEffects });
+                get().saveSettings();
+            },
+            setMetronome: (metronome) => {
+                set({ metronome });
+                get().saveSettings();
+            },
 
             // App settings
             syncWithCloud: false,
             textSize: 'medium',
             notifications: true,
-            setSyncWithCloud: (syncWithCloud) => set({ syncWithCloud }),
-            setTextSize: (textSize) => set({ textSize }),
-            setNotifications: (notifications) => set({ notifications }),
+            setSyncWithCloud: (syncWithCloud) => {
+                set({ syncWithCloud });
+                get().saveSettings();
+            },
+            setTextSize: (textSize) => {
+                set({ textSize });
+                get().saveSettings();
+            },
+            setNotifications: (notifications) => {
+                set({ notifications });
+                get().saveSettings();
+            },
 
             // Account settings
-            userName: 'User',
+            userName: '',
             userEmail: '',
             isAccountBackedUp: false,
             onboardingCompleted: false,
-            setUserName: (userName) => set({ userName }),
-            setUserEmail: (userEmail) => set({ userEmail }),
-            setAccountBackedUp: (isAccountBackedUp) => set({ isAccountBackedUp }),
-            setOnboardingCompleted: (onboardingCompleted) => set({ onboardingCompleted }),
+            setUserName: (userName) => {
+                set({ userName });
+                get().saveSettings();
+            },
+            setUserEmail: (userEmail) => {
+                set({ userEmail });
+                get().saveSettings();
+            },
+            setAccountBackedUp: (isAccountBackedUp) => {
+                set({ isAccountBackedUp });
+                get().saveSettings();
+            },
+            setOnboardingCompleted: (onboardingCompleted) => {
+                set({ onboardingCompleted });
+                get().saveSettings();
+            },
 
             // Device settings
-            deviceName: 'Focus25 Device',
-            setDeviceName: (deviceName) => set({ deviceName }),
+            deviceName: 'Flowzy Device',
+            setDeviceName: (deviceName) => {
+                set({ deviceName });
+                get().saveSettings();
+            },
 
             // Database operations
             loadSettings: async () => {
                 try {
+                    // Wait for database initialization
+                    await localDatabaseService.waitForInitialization();
+
                     const settings = await localDatabaseService.getSettings();
                     if (settings) {
                         set({
@@ -146,7 +188,7 @@ export const useSettingsStore = create<SettingsState>()(
                     userEmail: '',
                     isAccountBackedUp: false,
                     onboardingCompleted: false,
-                    deviceName: 'Focus25 Device',
+                    deviceName: 'Flowzy Device',
                 }),
         }),
         {

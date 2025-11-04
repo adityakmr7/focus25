@@ -20,6 +20,9 @@ class OptionalSyncService {
         try {
             if (this.isInitialized) return true;
 
+            // Wait for local database to be initialized
+            await localDatabaseService.waitForInitialization();
+
             // Check if user is authenticated
             const {
                 data: { user },
@@ -51,6 +54,9 @@ class OptionalSyncService {
      */
     async enableSync(): Promise<boolean> {
         try {
+            // Wait for local database to be initialized
+            await localDatabaseService.waitForInitialization();
+
             // Check if user is authenticated
             const {
                 data: { user },
@@ -111,6 +117,9 @@ class OptionalSyncService {
         try {
             this.syncInProgress = true;
             console.log('Starting sync process...');
+
+            // Wait for local database to be initialized
+            await localDatabaseService.waitForInitialization();
 
             // Check if sync is enabled
             const settings = await localDatabaseService.getSettings();
@@ -381,6 +390,9 @@ class OptionalSyncService {
     async forceSync(): Promise<boolean> {
         try {
             console.log('Performing force sync...');
+
+            // Wait for local database to be initialized
+            await localDatabaseService.waitForInitialization();
 
             // Clear sync log to force full sync
             await localDatabaseService.updateSettings({

@@ -1,21 +1,23 @@
+import React from 'react';
 import AuthErrorBoundary from '@/components/AuthErrorBoundary';
+
 import AuthLoadingScreen from '@/components/AuthLoadingScreen';
+import EnhancedLoadingScreen from '@/components/EnhancedLoadingScreen';
 import TypographyText from '@/components/TypographyText';
 import { useTheme } from '@/hooks/useTheme';
-import { notificationService } from '@/services/notification-service';
-import { localDatabaseService } from '@/services/local-database-service';
-import { optionalSyncService } from '@/services/optional-sync-service';
+import { splashScreenService } from '@/services/splash-screen-service';
 import { useAuthStore } from '@/stores/auth-store';
-import { useSettingsStore } from '@/stores/setting-store';
+import { useSettingsStore } from '@/stores/local-settings-store';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { HeroUIProvider } from 'react-native-heroui';
+import { HeroUIProvider, ToastProvider } from 'react-native-heroui';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Notifications from 'expo-notifications';
 // Inner component that uses the theme hook
 function AppContent() {
     const { resolvedTheme } = useTheme();
@@ -23,39 +25,51 @@ function AppContent() {
     const { initializeAuth, isInitialized, loading, error } = useAuthStore();
     const router = useRouter();
     const segments = useSegments();
+    const [isSplashScreenReady, setIsSplashScreenReady] = useState(false);
 
-    // Initialize services on app start
+    // Initialize splash screen and services
     useEffect(() => {
         let authCleanup: (() => void) | undefined;
 
-        const initializeServices = async () => {
+        const initializeApp = async () => {
             try {
-                // Initialize local database first
-                await localDatabaseService.initialize();
-                console.log('Local database initialized');
+                // Initialize splash screen service
+                await splashScreenService.initialize();
 
-                // Initialize auth state listener
+                // Set up notification response listener
+                const notificationListener = Notifications.addNotificationResponseReceivedListener(
+                    (response) => {
+                        // Handle notification response when services are ready
+                        // This will be handled by the notification service after initialization
+                    },
+                );
+
+                // Wait for all initialization to complete
+                await splashScreenService.waitForInitialization();
+
+                // Get auth cleanup function
                 authCleanup = initializeAuth();
 
-                // Initialize notification service
-                await notificationService.initialize();
+                setIsSplashScreenReady(true);
 
-                // Initialize optional sync service
-                await optionalSyncService.initialize();
+                // Cleanup function
+                return () => {
+                    if (authCleanup) {
+                        authCleanup();
+                    }
+                    notificationListener.remove();
+                };
             } catch (error) {
-                console.error('Failed to initialize services:', error);
+                console.error('Failed to initialize app:', error);
+                setIsSplashScreenReady(true); // Still show app even if initialization fails
             }
         };
 
-        initializeServices();
+        initializeApp();
 
         // Cleanup function
         return () => {
-            if (authCleanup) {
-                authCleanup();
-            }
-            // Close local database
-            localDatabaseService.close();
+            // Cleanup will be handled by individual services
         };
     }, [initializeAuth]);
 
@@ -77,13 +91,20 @@ function AppContent() {
         }
     }, [onboardingCompleted, segments, router]);
 
-    // Show loading screen while auth is initializing
-    if (!isInitialized || loading) {
+    // Show loading screen while splash screen is not ready or auth is initializing
+    if (!isSplashScreenReady || !isInitialized || loading) {
         return (
             <HeroUIProvider key={resolvedTheme} initialTheme={resolvedTheme}>
                 <SafeAreaProvider>
-                    <AuthLoadingScreen
-                        message={loading ? 'Signing in...' : 'Initializing authentication...'}
+                    <EnhancedLoadingScreen
+                        message={
+                            !isSplashScreenReady
+                                ? 'Initializing app...'
+                                : loading
+                                  ? 'Signing in...'
+                                  : 'Initializing authentication...'
+                        }
+                        showProgress={!isSplashScreenReady}
                     />
                 </SafeAreaProvider>
             </HeroUIProvider>
@@ -147,15 +168,20 @@ function AppContent() {
     return (
         <AuthErrorBoundary>
             <HeroUIProvider key={resolvedTheme} initialTheme={resolvedTheme}>
-                <SafeAreaProvider>
-                    <Stack>
-                        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                        <Stack.Screen name="(create-todo)" options={{ headerShown: false }} />
-                        <Stack.Screen name="+not-found" />
-                    </Stack>
-                    <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
-                </SafeAreaProvider>
+                <ToastProvider>
+                    <SafeAreaProvider>
+                        <Stack>
+                            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+                            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                            <Stack.Screen
+                                name="(create-todo)"
+                                options={{ headerShown: false, presentation: 'modal' }}
+                            />
+                            <Stack.Screen name="+not-found" />
+                        </Stack>
+                        <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
+                    </SafeAreaProvider>
+                </ToastProvider>
             </HeroUIProvider>
         </AuthErrorBoundary>
     );

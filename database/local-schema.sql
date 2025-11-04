@@ -1,4 +1,4 @@
--- SQLite Database Schema for Focus25 Local-First App
+-- SQLite Database Schema for Flowzy Local-First App
 -- This replaces the Supabase schema with local SQLite tables
 
 -- =============================================

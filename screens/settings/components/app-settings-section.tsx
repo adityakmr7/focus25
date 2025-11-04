@@ -1,4 +1,4 @@
-import { useSettingsStore } from '@/stores/setting-store';
+import { useSettingsStore } from '@/stores/local-settings-store';
 import React from 'react';
 import { Switch } from 'react-native-heroui';
 import ChevronRight from './chevron-right';
@@ -34,13 +34,7 @@ const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({
                 }
             />
             <Divider />
-            <SettingItem
-                title="Text Size"
-                subtitle={textSize.charAt(0).toUpperCase() + textSize.slice(1)}
-                rightElement={<ChevronRight />}
-                onPress={onTextSizePress}
-            />
-            <Divider />
+
             <SettingItem
                 title="Theme"
                 subtitle={

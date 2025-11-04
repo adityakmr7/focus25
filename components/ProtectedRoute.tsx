@@ -1,6 +1,6 @@
 import TypographyText from "@/components/TypographyText";
 import { useAuthStore } from "@/stores/auth-store";
-import { useSettingsStore } from "@/stores/setting-store";
+import { useSettingsStore } from "@/stores/local-settings-store";
 import { router } from "expo-router";
 import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";

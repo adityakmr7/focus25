@@ -1,9 +1,10 @@
 import TypographyText from '@/components/TypographyText';
-import { useSettingsStore } from '@/stores/setting-store';
+import { useSettingsStore } from '@/stores/local-settings-store';
 import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { HStack, SPACING, VStack, useTheme } from 'react-native-heroui';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AccountSection from './components/account-section';
 import AppManagementSection from './components/app-management-section';
 import AppSettingsSection from './components/app-settings-section';
 import DurationPickerModal from './components/duration-picker-modal';
@@ -29,6 +30,14 @@ const SettingsScreen = () => {
         console.log('Open text size picker');
     };
 
+    const handleFocusDurationSelect = (duration: number) => {
+        setFocusDuration(duration);
+    };
+
+    const handleBreakDurationSelect = (duration: number) => {
+        setBreakDuration(duration);
+    };
+
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
             {/* Header */}
@@ -46,9 +55,7 @@ const SettingsScreen = () => {
                 style={{ flex: 1 }}
             >
                 <VStack px="md" gap="lg">
-                    {/* <UpgradeToPro /> */}
-                    {/* <AccountSection /> */}
-                    {/* <DeviceSection /> */}
+                    <AccountSection />
                     <FocusSettingsSection
                         onFocusDurationPress={() => setFocusDurationModalVisible(true)}
                         onBreakDurationPress={() => setBreakDurationModalVisible(true)}
@@ -58,29 +65,25 @@ const SettingsScreen = () => {
                         onThemePress={() => setThemeModalVisible(true)}
                     />
                     <AppManagementSection />
-                    <LegalSection />
-                    <SupportSection />
                     <DataManagementSection />
                 </VStack>
             </ScrollView>
 
-            {/* Duration Picker Modals */}
             <DurationPickerModal
                 visible={focusDurationModalVisible}
                 onClose={() => setFocusDurationModalVisible(false)}
                 title="Focus Duration"
                 selectedDuration={focusDuration}
-                onSelectDuration={setFocusDuration}
+                onSelectDuration={handleFocusDurationSelect}
             />
             <DurationPickerModal
                 visible={breakDurationModalVisible}
                 onClose={() => setBreakDurationModalVisible(false)}
                 title="Break Duration"
                 selectedDuration={breakDuration}
-                onSelectDuration={setBreakDuration}
+                onSelectDuration={handleBreakDurationSelect}
             />
 
-            {/* Theme Selection Modal */}
             <ThemeSelectionModal
                 visible={themeModalVisible}
                 onClose={() => setThemeModalVisible(false)}

@@ -21,12 +21,7 @@ const TodoCard: React.FC<TodoCardProps> = ({ todo, index, viewMode, onToggle, on
     }
 
     const getTodoIcon = (index: number) => {
-        const icons = [
-            'library-outline',
-            'checkmark-square-outline',
-            'search-outline',
-            'create-outline',
-        ];
+        const icons = ['library-outline', 'search-outline', 'create-outline'];
         return icons[index % icons.length];
     };
 

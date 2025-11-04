@@ -1,4 +1,4 @@
-import { useSettingsStore } from "@/stores/setting-store";
+import { useSettingsStore } from "@/stores/local-settings-store";
 import { useColorScheme } from "react-native";
 
 export const useTheme = () => {

@@ -2,7 +2,7 @@
 -- Description: Create initial tables for todos, sessions, and user settings
 -- Date: 2024-01-26
 -- Author: Aditya Kumar
--- Purpose: Initial database schema for Focus25 Pomodoro app
+-- Purpose: Initial database schema for Flowzy Pomodoro app
 
 -- =============================================
 -- TODOS TABLE
