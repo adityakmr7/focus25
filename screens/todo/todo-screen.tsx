@@ -14,7 +14,7 @@ import EmptyState from './components/empty-state';
 const TodoScreen: React.FC = () => {
     const { theme } = useTheme();
     const { todos, toggleTodo, loadTodos } = useTodoStore();
-    const { userName } = useSettingsStore();
+    const { userName, userEmail } = useSettingsStore();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
     // Generate personalized greeting
@@ -28,7 +28,17 @@ const TodoScreen: React.FC = () => {
             timeGreeting = 'Good evening';
         }
 
-        return `${timeGreeting} ${userName}`;
+        // Get display name: use userName if available and not empty, otherwise use email prefix
+        let displayName = userName;
+        if (!displayName || displayName.trim() === '' || displayName === 'User') {
+            if (userEmail) {
+                displayName = userEmail.split('@')[0];
+            } else {
+                displayName = 'User';
+            }
+        }
+
+        return `${timeGreeting} ${displayName}`;
     };
 
     // Load todos on component mount

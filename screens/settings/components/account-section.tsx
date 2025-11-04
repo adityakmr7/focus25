@@ -15,21 +15,18 @@ const AccountSection: React.FC = () => {
     const { theme } = useTheme();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-    // Get display name: use userName if available, otherwise use email prefix
-    const displayName = userName || (userEmail ? userEmail.split('@')[0] : 'Guest User');
-
-    // Get first character for avatar (from name or email)
-    const getAvatarInitial = () => {
-        if (userName) {
-            return userName.charAt(0).toUpperCase();
-        }
+    // Get display name: use userName if available and not empty, otherwise use email prefix
+    let displayName = userName;
+    if (!displayName || displayName.trim() === '' || displayName === 'User') {
         if (userEmail) {
-            return userEmail.charAt(0).toUpperCase();
+            displayName = userEmail.split('@')[0];
+        } else {
+            displayName = 'Guest User';
         }
-        return 'G';
-    };
+    }
 
-    const avatarInitial = getAvatarInitial();
+    // Get first character for avatar from displayName
+    const avatarInitial = displayName.charAt(0).toUpperCase();
 
     const handleLogout = () => {
         Alert.alert(
