@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { HStack, SPACING, VStack, useTheme } from 'react-native-heroui';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AccountSection from './components/account-section';
 import AppManagementSection from './components/app-management-section';
 import AppSettingsSection from './components/app-settings-section';
 import DurationPickerModal from './components/duration-picker-modal';
@@ -54,6 +55,7 @@ const SettingsScreen = () => {
                 style={{ flex: 1 }}
             >
                 <VStack px="md" gap="lg">
+                    <AccountSection />
                     <FocusSettingsSection
                         onFocusDurationPress={() => setFocusDurationModalVisible(true)}
                         onBreakDurationPress={() => setBreakDurationModalVisible(true)}

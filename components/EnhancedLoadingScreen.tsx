@@ -1,190 +1,141 @@
 import TypographyText from '@/components/TypographyText';
-import { splashScreenService } from '@/services/splash-screen-service';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, StyleSheet, View } from 'react-native';
 import { useTheme } from 'react-native-heroui';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface EnhancedLoadingScreenProps {
     message?: string;
     showProgress?: boolean;
 }
 
-const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = ({
-    message = 'App is getting ready.',
-    showProgress = false,
-}) => {
+const INSPIRATIONAL_QUOTES = [
+    {
+        quote: "Focus is not about saying yes to everything. It's about saying no to all but the essential.",
+        author: 'Steve Jobs',
+    },
+    {
+        quote: 'The secret of getting ahead is getting started.',
+        author: 'Mark Twain',
+    },
+    {
+        quote: 'Do one thing at a time. Do it well.',
+        author: 'Unknown',
+    },
+    {
+        quote: 'Productivity is never an accident. It is always the result of a commitment to excellence.',
+        author: 'Paul J. Meyer',
+    },
+    {
+        quote: 'Concentrate all your thoughts upon the work at hand.',
+        author: 'Alexander Graham Bell',
+    },
+    {
+        quote: 'The way to get started is to quit talking and begin doing.',
+        author: 'Walt Disney',
+    },
+    {
+        quote: 'Focus on being productive instead of busy.',
+        author: 'Tim Ferriss',
+    },
+    {
+        quote: "You don't have to be great to start, but you have to start to be great.",
+        author: 'Zig Ziglar',
+    },
+];
+
+const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = () => {
     const { theme } = useTheme();
-    const [progress, setProgress] = useState(0);
-    const [currentTask, setCurrentTask] = useState<string | undefined>();
+    const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
+    const [fadeAnim] = useState(new Animated.Value(1));
 
+    // Rotate quotes every 3 seconds
     useEffect(() => {
-        if (!showProgress) return;
+        const quoteInterval = setInterval(() => {
+            Animated.sequence([
+                Animated.timing(fadeAnim, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+            ]).start();
 
-        const updateProgress = () => {
-            const progressInfo = splashScreenService.getProgress();
-            setProgress(progressInfo.progress);
-            setCurrentTask(progressInfo.currentTask);
-        };
+            setCurrentQuoteIndex((prev) => (prev + 1) % INSPIRATIONAL_QUOTES.length);
+        }, 3000);
 
-        // Update progress immediately
-        updateProgress();
+        return () => clearInterval(quoteInterval);
+    }, [fadeAnim]);
 
-        // Update progress every 100ms
-        const interval = setInterval(updateProgress, 100);
-
-        return () => clearInterval(interval);
-    }, [showProgress]);
+    const currentQuote = INSPIRATIONAL_QUOTES[currentQuoteIndex];
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            {/* App Logo/Icon */}
-            <View style={styles.logoContainer}>
-                <View style={[styles.logo, {}]}>
-                    <Image
-                        source={require('@/assets/images/splash-icon.png')}
-                        style={styles.logoImage}
-                    />
+        <SafeAreaView style={styles.container}>
+            <View style={styles.content}>
+                {/* Quote Section */}
+                <View style={styles.quoteSection}>
+                    <Animated.View style={[styles.quoteContainer, { opacity: fadeAnim }]}>
+                        <TypographyText variant="body" color="default" style={styles.quote}>
+                            {`"${currentQuote.quote}"`}
+                        </TypographyText>
+                        <TypographyText variant="caption" color="secondary" style={styles.author}>
+                            — {currentQuote.author}
+                        </TypographyText>
+                    </Animated.View>
+                </View>
+
+                {/* Spinner */}
+                <View style={styles.spinnerContainer}>
+                    <ActivityIndicator size="small" color={theme.colors.foreground} />
                 </View>
             </View>
-
-            {/* Loading Indicator */}
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator
-                    size="large"
-                    color={theme.colors.primary}
-                    style={styles.spinner}
-                />
-                <TypographyText variant="body" color="secondary" style={styles.message}>
-                    {message}
-                </TypographyText>
-
-                {/* Progress Bar */}
-                {showProgress && (
-                    <View style={styles.progressContainer}>
-                        <View
-                            style={[
-                                styles.progressBar,
-                                {
-                                    backgroundColor: theme.colors.background,
-                                    borderColor: theme.colors.foreground,
-                                },
-                            ]}
-                        >
-                            <View
-                                style={[
-                                    styles.progressFill,
-                                    {
-                                        backgroundColor: theme.colors.primary,
-                                        width: `${progress}%`,
-                                    },
-                                ]}
-                            />
-                        </View>
-                        <TypographyText
-                            variant="caption"
-                            color="secondary"
-                            style={styles.progressText}
-                        >
-                            {progress}% {currentTask && `• ${currentTask}`}
-                        </TypographyText>
-                    </View>
-                )}
-            </View>
-
-            {/* App Name */}
-            <View style={styles.appNameContainer}>
-                <TypographyText variant="title" color="default" style={styles.appName}>
-                    Flowzy
-                </TypographyText>
-                <TypographyText variant="caption" color="secondary" style={styles.tagline}>
-                    Stay focused, stay productive
-                </TypographyText>
-            </View>
-        </View>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    logoImage: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 16,
-        elevation: 8,
-    },
     container: {
         flex: 1,
+        backgroundColor: '#FFFFFF',
+    },
+    content: {
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        paddingHorizontal: 32,
     },
-    logoContainer: {
+    quoteSection: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    logo: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 16,
-        elevation: 8,
-    },
-    logoText: {
-        fontSize: 48,
-        fontWeight: 'bold',
-    },
-    loadingContainer: {
-        alignItems: 'center',
-        marginBottom: 40,
-    },
-    spinner: {
-        marginBottom: 16,
-    },
-    message: {
-        textAlign: 'center',
-        marginBottom: 20,
-    },
-    progressContainer: {
+    quoteContainer: {
         width: '100%',
         alignItems: 'center',
+        paddingHorizontal: 8,
     },
-    progressBar: {
-        width: '80%',
-        height: 4,
-        borderRadius: 2,
-        borderWidth: 1,
-        overflow: 'hidden',
-        marginBottom: 8,
-    },
-    progressFill: {
-        height: '100%',
-        borderRadius: 2,
-    },
-    progressText: {
+    quote: {
+        fontSize: 20,
+        lineHeight: 30,
         textAlign: 'center',
-        fontSize: 12,
+        color: '#000000',
+        fontWeight: '400',
+        marginBottom: 16,
+        letterSpacing: -0.3,
     },
-    appNameContainer: {
-        alignItems: 'center',
-        marginBottom: 40,
-    },
-    appName: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        marginBottom: 4,
-    },
-    tagline: {
+    author: {
         fontSize: 14,
-        opacity: 0.7,
+        textAlign: 'center',
+        opacity: 0.6,
+        fontStyle: 'italic',
+    },
+    spinnerContainer: {
+        paddingBottom: 60,
+        alignItems: 'center',
     },
 });
 

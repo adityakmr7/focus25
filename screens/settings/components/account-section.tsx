@@ -1,6 +1,9 @@
+import { useAuthStore } from '@/stores/auth-store';
 import { useSettingsStore } from '@/stores/local-settings-store';
-import React from 'react';
-import { Avatar, Badge, HStack } from 'react-native-heroui';
+import React, { useState } from 'react';
+import { Alert, StyleSheet, View } from 'react-native';
+import { Badge, HStack, Spinner, useTheme } from 'react-native-heroui';
+import TypographyText from '@/components/TypographyText';
 import ChevronRight from './chevron-right';
 import Divider from './divider';
 import SettingItem from './setting-item';
@@ -8,30 +11,96 @@ import SettingsSection from './settings-section';
 
 const AccountSection: React.FC = () => {
     const { userName, userEmail, isAccountBackedUp } = useSettingsStore();
+    const { signOut, loading } = useAuthStore();
+    const { theme } = useTheme();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    // Get display name: use userName if available, otherwise use email prefix
+    const displayName = userName || (userEmail ? userEmail.split('@')[0] : 'Guest User');
+
+    // Get first character for avatar (from name or email)
+    const getAvatarInitial = () => {
+        if (userName) {
+            return userName.charAt(0).toUpperCase();
+        }
+        if (userEmail) {
+            return userEmail.charAt(0).toUpperCase();
+        }
+        return 'G';
+    };
+
+    const avatarInitial = getAvatarInitial();
+
+    const handleLogout = () => {
+        Alert.alert(
+            'Sign Out',
+            'Are you sure you want to sign out? You will need to sign in again to access your account.',
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Sign Out',
+                    style: 'destructive',
+                    onPress: async () => {
+                        setIsLoggingOut(true);
+                        try {
+                            await signOut();
+                            // Navigation will be handled by ProtectedRoute automatically
+                        } catch (error: any) {
+                            Alert.alert(
+                                'Error',
+                                error.message || 'Failed to sign out. Please try again.',
+                            );
+                            setIsLoggingOut(false);
+                        }
+                    },
+                },
+            ],
+        );
+    };
 
     return (
         <SettingsSection title="Account">
             <SettingItem
-                title={userName || 'Guest User'}
+                title={displayName}
                 subtitle={userEmail || 'No email provided'}
-                icon={<Avatar size="md" src="https://i.pravatar.cc/150?u=john" />}
+                icon={
+                    <View
+                        style={[
+                            styles.avatar,
+                            {
+                                backgroundColor: theme.colors.primary + '20',
+                            },
+                        ]}
+                    >
+                        <TypographyText
+                            variant="title"
+                            weight="bold"
+                            style={[
+                                styles.avatarText,
+                                {
+                                    color: theme.colors.primary,
+                                },
+                            ]}
+                        >
+                            {avatarInitial}
+                        </TypographyText>
+                    </View>
+                }
                 rightElement={<ChevronRight />}
             />
             <Divider />
+
             <SettingItem
-                title={isAccountBackedUp ? 'Account Backed Up' : 'Account Not Backed Up'}
+                title="Sign Out"
+                subtitle="Sign out of your account"
+                onPress={handleLogout}
+                disabled={isLoggingOut || loading}
                 rightElement={
-                    !isAccountBackedUp ? (
-                        <HStack alignItems="center" gap="xs">
-                            <Badge
-                                variant="solid"
-                                content="1"
-                                color="danger"
-                                size="md"
-                                isOneChar={true}
-                            />
-                            <ChevronRight />
-                        </HStack>
+                    isLoggingOut || loading ? (
+                        <Spinner size="sm" color="danger" />
                     ) : (
                         <ChevronRight />
                     )
@@ -40,5 +109,18 @@ const AccountSection: React.FC = () => {
         </SettingsSection>
     );
 };
+
+const styles = StyleSheet.create({
+    avatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatarText: {
+        fontSize: 16,
+    },
+});
 
 export default AccountSection;

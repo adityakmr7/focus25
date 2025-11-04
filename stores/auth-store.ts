@@ -14,7 +14,7 @@ interface AuthState {
   isOffline: boolean;
 
   // Actions
-  signInWithApple: () => Promise<{ displayName: string }>;
+  signInWithApple: () => Promise<{ displayName: string; email: string }>;
   signOut: () => Promise<void>;
   updateUserProfile: (displayName: string) => Promise<void>;
   initializeAuth: () => () => void; // Returns cleanup function
@@ -72,16 +72,26 @@ export const useAuthStore = create<AuthState>()(
       signInWithApple: async () => {
         set({ loading: true, error: null });
         try {
-          const { user, displayName } =
+          const { user, displayName, email } =
             await new AppleAuthService().signInWithApple();
           set({ user, loading: false });
-          return { displayName };
+          return { displayName, email };
         } catch (error: any) {
-          console.error("Apple Sign-In failed:", error);
-          set({
-            error: error.message || "Apple Sign-In failed",
-            loading: false,
-          });
+          // Don't log or set error for user cancellations
+          const isCancellation = 
+            error?.code === 'ERR_REQUEST_CANCELED' ||
+            error?.message?.toLowerCase().includes('cancel');
+          
+          if (!isCancellation) {
+            console.error("Apple Sign-In failed:", error);
+            set({
+              error: error.message || "Apple Sign-In failed",
+              loading: false,
+            });
+          } else {
+            // Clear error state for cancellations
+            set({ error: null, loading: false });
+          }
           throw error;
         }
       },

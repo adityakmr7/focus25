@@ -1,4 +1,6 @@
+import React from 'react';
 import AuthErrorBoundary from '@/components/AuthErrorBoundary';
+
 import AuthLoadingScreen from '@/components/AuthLoadingScreen';
 import EnhancedLoadingScreen from '@/components/EnhancedLoadingScreen';
 import TypographyText from '@/components/TypographyText';
