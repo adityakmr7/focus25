@@ -1,11 +1,11 @@
-import type { Todo } from "../todo-store";
+import type { Todo } from "@/services/local-database-service";
 
-// Helper function to create dates relative to today
-const getDate = (daysAgo: number, hours: number = 9) => {
+// Helper function to create ISO date strings relative to today
+const getDateString = (daysAgo: number, hours: number = 9): string => {
   const date = new Date();
   date.setDate(date.getDate() - daysAgo);
   date.setHours(hours, 0, 0, 0);
-  return date;
+  return date.toISOString();
 };
 
 export const mockTodos: Todo[] = [
@@ -17,8 +17,10 @@ export const mockTodos: Todo[] = [
       "Write comprehensive documentation for the Flowzy app including setup instructions and feature descriptions",
     icon: "bookmark",
     isCompleted: false,
-    createdAt: getDate(0, 9), // Today 9 AM
+    createdAt: getDateString(0, 9), // Today 9 AM
     completedAt: null,
+    priority: 0,
+    actualMinutes: 0,
   },
   {
     id: "2",
@@ -27,8 +29,10 @@ export const mockTodos: Todo[] = [
       "Review and provide feedback on pending pull requests from team members",
     icon: "checkmark-circle",
     isCompleted: true,
-    createdAt: getDate(0, 10), // Today 10 AM
-    completedAt: getDate(0, 14), // Today 2 PM
+    createdAt: getDateString(0, 10), // Today 10 AM
+    completedAt: getDateString(0, 14), // Today 2 PM
+    priority: 0,
+    actualMinutes: 0,
   },
   {
     id: "3",
@@ -37,8 +41,10 @@ export const mockTodos: Todo[] = [
       "Investigate and fix the navigation issue on the settings screen",
     icon: "flash",
     isCompleted: false,
-    createdAt: getDate(0, 8), // Today 8 AM
+    createdAt: getDateString(0, 8), // Today 8 AM
     completedAt: null,
+    priority: 0,
+    actualMinutes: 0,
   },
   {
     id: "4",
@@ -46,8 +52,10 @@ export const mockTodos: Todo[] = [
     description: "Add full dark mode support across all screens and components",
     icon: "star",
     isCompleted: false,
-    createdAt: getDate(0, 11), // Today 11 AM
+    createdAt: getDateString(0, 11), // Today 11 AM
     completedAt: null,
+    priority: 0,
+    actualMinutes: 0,
   },
 
   // Yesterday's todos
@@ -57,8 +65,10 @@ export const mockTodos: Todo[] = [
     description: "Update all npm packages to their latest stable versions",
     icon: "flash",
     isCompleted: false,
-    createdAt: getDate(1, 9), // Yesterday 9 AM
+    createdAt: getDateString(1, 9), // Yesterday 9 AM
     completedAt: null,
+    priority: 0,
+    actualMinutes: 0,
   },
   {
     id: "6",
@@ -66,8 +76,10 @@ export const mockTodos: Todo[] = [
     description: "Create comprehensive unit tests for all core functionality",
     icon: "checkmark-circle",
     isCompleted: true,
-    createdAt: getDate(1, 10), // Yesterday 10 AM
-    completedAt: getDate(1, 15), // Yesterday 3 PM
+    createdAt: getDateString(1, 10), // Yesterday 10 AM
+    completedAt: getDateString(1, 15), // Yesterday 3 PM
+    priority: 0,
+    actualMinutes: 0,
   },
   {
     id: "7",
@@ -76,8 +88,10 @@ export const mockTodos: Todo[] = [
       "Create a modern and appealing app icon for both iOS and Android",
     icon: "star",
     isCompleted: true,
-    createdAt: getDate(1, 13), // Yesterday 1 PM
-    completedAt: getDate(1, 16), // Yesterday 4 PM
+    createdAt: getDateString(1, 13), // Yesterday 1 PM
+    completedAt: getDateString(1, 16), // Yesterday 4 PM
+    priority: 0,
+    actualMinutes: 0,
   },
 
   // 2 days ago
@@ -87,8 +101,10 @@ export const mockTodos: Todo[] = [
     description: "Profile and optimize app performance, reduce bundle size",
     icon: "flash",
     isCompleted: true,
-    createdAt: getDate(2, 9), // 2 days ago 9 AM
-    completedAt: getDate(2, 11), // 2 days ago 11 AM
+    createdAt: getDateString(2, 9), // 2 days ago 9 AM
+    completedAt: getDateString(2, 11), // 2 days ago 11 AM
+    priority: 0,
+    actualMinutes: 0,
   },
   {
     id: "9",
@@ -96,8 +112,10 @@ export const mockTodos: Todo[] = [
     description: "Configure continuous integration and deployment pipeline",
     icon: "bookmark",
     isCompleted: false,
-    createdAt: getDate(2, 14), // 2 days ago 2 PM
+    createdAt: getDateString(2, 14), // 2 days ago 2 PM
     completedAt: null,
+    priority: 0,
+    actualMinutes: 0,
   },
 
   // 3 days ago
@@ -107,8 +125,10 @@ export const mockTodos: Todo[] = [
     description: "Conduct user interviews to gather feedback on app usability",
     icon: "heart",
     isCompleted: true,
-    createdAt: getDate(3, 10), // 3 days ago 10 AM
-    completedAt: getDate(3, 12), // 3 days ago 12 PM
+    createdAt: getDateString(3, 10), // 3 days ago 10 AM
+    completedAt: getDateString(3, 12), // 3 days ago 12 PM
+    priority: 0,
+    actualMinutes: 0,
   },
   {
     id: "11",
@@ -116,8 +136,10 @@ export const mockTodos: Todo[] = [
     description: "Optimize database queries and add proper indexing",
     icon: "star",
     isCompleted: false,
-    createdAt: getDate(3, 15), // 3 days ago 3 PM
+    createdAt: getDateString(3, 15), // 3 days ago 3 PM
     completedAt: null,
+    priority: 0,
+    actualMinutes: 0,
   },
 
   // 1 week ago
@@ -127,7 +149,9 @@ export const mockTodos: Todo[] = [
     description: "Set up the basic project structure and dependencies",
     icon: "checkmark-circle",
     isCompleted: true,
-    createdAt: getDate(7, 9), // 1 week ago 9 AM
-    completedAt: getDate(7, 11), // 1 week ago 11 AM
+    createdAt: getDateString(7, 9), // 1 week ago 9 AM
+    completedAt: getDateString(7, 11), // 1 week ago 11 AM
+    priority: 0,
+    actualMinutes: 0,
   },
 ];

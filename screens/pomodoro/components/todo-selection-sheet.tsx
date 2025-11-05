@@ -1,5 +1,5 @@
 import TypographyText from '@/components/TypographyText';
-import { useTodoStore } from '@/stores/todo-store';
+import { useTodoStore } from '@/stores/local-todo-store';
 import { isToday } from '@/utils/dateUtils';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import React, { forwardRef, useMemo } from 'react';
@@ -19,7 +19,12 @@ const TodoSelectionSheet = forwardRef<BottomSheet, TodoSelectionSheetProps>(
 
         // Filter todos to only show today's todos
         const todayTodos = useMemo(() => {
-            return activeTodos.filter((todo) => todo.createdAt && isToday(todo.createdAt));
+            return activeTodos.filter((todo) => {
+                if (!todo.createdAt) return false;
+                // createdAt is a string in ISO format, convert to Date for comparison
+                const createdDate = new Date(todo.createdAt);
+                return isToday(createdDate);
+            });
         }, [activeTodos]);
 
         const snapPoints = useMemo(() => ['50%', '75%'], []);

@@ -9,8 +9,6 @@ import AppManagementSection from './components/app-management-section';
 import AppSettingsSection from './components/app-settings-section';
 import DurationPickerModal from './components/duration-picker-modal';
 import FocusSettingsSection from './components/focus-settings-section';
-import LegalSection from './components/legal-section';
-import SupportSection from './components/support-section';
 import ThemeSelectionModal from './components/theme-selection-modal';
 import DataManagementSection from './components/data-management-section';
 

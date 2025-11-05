@@ -2,7 +2,7 @@ import { usePomodoroTimer } from '@/hooks/usePomodoroTimer';
 import { useAppLifecycle } from '@/hooks/useAppLifecycle';
 import { usePomodoroStore } from '@/stores/pomodoro-store';
 import { useSettingsStore } from '@/stores/local-settings-store';
-import { useTodoStore } from '@/stores/todo-store';
+import { useTodoStore } from '@/stores/local-todo-store';
 import BottomSheet from '@gorhom/bottom-sheet';
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
