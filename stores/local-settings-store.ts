@@ -1,4 +1,6 @@
 import { localDatabaseService, UserSettings } from '@/services/local-database-service';
+import { errorHandlingService } from '@/services/error-handling-service';
+import { showError } from '@/utils/error-toast';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -148,7 +150,8 @@ export const useSettingsStore = create<SettingsState>()(
                         });
                     }
                 } catch (error) {
-                    console.error('Failed to load settings from database:', error);
+                    // Silently handle loading errors - use defaults from persisted state
+                    errorHandlingService.processError(error, { action: 'loadSettings' });
                 }
             },
 
@@ -169,7 +172,8 @@ export const useSettingsStore = create<SettingsState>()(
                         lastSyncAt: state.syncWithCloud ? new Date().toISOString() : null,
                     });
                 } catch (error) {
-                    console.error('Failed to save settings to database:', error);
+                    // Silently handle save errors - settings are persisted in AsyncStorage anyway
+                    errorHandlingService.processError(error, { action: 'saveSettings' });
                 }
             },
 

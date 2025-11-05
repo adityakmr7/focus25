@@ -1,5 +1,7 @@
 import { notificationService } from '@/services/notification-service';
 import { localDatabaseService, Session } from '@/services/local-database-service';
+import { errorHandlingService, DatabaseError } from '@/services/error-handling-service';
+import { showError } from '@/utils/error-toast';
 import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 import { create } from 'zustand';
 
@@ -109,7 +111,8 @@ const playCompletionSound = async (soundEnabled: boolean) => {
             }
         }, 3000);
     } catch (error) {
-        console.error('Error playing completion sound:', error);
+        // Silently handle audio errors - they're not critical
+        errorHandlingService.processError(error, { action: 'playCompletionSound' });
         // Clean up on error
         if (player) {
             try {
@@ -194,11 +197,13 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                         todoTitle: currentTodoTitle || undefined,
                     });
                 } catch (error) {
-                    console.error('Failed to schedule timer notification:', error);
+                    // Silently handle notification errors - they're not critical for timer functionality
+                    errorHandlingService.processError(error, { action: 'scheduleTimerNotification' });
                 }
             }
         } catch (error) {
-            console.error('Failed to start timer:', error);
+            errorHandlingService.processError(error, { action: 'startTimer' });
+            showError(error, { action: 'startTimer' });
         } finally {
             set({ isProcessing: false });
         }
@@ -220,7 +225,8 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
             // Cancel scheduled notifications when paused
             await notificationService.cancelTimerNotifications();
         } catch (error) {
-            console.error('Failed to pause timer:', error);
+            // Silently handle notification cancellation errors - they're not critical
+            errorHandlingService.processError(error, { action: 'pauseTimer' });
         } finally {
             set({ isProcessing: false });
         }
@@ -262,7 +268,8 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                 try {
                     await localDatabaseService.createSession(newSession);
                 } catch (error) {
-                    console.error('Failed to save session to database:', error);
+                    // Silently handle session save errors - we still update local state
+                    errorHandlingService.processError(error, { action: 'saveSession', sessionType: 'reset' });
                 }
 
                 set({
@@ -275,7 +282,8 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
         try {
             await notificationService.cancelTimerNotifications();
         } catch (error) {
-            console.error('Failed to cancel timer notifications:', error);
+            // Silently handle notification cancellation errors - they're not critical
+            errorHandlingService.processError(error, { action: 'cancelTimerNotifications' });
         }
 
         // Reset timer and session - keep current initialTime
@@ -354,7 +362,8 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
                     currentTodoTitle || undefined,
                 );
             } catch (error) {
-                console.error('Failed to send timer completion notification:', error);
+                // Silently handle notification errors - they're not critical
+                errorHandlingService.processError(error, { action: 'sendTimerCompletionNotification' });
             }
         }
 
@@ -377,7 +386,8 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
             try {
                 await localDatabaseService.createSession(newSession);
             } catch (error) {
-                console.error('Failed to save session to database:', error);
+                // Silently handle session save errors - we still update local state
+                errorHandlingService.processError(error, { action: 'saveSession', sessionType: 'complete' });
             }
 
             set({
@@ -493,7 +503,8 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
             const sessions = await localDatabaseService.getSessions();
             set({ sessions, sessionsLoaded: true });
         } catch (error) {
-            console.error('Failed to load sessions:', error);
+            errorHandlingService.processError(error, { action: 'loadSessions' });
+            showError(error, { action: 'loadSessions' });
         }
     },
 
@@ -506,7 +517,8 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
             // Return a promise for async operation
             return await localDatabaseService.getTotalTimeForTodo(todoId);
         } catch (error) {
-            console.error('Failed to get total time for todo:', error);
+            // Silently handle errors - return 0 as fallback
+            errorHandlingService.processError(error, { action: 'getTotalTimeForTodo', todoId });
             return 0;
         }
     },
