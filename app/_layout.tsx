@@ -1,11 +1,15 @@
 import React from 'react';
 import AuthErrorBoundary from '@/components/AuthErrorBoundary';
-
+import GlobalErrorBoundary from '@/components/GlobalErrorBoundary';
+import OfflineIndicator from '@/components/OfflineIndicator';
 import AuthLoadingScreen from '@/components/AuthLoadingScreen';
 import EnhancedLoadingScreen from '@/components/EnhancedLoadingScreen';
 import TypographyText from '@/components/TypographyText';
 import { useTheme } from '@/hooks/useTheme';
 import { splashScreenService } from '@/services/splash-screen-service';
+import { networkService } from '@/services/network-service';
+import { errorHandlingService } from '@/services/error-handling-service';
+import { showError } from '@/utils/error-toast';
 import { useAuthStore } from '@/stores/auth-store';
 import { useSettingsStore } from '@/stores/local-settings-store';
 import { useFonts } from 'expo-font';
@@ -30,14 +34,18 @@ function AppContent() {
     // Initialize splash screen and services
     useEffect(() => {
         let authCleanup: (() => void) | undefined;
+        let notificationListener: Notifications.Subscription | undefined;
 
         const initializeApp = async () => {
             try {
+                // Initialize network service
+                await networkService.initialize();
+
                 // Initialize splash screen service
                 await splashScreenService.initialize();
 
                 // Set up notification response listener
-                const notificationListener = Notifications.addNotificationResponseReceivedListener(
+                notificationListener = Notifications.addNotificationResponseReceivedListener(
                     (response) => {
                         // Handle notification response when services are ready
                         // This will be handled by the notification service after initialization
@@ -51,16 +59,8 @@ function AppContent() {
                 authCleanup = initializeAuth();
 
                 setIsSplashScreenReady(true);
-
-                // Cleanup function
-                return () => {
-                    if (authCleanup) {
-                        authCleanup();
-                    }
-                    notificationListener.remove();
-                };
             } catch (error) {
-                console.error('Failed to initialize app:', error);
+                errorHandlingService.processError(error, { action: 'initializeApp' });
                 setIsSplashScreenReady(true); // Still show app even if initialization fails
             }
         };
@@ -69,7 +69,13 @@ function AppContent() {
 
         // Cleanup function
         return () => {
-            // Cleanup will be handled by individual services
+            if (authCleanup) {
+                authCleanup();
+            }
+            if (notificationListener) {
+                notificationListener.remove();
+            }
+            networkService.cleanup();
         };
     }, [initializeAuth]);
 
@@ -166,24 +172,27 @@ function AppContent() {
     }
 
     return (
-        <AuthErrorBoundary>
-            <HeroUIProvider key={resolvedTheme} initialTheme={resolvedTheme}>
-                <ToastProvider>
-                    <SafeAreaProvider>
-                        <Stack>
-                            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-                            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                            <Stack.Screen
-                                name="(create-todo)"
-                                options={{ headerShown: false, presentation: 'modal' }}
-                            />
-                            <Stack.Screen name="+not-found" />
-                        </Stack>
-                        <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
-                    </SafeAreaProvider>
-                </ToastProvider>
-            </HeroUIProvider>
-        </AuthErrorBoundary>
+        <GlobalErrorBoundary>
+            <AuthErrorBoundary>
+                <HeroUIProvider key={resolvedTheme} initialTheme={resolvedTheme}>
+                    <ToastProvider>
+                        <SafeAreaProvider>
+                            <OfflineIndicator />
+                            <Stack>
+                                <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+                                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                                <Stack.Screen
+                                    name="(create-todo)"
+                                    options={{ headerShown: false, presentation: 'modal' }}
+                                />
+                                <Stack.Screen name="+not-found" />
+                            </Stack>
+                            <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
+                        </SafeAreaProvider>
+                    </ToastProvider>
+                </HeroUIProvider>
+            </AuthErrorBoundary>
+        </GlobalErrorBoundary>
     );
 }
 

@@ -1,4 +1,6 @@
 import { localDatabaseService, Todo } from '@/services/local-database-service';
+import { errorHandlingService, DatabaseError } from '@/services/error-handling-service';
+import { showError, showSuccess } from '@/utils/error-toast';
 import { create } from 'zustand';
 
 interface TodoState {
@@ -52,11 +54,12 @@ export const useTodoStore = create<TodoState>((set, get) => ({
             const todos = await localDatabaseService.getTodos();
             set({ todos, isLoading: false, isInitialized: true });
         } catch (error) {
-            console.error('Error loading todos:', error);
+            const appError = errorHandlingService.processError(error, { action: 'loadTodos' });
             set({
-                error: error instanceof Error ? error.message : 'Failed to load todos',
+                error: appError.userMessage || 'Failed to load todos',
                 isLoading: false,
             });
+            showError(error, { action: 'loadTodos' });
         }
     },
 
@@ -82,12 +85,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
                 todos: [newTodo, ...state.todos],
                 isLoading: false,
             }));
+            showSuccess('Todo created successfully');
         } catch (error) {
-            console.error('Error creating todo:', error);
+            const appError = errorHandlingService.processError(error, { action: 'createTodo' });
             set({
-                error: error instanceof Error ? error.message : 'Failed to create todo',
+                error: appError.userMessage || 'Failed to create todo',
                 isLoading: false,
             });
+            showError(error, { action: 'createTodo' });
         }
     },
 
@@ -105,11 +110,12 @@ export const useTodoStore = create<TodoState>((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            console.error('Failed to update todo:', error);
+            const appError = errorHandlingService.processError(error, { action: 'updateTodo', todoId: id });
             set({
-                error: error instanceof Error ? error.message : 'Failed to update todo',
+                error: appError.userMessage || 'Failed to update todo',
                 isLoading: false,
             });
+            showError(error, { action: 'updateTodo', todoId: id });
         }
     },
 
@@ -132,10 +138,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
                 todos: state.todos.map((todo) => (todo.id === id ? { ...todo, ...updates } : todo)),
             }));
         } catch (error) {
-            console.error('Failed to toggle todo:', error);
+            const appError = errorHandlingService.processError(error, { action: 'toggleTodo', todoId: id });
             set({
-                error: error instanceof Error ? error.message : 'Failed to toggle todo',
+                error: appError.userMessage || 'Failed to toggle todo',
             });
+            showError(error, { action: 'toggleTodo', todoId: id });
         }
     },
 
@@ -152,12 +159,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
                 todos: state.todos.filter((todo) => todo.id !== id),
                 isLoading: false,
             }));
+            showSuccess('Todo deleted successfully');
         } catch (error) {
-            console.error('Failed to delete todo:', error);
+            const appError = errorHandlingService.processError(error, { action: 'deleteTodo', todoId: id });
             set({
-                error: error instanceof Error ? error.message : 'Failed to delete todo',
+                error: appError.userMessage || 'Failed to delete todo',
                 isLoading: false,
             });
+            showError(error, { action: 'deleteTodo', todoId: id });
         }
     },
 
@@ -178,12 +187,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
                 todos: state.todos.filter((todo) => !todo.isCompleted),
                 isLoading: false,
             }));
+            showSuccess('Completed todos deleted successfully');
         } catch (error) {
-            console.error('Failed to delete completed todos:', error);
+            const appError = errorHandlingService.processError(error, { action: 'deleteCompletedTodos' });
             set({
-                error: error instanceof Error ? error.message : 'Failed to delete completed todos',
+                error: appError.userMessage || 'Failed to delete completed todos',
                 isLoading: false,
             });
+            showError(error, { action: 'deleteCompletedTodos' });
         }
     },
 
@@ -207,8 +218,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         try {
             return await localDatabaseService.getTodos();
         } catch (error) {
-            console.error('Failed to export todos:', error);
-            throw error;
+            const appError = errorHandlingService.processError(error, { action: 'exportTodos' });
+            showError(error, { action: 'exportTodos' });
+            throw new DatabaseError(appError.message, error instanceof Error ? error : undefined);
         }
     },
 
@@ -222,12 +234,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
             await get().loadTodos();
 
             set({ isLoading: false });
+            showSuccess('Todos imported successfully');
         } catch (error) {
-            console.error('Failed to import todos:', error);
+            const appError = errorHandlingService.processError(error, { action: 'importTodos' });
             set({
-                error: error instanceof Error ? error.message : 'Failed to import todos',
+                error: appError.userMessage || 'Failed to import todos',
                 isLoading: false,
             });
+            showError(error, { action: 'importTodos' });
         }
     },
 }));

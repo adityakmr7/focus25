@@ -1,5 +1,7 @@
 import { supabase } from '@/configs/supabase-config';
 import { AppleAuthService } from '@/services/apple-auth-service';
+import { errorHandlingService, AuthenticationError } from '@/services/error-handling-service';
+import { showError, showSuccess } from '@/utils/error-toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Session, User } from '@supabase/supabase-js';
 import { create } from 'zustand';
@@ -83,13 +85,16 @@ export const useAuthStore = create<AuthState>()(
                         error?.message?.toLowerCase().includes('cancel');
 
                     if (!isCancellation) {
-                        console.error('Apple Sign-In failed:', error);
+                        const appError = errorHandlingService.processError(error, {
+                            action: 'signInWithApple',
+                        });
                         set({
-                            error: error.message || 'Apple Sign-In failed',
+                            error: appError.userMessage || 'Apple Sign-In failed',
                             loading: false,
                         });
+                        showError(error, { action: 'signInWithApple' });
                     } else {
-                        // Clear error state for cancellations
+                        // Clear error state for cancellations (silent errors)
                         set({ error: null, loading: false });
                     }
                     throw error;
@@ -103,12 +108,16 @@ export const useAuthStore = create<AuthState>()(
                     const { error } = await supabase.auth.signOut();
                     if (error) throw error;
                     set({ user: null, session: null, loading: false });
+                    showSuccess('Signed out successfully');
                 } catch (error: any) {
-                    console.error('Error signing out:', error);
+                    const appError = errorHandlingService.processError(error, {
+                        action: 'signOut',
+                    });
                     set({
-                        error: error.message || 'Failed to sign out',
+                        error: appError.userMessage || 'Failed to sign out',
                         loading: false,
                     });
+                    showError(error, { action: 'signOut' });
                     throw error;
                 }
             },
@@ -125,12 +134,16 @@ export const useAuthStore = create<AuthState>()(
                     });
                     if (error) throw error;
                     set({ loading: false });
+                    showSuccess('Profile updated successfully');
                 } catch (error: any) {
-                    console.error('Error updating profile:', error);
+                    const appError = errorHandlingService.processError(error, {
+                        action: 'updateUserProfile',
+                    });
                     set({
-                        error: error.message || 'Failed to update profile',
+                        error: appError.userMessage || 'Failed to update profile',
                         loading: false,
                     });
+                    showError(error, { action: 'updateUserProfile' });
                     throw error;
                 }
             },

@@ -5,8 +5,9 @@ import SettingItem from './setting-item';
 import SettingsSection from './settings-section';
 import { Linking, Platform } from 'react-native';
 import { APP_CONFIG } from '@/configs/app-config';
-import { toast, Spinner, useTheme } from 'react-native-heroui';
+import { Spinner, useTheme } from 'react-native-heroui';
 import { updateService } from '@/services/update-service';
+import { showError, showInfo } from '@/utils/error-toast';
 
 const AppManagementSection: React.FC = () => {
     const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
@@ -22,10 +23,10 @@ const AppManagementSection: React.FC = () => {
             if (updateInfo.isUpdateAvailable) {
                 await updateService.showUpdateAlert(updateInfo);
             } else {
-                toast.show("You're Up to Date!");
+                showInfo("You're up to date!");
             }
         } catch (error) {
-            toast.show('Update Check Failed');
+            showError(error, { action: 'checkForUpdates' });
         } finally {
             setIsCheckingUpdates(false);
         }
