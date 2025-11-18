@@ -1,6 +1,5 @@
 import TypographyText from '@/components/TypographyText';
 import { useNetworkStore } from '@/services/network-service';
-import { useTheme } from '@/hooks/useTheme';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Animated } from 'react-native';
 
@@ -10,7 +9,6 @@ import { StyleSheet, View, Animated } from 'react-native';
  */
 export default function OfflineIndicator() {
     const { isConnected, isInternetReachable } = useNetworkStore();
-    const { theme } = useTheme();
     const [slideAnim] = useState(new Animated.Value(-100));
     const [isVisible, setIsVisible] = useState(false);
 
@@ -44,13 +42,13 @@ export default function OfflineIndicator() {
 
     return (
         <Animated.View
-                style={[
-                    styles.container,
-                    {
-                        backgroundColor: '#FF3B30',
-                        transform: [{ translateY: slideAnim }],
-                    },
-                ]}
+            style={[
+                styles.container,
+                {
+                    backgroundColor: '#FF3B30',
+                    transform: [{ translateY: slideAnim }],
+                },
+            ]}
         >
             <View style={styles.content}>
                 <TypographyText
@@ -93,4 +91,3 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 });
-

@@ -35,6 +35,12 @@ export const useSupabaseTodoStore = create<TodoState>((set, get) => ({
 
     // Actions
     loadTodos: async () => {
+        const { isProUser } = useAuthStore.getState();
+        if (!isProUser) {
+            set({ error: 'Pro subscription required to load cloud todos', isLoading: false });
+            return;
+        }
+
         const { user } = useAuthStore.getState();
         if (!user) {
             set({ error: 'User not authenticated', isLoading: false });
@@ -57,6 +63,12 @@ export const useSupabaseTodoStore = create<TodoState>((set, get) => ({
     },
 
     createTodo: async (todoData) => {
+        const { isProUser } = useAuthStore.getState();
+        if (!isProUser) {
+            set({ error: 'Pro subscription required to create cloud todos' });
+            return;
+        }
+
         const { user } = useAuthStore.getState();
         if (!user) {
             set({ error: 'User not authenticated' });
@@ -92,6 +104,12 @@ export const useSupabaseTodoStore = create<TodoState>((set, get) => ({
     },
 
     updateTodo: async (id, updates) => {
+        const { isProUser } = useAuthStore.getState();
+        if (!isProUser) {
+            set({ error: 'Pro subscription required to update cloud todos' });
+            return;
+        }
+
         const { user } = useAuthStore.getState();
         if (!user) {
             set({ error: 'User not authenticated' });
@@ -118,6 +136,12 @@ export const useSupabaseTodoStore = create<TodoState>((set, get) => ({
     },
 
     toggleTodo: async (id) => {
+        const { isProUser } = useAuthStore.getState();
+        if (!isProUser) {
+            set({ error: 'Pro subscription required to update cloud todos' });
+            return;
+        }
+
         const { user } = useAuthStore.getState();
         if (!user) {
             set({ error: 'User not authenticated' });
@@ -152,6 +176,12 @@ export const useSupabaseTodoStore = create<TodoState>((set, get) => ({
     },
 
     deleteTodo: async (id) => {
+        const { isProUser } = useAuthStore.getState();
+        if (!isProUser) {
+            set({ error: 'Pro subscription required to delete cloud todos' });
+            return;
+        }
+
         const { user } = useAuthStore.getState();
         if (!user) {
             set({ error: 'User not authenticated' });

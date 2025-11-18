@@ -1,6 +1,6 @@
 import TypographyText from '@/components/TypographyText';
-import { useTheme } from '@/hooks/useTheme';
 import React from 'react';
+import { useTheme } from 'react-native-heroui';
 import { StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 
 interface RetryButtonProps {
@@ -57,4 +57,3 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
 });
-

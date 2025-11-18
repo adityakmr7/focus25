@@ -1,56 +1,46 @@
-import ProtectedRoute from "@/components/ProtectedRoute";
-import CustomTabBar from "@/components/ui/custom-tab-bar";
-import { Ionicons } from "@expo/vector-icons";
-import { Tabs, router } from "expo-router";
-import React from "react";
+import CustomTabBar from '@/components/ui/custom-tab-bar';
+import HugeIconView from '@/components/ui/huge-icon-view';
+import { Tabs, router } from 'expo-router';
+import React from 'react';
+import { Home01Icon, Settings01Icon, Timer01Icon } from '@hugeicons/core-free-icons';
 
 export default function TabLayout() {
-  const handleOnFabPress = () => {
-    router.push("/(create-todo)/create-todo");
-  };
+    const handleOnFabPress = () => {
+        router.push('/(create-todo)/create-todo');
+    };
 
-  return (
-    <ProtectedRoute>
-      <Tabs
-        tabBar={(props) => (
-          <CustomTabBar onFabPress={handleOnFabPress} {...props} />
-        )}
-        screenOptions={{
-          headerShown: false,
-          tabBarStyle: {
-            display: "none", // Hide default tab bar
-          },
-        }}
-      >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: "Home",
-            tabBarIcon: ({ color }) => (
-              <Ionicons name="home-outline" size={20} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="pomodoro"
-          options={{
-            title: "Pomodoro",
-            tabBarIcon: ({ color }) => (
-              <Ionicons name="timer-outline" size={20} color={color} />
-            ),
-          }}
-        />
+    return (
+        <Tabs
+            tabBar={(props) => <CustomTabBar onFabPress={handleOnFabPress} {...props} />}
+            screenOptions={{
+                headerShown: false,
+                tabBarStyle: {
+                    display: 'none', // Hide default tab bar
+                },
+            }}
+        >
+            <Tabs.Screen
+                name="index"
+                options={{
+                    title: 'Home',
+                    tabBarIcon: ({ color }) => <HugeIconView icon={Home01Icon} color={color} />,
+                }}
+            />
+            <Tabs.Screen
+                name="pomodoro"
+                options={{
+                    title: 'Pomodoro',
+                    tabBarIcon: ({ color }) => <HugeIconView icon={Timer01Icon} color={color} />,
+                }}
+            />
 
-        <Tabs.Screen
-          name="settings"
-          options={{
-            title: "Settings",
-            tabBarIcon: ({ color }) => (
-              <Ionicons name="settings-outline" size={20} color={color} />
-            ),
-          }}
-        />
-      </Tabs>
-    </ProtectedRoute>
-  );
+            <Tabs.Screen
+                name="settings"
+                options={{
+                    title: 'Settings',
+                    tabBarIcon: ({ color }) => <HugeIconView icon={Settings01Icon} color={color} />,
+                }}
+            />
+        </Tabs>
+    );
 }

@@ -1,45 +1,18 @@
-import { useSettingsStore } from '@/stores/local-settings-store';
 import { useTodoStore } from '@/stores/local-todo-store';
 import { groupTodosByDate } from '@/utils/dateUtils';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { SPACING, useTheme } from 'react-native-heroui';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Box, SPACING, useTheme } from 'react-native-heroui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import HeaderSection from './components/header-section';
 import TodoSectionComponent from './components/todo-section';
-import ViewToggle from './components/view-toggle';
 import EmptyState from './components/empty-state';
+import { Ionicons } from '@expo/vector-icons';
 
 const TodoScreen: React.FC = () => {
     const { theme } = useTheme();
     const { todos, toggleTodo, loadTodos } = useTodoStore();
-    const { userName, userEmail } = useSettingsStore();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-
-    // Generate personalized greeting
-    const getGreeting = () => {
-        const hour = new Date().getHours();
-        let timeGreeting = 'Good morning';
-
-        if (hour >= 12 && hour < 17) {
-            timeGreeting = 'Good afternoon';
-        } else if (hour >= 17) {
-            timeGreeting = 'Good evening';
-        }
-
-        // Get display name: use userName if available and not empty, otherwise use email prefix
-        let displayName = userName;
-        if (!displayName || displayName.trim() === '' || displayName === 'User') {
-            if (userEmail) {
-                displayName = userEmail.split('@')[0];
-            } else {
-                displayName = 'User';
-            }
-        }
-
-        return `${timeGreeting} ${displayName}`;
-    };
 
     // Load todos on component mount
     useEffect(() => {
@@ -61,14 +34,8 @@ const TodoScreen: React.FC = () => {
     const handleEditTodo = useCallback((todo: any) => {
         router.push(`/(create-todo)/create-todo?todoId=${todo.id}`);
     }, []);
-
-    const handleViewModeChange = useCallback((mode: 'grid' | 'list') => {
-        setViewMode(mode);
-    }, []);
-
-    // Helper functions
-    const getCurrentGreeting = () => {
-        return getGreeting();
+    const onFabPress = () => {
+        router.push('/(create-todo)/create-todo');
     };
 
     return (
@@ -81,19 +48,6 @@ const TodoScreen: React.FC = () => {
                 style={{ flex: 1 }}
             >
                 <View style={styles.content}>
-                    {/* Header Section */}
-                    <HeaderSection
-                        greeting={getCurrentGreeting()}
-                        subtitle={
-                            todos.length > 0
-                                ? 'Here are your plan for today'
-                                : 'Ready to get organized?'
-                        }
-                    />
-
-                    {/* View Toggle */}
-                    <ViewToggle viewMode={viewMode} onViewModeChange={handleViewModeChange} />
-
                     {/* Todo Sections or Empty State */}
                     {todoSections.length > 0 ? (
                         <View style={styles.todoSections}>
@@ -111,6 +65,20 @@ const TodoScreen: React.FC = () => {
                         <EmptyState viewMode={viewMode} />
                     )}
                 </View>
+                <Box
+                    style={{
+                        backgroundColor: theme.colors.foreground,
+                        position: 'absolute',
+                        bottom: 45,
+                        right: 20,
+                    }}
+                    borderRadius="full"
+                    p="md"
+                >
+                    <TouchableOpacity onPress={onFabPress}>
+                        <Ionicons name="add" size={24} color={theme.colors.background} />
+                    </TouchableOpacity>
+                </Box>
             </ScrollView>
         </SafeAreaView>
     );
@@ -126,7 +94,22 @@ const styles = StyleSheet.create({
         paddingTop: 20,
     },
     todoSections: {
-        gap: 24,
+        gap: SPACING['unit-2'],
+    },
+    fab: {
+        position: 'absolute',
+        right: 20,
+        bottom: 24,
+        width: 56,
+        height: 56,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 3,
     },
 });
 

@@ -10,6 +10,12 @@ function generateUUID(): string {
 }
 
 // Database types
+export interface Subtask {
+    id: string;
+    title: string;
+    done: boolean;
+}
+
 export interface Todo {
     id: string;
     title: string;
@@ -22,6 +28,8 @@ export interface Todo {
     priority: number;
     estimatedMinutes?: number;
     actualMinutes: number;
+    reminderAt?: string | null;
+    subtasks?: Subtask[];
 }
 
 export interface Session {
@@ -79,6 +87,9 @@ class LocalDatabaseService {
             const schema = await this.loadSchema();
             await this.db.execAsync(schema);
 
+            // Apply lightweight migrations (ignore errors if already applied)
+            await this.applyMigrations();
+
             this.isInitialized = true;
             console.log('Local database initialized successfully');
             return true;
@@ -132,7 +143,9 @@ class LocalDatabaseService {
         category TEXT,
         priority INTEGER DEFAULT 0,
         estimatedMinutes INTEGER,
-        actualMinutes INTEGER DEFAULT 0
+        actualMinutes INTEGER DEFAULT 0,
+        reminderAt TEXT,
+        subtasks TEXT
       );
 
       CREATE TABLE IF NOT EXISTS sessions (
@@ -194,30 +207,91 @@ class LocalDatabaseService {
     `;
     }
 
+    /**
+     * Apply ALTER TABLE migrations safely; ignore if columns already exist.
+     */
+    private async applyMigrations(): Promise<void> {
+        if (!this.db) return;
+        try {
+            await this.db.execAsync(`ALTER TABLE todos ADD COLUMN reminderAt TEXT;`);
+        } catch (_e) {
+            // ignore if exists
+        }
+        try {
+            await this.db.execAsync(`ALTER TABLE todos ADD COLUMN subtasks TEXT;`);
+        } catch (_e) {
+            // ignore if exists
+        }
+    }
+
     // ===== TODO OPERATIONS =====
 
     async getTodos(): Promise<Todo[]> {
         if (!this.db) throw new Error('Database not initialized');
 
-        const result = await this.db.getAllAsync(`
+        const rows = await this.db.getAllAsync(`
       SELECT * FROM todos 
       ORDER BY createdAt DESC
     `);
 
-        return result as Todo[];
+        // Normalize/parse fields
+        return (rows as any[]).map((row) => {
+            let parsedSubtasks: Subtask[] | undefined;
+            try {
+                parsedSubtasks = row.subtasks ? JSON.parse(row.subtasks) : undefined;
+            } catch {
+                parsedSubtasks = undefined;
+            }
+            return {
+                id: row.id,
+                title: row.title,
+                description: row.description ?? undefined,
+                icon: row.icon ?? undefined,
+                isCompleted: !!row.isCompleted,
+                createdAt: row.createdAt,
+                completedAt: row.completedAt ?? null,
+                category: row.category ?? undefined,
+                priority: row.priority ?? 0,
+                estimatedMinutes: row.estimatedMinutes ?? undefined,
+                actualMinutes: row.actualMinutes ?? 0,
+                reminderAt: row.reminderAt ?? null,
+                subtasks: parsedSubtasks,
+            } as Todo;
+        });
     }
 
     async getTodo(id: string): Promise<Todo | null> {
         if (!this.db) throw new Error('Database not initialized');
 
-        const result = await this.db.getFirstAsync(
+        const row = await this.db.getFirstAsync(
             `
       SELECT * FROM todos WHERE id = ?
     `,
             [id],
         );
 
-        return result as Todo | null;
+        if (!row) return null;
+        let parsedSubtasks: Subtask[] | undefined;
+        try {
+            parsedSubtasks = (row as any).subtasks ? JSON.parse((row as any).subtasks) : undefined;
+        } catch {
+            parsedSubtasks = undefined;
+        }
+        return {
+            id: (row as any).id,
+            title: (row as any).title,
+            description: (row as any).description ?? undefined,
+            icon: (row as any).icon ?? undefined,
+            isCompleted: !!(row as any).isCompleted,
+            createdAt: (row as any).createdAt,
+            completedAt: (row as any).completedAt ?? null,
+            category: (row as any).category ?? undefined,
+            priority: (row as any).priority ?? 0,
+            estimatedMinutes: (row as any).estimatedMinutes ?? undefined,
+            actualMinutes: (row as any).actualMinutes ?? 0,
+            reminderAt: (row as any).reminderAt ?? null,
+            subtasks: parsedSubtasks,
+        } as Todo;
     }
 
     async createTodo(todo: Omit<Todo, 'id' | 'createdAt' | 'actualMinutes'>): Promise<string> {
@@ -230,8 +304,9 @@ class LocalDatabaseService {
             `
       INSERT INTO todos (
         id, title, description, icon, isCompleted, createdAt, 
-        completedAt, category, priority, estimatedMinutes, actualMinutes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        completedAt, category, priority, estimatedMinutes, actualMinutes,
+        reminderAt, subtasks
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
             [
                 id,
@@ -245,6 +320,8 @@ class LocalDatabaseService {
                 todo.priority || 0,
                 todo.estimatedMinutes || null,
                 0,
+                (todo as any).reminderAt || null,
+                JSON.stringify((todo as any).subtasks || []),
             ],
         );
 
@@ -295,6 +372,14 @@ class LocalDatabaseService {
         if (updates.actualMinutes !== undefined) {
             fields.push('actualMinutes = ?');
             values.push(updates.actualMinutes);
+        }
+        if ((updates as any).reminderAt !== undefined) {
+            fields.push('reminderAt = ?');
+            values.push((updates as any).reminderAt);
+        }
+        if ((updates as any).subtasks !== undefined) {
+            fields.push('subtasks = ?');
+            values.push(JSON.stringify((updates as any).subtasks || []));
         }
 
         if (fields.length === 0) return;
@@ -646,8 +731,9 @@ class LocalDatabaseService {
                         `
             INSERT OR REPLACE INTO todos (
               id, title, description, icon, isCompleted, createdAt, 
-              completedAt, category, priority, estimatedMinutes, actualMinutes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              completedAt, category, priority, estimatedMinutes, actualMinutes,
+              reminderAt, subtasks
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
                         [
                             todo.id,
@@ -661,6 +747,8 @@ class LocalDatabaseService {
                             todo.priority || 0,
                             todo.estimatedMinutes || null,
                             todo.actualMinutes || 0,
+                            (todo as any).reminderAt || null,
+                            JSON.stringify((todo as any).subtasks || []),
                         ],
                     );
                 }

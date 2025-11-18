@@ -1,8 +1,8 @@
 import TypographyText from '@/components/TypographyText';
 import { errorHandlingService } from '@/services/error-handling-service';
-import { useTheme } from '@/hooks/useTheme';
 import React, { Component, ReactNode } from 'react';
 import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
+import { useTheme } from 'react-native-heroui';
 
 interface Props {
     children: ReactNode;
@@ -101,12 +101,7 @@ function ErrorBoundaryScreen({
     const { theme } = useTheme();
 
     return (
-        <View
-            style={[
-                styles.container,
-                { backgroundColor: theme.colors.background },
-            ]}
-        >
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
@@ -176,7 +171,7 @@ function ErrorBoundaryScreen({
                             style={[
                                 styles.button,
                                 styles.secondaryButton,
-                                { borderColor: theme.colors.border },
+                                { borderColor: theme.colors['default-200'] },
                             ]}
                         >
                             <TypographyText
@@ -259,4 +254,3 @@ const styles = StyleSheet.create({
 });
 
 export default GlobalErrorBoundary;
-

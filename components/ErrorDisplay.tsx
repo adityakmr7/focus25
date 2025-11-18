@@ -1,8 +1,8 @@
 import TypographyText from '@/components/TypographyText';
 import { errorHandlingService } from '@/services/error-handling-service';
-import { useTheme } from '@/hooks/useTheme';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useTheme } from 'react-native-heroui';
 import RetryButton from './RetryButton';
 
 interface ErrorDisplayProps {
@@ -77,4 +77,3 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
 });
-

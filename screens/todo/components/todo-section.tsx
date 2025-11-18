@@ -29,8 +29,6 @@ const TodoSectionComponent: React.FC<TodoSectionProps> = ({
                         <TodoCard
                             key={todo.id}
                             todo={todo}
-                            index={index}
-                            viewMode={viewMode}
                             onToggle={onToggleTodo}
                             onEdit={onEditTodo}
                         />

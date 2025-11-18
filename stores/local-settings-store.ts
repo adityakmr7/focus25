@@ -1,6 +1,5 @@
-import { localDatabaseService, UserSettings } from '@/services/local-database-service';
+import { localDatabaseService } from '@/services/local-database-service';
 import { errorHandlingService } from '@/services/error-handling-service';
-import { showError } from '@/utils/error-toast';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,10 +14,12 @@ export interface SettingsState {
     breakDuration: number;
     soundEffects: boolean;
     metronome: boolean;
+    metronomeVolume: number;
     setFocusDuration: (focusDuration: number) => void;
     setBreakDuration: (breakDuration: number) => void;
     setSoundEffects: (soundEffects: boolean) => void;
     setMetronome: (metronome: boolean) => void;
+    setMetronomeVolume: (volume: number) => void;
 
     // App settings
     syncWithCloud: boolean;
@@ -33,10 +34,12 @@ export interface SettingsState {
     userEmail: string;
     isAccountBackedUp: boolean;
     onboardingCompleted: boolean;
+    hasProAccess: boolean;
     setUserName: (userName: string) => void;
     setUserEmail: (userEmail: string) => void;
     setAccountBackedUp: (isAccountBackedUp: boolean) => void;
     setOnboardingCompleted: (onboardingCompleted: boolean) => void;
+    setHasProAccess: (hasProAccess: boolean) => void;
 
     // Device settings
     deviceName: string;
@@ -65,6 +68,7 @@ export const useSettingsStore = create<SettingsState>()(
             breakDuration: 5,
             soundEffects: true,
             metronome: false,
+            metronomeVolume: 0.5,
             setFocusDuration: (focusDuration) => {
                 set({ focusDuration });
                 get().saveSettings();
@@ -80,6 +84,10 @@ export const useSettingsStore = create<SettingsState>()(
             setMetronome: (metronome) => {
                 set({ metronome });
                 get().saveSettings();
+            },
+            setMetronomeVolume: (volume) => {
+                set({ metronomeVolume: volume });
+                // metronomeVolume is UI-only; no DB persistence required
             },
 
             // App settings
@@ -104,6 +112,7 @@ export const useSettingsStore = create<SettingsState>()(
             userEmail: '',
             isAccountBackedUp: false,
             onboardingCompleted: false,
+            hasProAccess: false,
             setUserName: (userName) => {
                 set({ userName });
                 get().saveSettings();
@@ -119,6 +128,9 @@ export const useSettingsStore = create<SettingsState>()(
             setOnboardingCompleted: (onboardingCompleted) => {
                 set({ onboardingCompleted });
                 get().saveSettings();
+            },
+            setHasProAccess: (hasProAccess) => {
+                set({ hasProAccess });
             },
 
             // Device settings
@@ -185,6 +197,7 @@ export const useSettingsStore = create<SettingsState>()(
                     breakDuration: 5,
                     soundEffects: true,
                     metronome: false,
+                    metronomeVolume: 0.5,
                     syncWithCloud: false,
                     textSize: 'medium',
                     notifications: true,
@@ -192,6 +205,7 @@ export const useSettingsStore = create<SettingsState>()(
                     userEmail: '',
                     isAccountBackedUp: false,
                     onboardingCompleted: false,
+                    hasProAccess: false,
                     deviceName: 'Flowzy Device',
                 }),
         }),
@@ -202,8 +216,14 @@ export const useSettingsStore = create<SettingsState>()(
                 // Only persist UI-related settings, not database settings
                 themeMode: state.themeMode,
                 textSize: state.textSize,
+                metronomeVolume: state.metronomeVolume,
                 deviceName: state.deviceName,
                 isAccountBackedUp: state.isAccountBackedUp,
+                userName: state.userName,
+                userEmail: state.userEmail,
+                syncWithCloud: state.syncWithCloud,
+                onboardingCompleted: state.onboardingCompleted,
+                hasProAccess: state.hasProAccess,
             }),
         },
     ),
