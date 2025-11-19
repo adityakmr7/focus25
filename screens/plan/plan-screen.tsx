@@ -1,63 +1,12 @@
 import TypographyText from '@/components/TypographyText';
+import { SUBSCRIPTION_CONSTANTS } from '@/constants/subscription';
+import { revenueCatService } from '@/services/revenuecat-service';
+import { useAuthStore } from '@/stores/auth-store';
+import { showError, showSuccess } from '@/utils/error-toast';
 import React, { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Platform, ScrollView, View } from 'react-native';
 import { Button, Card, CardBody, HStack, SPACING, VStack, useTheme } from 'react-native-heroui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-const TogglePill: React.FC<{
-    leftLabel: string;
-    rightLabel: string;
-    value: 'monthly' | 'annual';
-    onChange: (v: 'monthly' | 'annual') => void;
-}> = ({ leftLabel, rightLabel, value, onChange }) => {
-    const { theme } = useTheme();
-    return (
-        <HStack
-            alignItems="center"
-            justifyContent="space-between"
-            px="xs"
-            py="xs"
-            style={{
-                backgroundColor: theme.colors.background,
-                borderRadius: theme.borderRadius.lg,
-                borderWidth: 1,
-                borderColor: theme.colors['default-200'],
-                width: 220,
-            }}
-        >
-            {(
-                [
-                    { key: 'monthly', label: leftLabel },
-                    { key: 'annual', label: rightLabel },
-                ] as const
-            ).map((opt) => {
-                const selected = value === opt.key;
-                return (
-                    <Button
-                        key={opt.key}
-                        size="sm"
-                        variant={selected ? 'solid' : 'outline'}
-                        onPress={() => onChange(opt.key)}
-                        style={{
-                            flex: 1,
-                            marginHorizontal: 4,
-                        }}
-                    >
-                        <TypographyText
-                            variant="body"
-                            size="sm"
-                            style={{
-                                color: selected ? '#fff' : theme.colors.foreground,
-                            }}
-                        >
-                            {opt.label}
-                        </TypographyText>
-                    </Button>
-                );
-            })}
-        </HStack>
-    );
-};
 
 const FeatureRow: React.FC<{ text: string }> = ({ text }) => {
     const { theme } = useTheme();
@@ -79,15 +28,97 @@ const FeatureRow: React.FC<{ text: string }> = ({ text }) => {
 
 const PlanScreen = () => {
     const { theme } = useTheme();
-    const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
+    const [isLoading, setIsLoading] = useState(false);
+    const refreshProStatus = useAuthStore((state) => state.refreshProStatus);
 
-    const price = billing === 'monthly' ? 14.99 : 99.99;
-    const cadence = billing === 'monthly' ? '/month' : '/year';
+    const handleUpgradeToPro = async () => {
+        if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
+            showError(new Error('Subscriptions are currently only available on iOS and Android.'), {
+                action: 'handleUpgradeToPro.platformCheck',
+            });
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            // Ensure RevenueCat is initialized
+            if (!revenueCatService.isInitialized()) {
+                await revenueCatService.initialize();
+
+                // Check again after initialization
+                if (!revenueCatService.isInitialized()) {
+                    showError(
+                        new Error(
+                            'RevenueCat is not properly configured. Please check your API key and try again.',
+                        ),
+                        {
+                            action: 'handleUpgradeToPro.initialize',
+                        },
+                    );
+                    setIsLoading(false);
+                    return;
+                }
+            }
+
+            // Get the current offering from RevenueCat
+            const offering = await revenueCatService.getOfferings();
+            if (!offering) {
+                // Provide more helpful error message
+                const errorMessage =
+                    'No subscription offerings are available. This could mean:\n' +
+                    '• Offerings are not configured in RevenueCat dashboard\n' +
+                    '• There is a network connectivity issue\n' +
+                    '• The app is not properly connected to RevenueCat\n\n' +
+                    'Please check your RevenueCat configuration and try again.';
+                showError(new Error(errorMessage), {
+                    action: 'handleUpgradeToPro.getOfferings',
+                });
+                setIsLoading(false);
+                return;
+            }
+
+            // Get the package for the premium product
+            const pkg = await revenueCatService.getPackageForProduct(
+                SUBSCRIPTION_CONSTANTS.PRO_OFFERING_ID,
+                SUBSCRIPTION_CONSTANTS.PRO_PRODUCT_ID,
+            );
+
+            // Fallback to first available package if specific product not found
+            const packageToPurchase = pkg || offering.availablePackages?.[0];
+
+            if (!packageToPurchase) {
+                showError(new Error('No subscription package available. Please try again later.'), {
+                    action: 'handleUpgradeToPro.getPackage',
+                });
+                setIsLoading(false);
+                return;
+            }
+
+            // Purchase the package
+            const customerInfo = await revenueCatService.purchasePackage(packageToPurchase);
+
+            if (customerInfo) {
+                // Refresh pro status in auth store
+                await refreshProStatus();
+                showSuccess('Successfully upgraded to Flowzy Premium!', 'Upgrade Successful');
+            }
+        } catch (error: any) {
+            // Error is already handled by revenueCatService, but we can add additional context
+            if (!error?.userCancelled) {
+                showError(error, {
+                    action: 'handleUpgradeToPro.purchase',
+                });
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
             <ScrollView
                 contentContainerStyle={{
+                    paddingTop: SPACING['unit-8'],
                     paddingBottom: SPACING['unit-16'],
                     paddingHorizontal: SPACING['unit-5'],
                 }}
@@ -108,18 +139,8 @@ const PlanScreen = () => {
                             </TypographyText>
                         </HStack>
                         <TypographyText variant="body" size="sm">
-                            Boost your productivity and creativity with a smarter, faster, and
-                            limitless AI.
+                            Boost your productivity and creativity with a smarter, faster.
                         </TypographyText>
-                    </VStack>
-
-                    <VStack alignItems="center" mt="sm">
-                        <TogglePill
-                            leftLabel="Monthly"
-                            rightLabel="Annual"
-                            value={billing}
-                            onChange={setBilling}
-                        />
                     </VStack>
 
                     <Card variant="bordered" style={{ borderRadius: 20, overflow: 'hidden' }}>
@@ -128,26 +149,16 @@ const PlanScreen = () => {
                                 <VStack gap="unit-1">
                                     <HStack gap="unit-1" alignItems="baseline">
                                         <TypographyText variant="title" weight="bold">
-                                            ${price.toFixed(2)}
-                                        </TypographyText>
-                                        <TypographyText variant="body" size="sm">
-                                            {cadence}
+                                            $2.99
                                         </TypographyText>
                                     </HStack>
-                                    <TypographyText variant="body" size="sm">
-                                        AI-powered planning and tracking tools to manage ideas and
-                                        reach your goals.
-                                    </TypographyText>
                                 </VStack>
 
                                 <VStack gap="unit-2">
                                     <TypographyText variant="label">Features</TypographyText>
                                     <VStack gap="unit-3">
-                                        <FeatureRow text="AI-Powered Idea Organization" />
                                         <FeatureRow text="Seamless Cloud Synchronization" />
-                                        <FeatureRow text="Advanced AI-Driven Insights" />
-                                        <FeatureRow text="Priority Customer Support" />
-                                        <FeatureRow text="Real-Time Collaboration Tools" />
+                                        <FeatureRow text="Unlimited Todos" />
                                         <FeatureRow text="Fully Customizable Dashboards" />
                                     </VStack>
                                 </VStack>
@@ -163,7 +174,13 @@ const PlanScreen = () => {
                     paddingVertical: SPACING['unit-4'],
                 }}
             >
-                <Button size="lg" variant="solid">
+                <Button
+                    size="lg"
+                    variant="solid"
+                    onPress={handleUpgradeToPro}
+                    isLoading={isLoading}
+                    isDisabled={isLoading}
+                >
                     <TypographyText variant="body" style={{ color: '#fff' }}>
                         Upgrade to Plus
                     </TypographyText>

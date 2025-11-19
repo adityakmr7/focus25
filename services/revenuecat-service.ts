@@ -15,14 +15,26 @@ class RevenueCatService {
     private customerInfo: CustomerInfo | null = null;
 
     async initialize(): Promise<void> {
-        if (this.initialized || Platform.OS !== 'ios') {
+        if (this.initialized) {
             return;
         }
 
-        const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_IOS;
+        let apiKey: string | undefined;
 
-        if (!apiKey) {
-            console.warn('[RevenueCatService] Missing EXPO_PUBLIC_REVENUECAT_API_KEY_IOS');
+        if (Platform.OS === 'ios') {
+            apiKey = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_IOS;
+            if (!apiKey) {
+                console.warn('[RevenueCatService] Missing EXPO_PUBLIC_REVENUECAT_API_KEY_IOS');
+                return;
+            }
+        } else if (Platform.OS === 'android') {
+            apiKey = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID;
+            if (!apiKey) {
+                console.warn('[RevenueCatService] Missing EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID');
+                return;
+            }
+        } else {
+            console.warn('[RevenueCatService] Unsupported platform:', Platform.OS);
             return;
         }
 
@@ -77,20 +89,30 @@ class RevenueCatService {
     ): Promise<PurchasesPackage | null> {
         try {
             const offerings = await Purchases.getOfferings();
-            const offering =
-                offerings.all?.[offeringId] ??
-                (offeringId === offerings.current?.identifier
-                    ? offerings.current
-                    : offerings.current);
+
+            // First, try to get the specific offering by ID from all offerings
+            let offering: PurchasesOffering | null = offerings.all?.[offeringId] ?? null;
+
+            // If not found and the offeringId matches the current offering, use current
+            if (!offering && offeringId === offerings.current?.identifier) {
+                offering = offerings.current;
+            }
+
+            // If still not found, fallback to current offering
+            if (!offering) {
+                offering = offerings.current ?? null;
+            }
 
             if (!offering) {
                 return null;
             }
 
+            // If no productId specified, return the first available package
             if (!productId) {
                 return offering.availablePackages?.[0] ?? null;
             }
 
+            // Find the specific package by productId
             return offering.availablePackages?.find((pkg) => pkg.identifier === productId) ?? null;
         } catch (error) {
             errorHandlingService.processError(error, { action: 'RevenueCat.getPackageForProduct' });
@@ -141,6 +163,41 @@ class RevenueCatService {
 
     hasActiveEntitlement(entitlementId: string): boolean {
         return Boolean(this.customerInfo?.entitlements?.active?.[entitlementId]);
+    }
+
+    async identifyUser(userId: string): Promise<CustomerInfo | null> {
+        if (!this.initialized) {
+            console.warn('[RevenueCatService] Cannot identify user: RevenueCat not initialized');
+            return null;
+        }
+
+        try {
+            const { customerInfo } = await Purchases.logIn(userId);
+            this.customerInfo = customerInfo;
+            this.notifyListeners(customerInfo);
+            return customerInfo;
+        } catch (error) {
+            errorHandlingService.processError(error, { action: 'RevenueCat.identifyUser' });
+            return null;
+        }
+    }
+
+    async logoutUser(): Promise<void> {
+        if (!this.initialized) {
+            return;
+        }
+
+        try {
+            const customerInfo = await Purchases.logOut();
+            this.customerInfo = customerInfo;
+            this.notifyListeners(customerInfo);
+        } catch (error) {
+            errorHandlingService.processError(error, { action: 'RevenueCat.logoutUser' });
+        }
+    }
+
+    isInitialized(): boolean {
+        return this.initialized;
     }
 }
 

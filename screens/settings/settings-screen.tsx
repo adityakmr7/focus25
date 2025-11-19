@@ -9,7 +9,8 @@ import { ArrowLeft02Icon } from '@hugeicons/core-free-icons';
 import { router } from 'expo-router';
 import { Host, ContextMenu, Slider, Button as SwiftButton, Picker } from '@expo/ui/swift-ui';
 import Avatar from '@/components/ui/avatar';
-
+import { LazyRequireImages } from '@/assets/images/lazy-require-image';
+import { Image } from 'expo-image';
 const Header = () => {
     const { theme } = useTheme();
     return (
@@ -86,18 +87,13 @@ const SubscriptionCard = ({ handleSeePlanPress }: { handleSeePlanPress: () => vo
                                 width: 40,
                                 height: 40,
                                 borderRadius: theme.borderRadius.lg,
-                                backgroundColor: theme.colors.primary,
                                 alignItems: 'center',
                                 justifyContent: 'center',
                             }}
                         >
-                            <View
-                                style={{
-                                    width: 18,
-                                    height: 18,
-                                    backgroundColor: theme.colors.primary,
-                                    borderRadius: theme.borderRadius.sm,
-                                }}
+                            <Image
+                                source={LazyRequireImages.starImage()}
+                                style={{ width: 40, height: 40 }}
                             />
                         </View>
                         <VStack>

@@ -74,7 +74,7 @@ export const useAuthStore = create<AuthState>()(
                 // Initialize auth state listener
                 initializeAuth: () => {
                     // Ensure cached pro status reflects latest customer info
-                    if (Platform.OS === 'ios') {
+                    if (Platform.OS === 'ios' || Platform.OS === 'android') {
                         const existingInfo = revenueCatService.getCustomerInfo();
                         if (existingInfo) {
                             applyProStatus(existingInfo);
@@ -84,13 +84,21 @@ export const useAuthStore = create<AuthState>()(
                     }
 
                     // Get initial session
-                    supabase.auth.getSession().then(({ data: { session } }) => {
+                    supabase.auth.getSession().then(async ({ data: { session } }) => {
                         set({
                             user: session?.user ?? null,
                             session,
                             isInitialized: true,
                             loading: false,
                         });
+
+                        // Identify user in RevenueCat if signed in
+                        if ((Platform.OS === 'ios' || Platform.OS === 'android') && session?.user?.id) {
+                            const customerInfo = await revenueCatService.identifyUser(session.user.id);
+                            if (customerInfo) {
+                                applyProStatus(customerInfo);
+                            }
+                        }
                     });
 
                     // Listen for auth changes
@@ -105,10 +113,23 @@ export const useAuthStore = create<AuthState>()(
                             isInitialized: true,
                             error: null,
                         });
+
+                        // Identify user in RevenueCat when signed in, logout when signed out
+                        if (Platform.OS === 'ios' || Platform.OS === 'android') {
+                            if (session?.user?.id) {
+                                const customerInfo = await revenueCatService.identifyUser(session.user.id);
+                                if (customerInfo) {
+                                    applyProStatus(customerInfo);
+                                }
+                            } else if (event === 'SIGNED_OUT') {
+                                await revenueCatService.logoutUser();
+                                applyProStatus(null, false);
+                            }
+                        }
                     });
 
                     let removeRevenueCatListener: (() => void) | undefined;
-                    if (Platform.OS === 'ios') {
+                    if (Platform.OS === 'ios' || Platform.OS === 'android') {
                         removeRevenueCatListener = revenueCatService.addCustomerInfoListener(
                             (info) => applyProStatus(info),
                         );
@@ -142,6 +163,15 @@ export const useAuthStore = create<AuthState>()(
                         const { user, displayName, email } =
                             await new AppleAuthService().signInWithApple();
                         set({ user, loading: false });
+
+                        // Identify user in RevenueCat after successful sign-in
+                        if ((Platform.OS === 'ios' || Platform.OS === 'android') && user?.id) {
+                            const customerInfo = await revenueCatService.identifyUser(user.id);
+                            if (customerInfo) {
+                                applyProStatus(customerInfo);
+                            }
+                        }
+
                         await get().refreshProStatus();
                         return { displayName, email };
                     } catch (error: any) {
@@ -168,7 +198,7 @@ export const useAuthStore = create<AuthState>()(
                 },
 
                 refreshProStatus: async () => {
-                    if (Platform.OS !== 'ios') {
+                    if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
                         applyProStatus(null, false);
                         return;
                     }
@@ -187,6 +217,12 @@ export const useAuthStore = create<AuthState>()(
                     try {
                         const { error } = await supabase.auth.signOut();
                         if (error) throw error;
+
+                        // Logout user from RevenueCat
+                        if (Platform.OS === 'ios' || Platform.OS === 'android') {
+                            await revenueCatService.logoutUser();
+                        }
+
                         set({ user: null, session: null, loading: false });
                         applyProStatus(null, false);
                         showSuccess('Signed out successfully');

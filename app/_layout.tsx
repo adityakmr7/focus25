@@ -6,6 +6,7 @@ import TypographyText from '@/components/TypographyText';
 import { splashScreenService } from '@/services/splash-screen-service';
 import { networkService } from '@/services/network-service';
 import { errorHandlingService } from '@/services/error-handling-service';
+import { revenueCatService } from '@/services/revenuecat-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useSettingsStore } from '@/stores/local-settings-store';
 import { useFonts } from 'expo-font';
@@ -33,6 +34,9 @@ function AppContent() {
             try {
                 // Initialize network service
                 await networkService.initialize();
+
+                // Initialize RevenueCat service (iOS only)
+                await revenueCatService.initialize();
 
                 // Initialize splash screen service
                 await splashScreenService.initialize();
