@@ -183,29 +183,137 @@ Cloud sync is optional. To enable:
 
 ## 📱 Building for Production
 
-### iOS
+This project uses [EAS Build](https://docs.expo.dev/build/introduction/) for cloud-based builds. EAS Build allows you to build iOS and Android apps without requiring local development environments.
 
-1. **Configure app.json** with your bundle identifier
-2. **Build the app**:
+### Prerequisites
+
+1. **Install EAS CLI**:
    ```bash
-   expo build:ios
-   ```
-   Or use EAS Build:
-   ```bash
-   eas build --platform ios
+   npm install -g eas-cli
    ```
 
-### Android
+2. **Login to your Expo account**:
+   ```bash
+   eas login
+   ```
+   If you don't have an account, create one at [expo.dev](https://expo.dev)
 
-1. **Configure app.json** with your package name
-2. **Build the app**:
+3. **Configure your project** (first time only):
    ```bash
-   expo build:android
+   eas build:configure
    ```
-   Or use EAS Build:
-   ```bash
-   eas build --platform android
-   ```
+   This will create the `eas.json` configuration file (already included in this project).
+
+### Build Profiles
+
+The project includes three build profiles configured in `eas.json`:
+
+- **development**: Development builds with dev client for testing
+- **preview**: Internal testing builds (APK for Android, TestFlight for iOS)
+- **production**: App Store and Play Store release builds
+
+### Building Your App
+
+#### Quick Build Commands
+
+```bash
+# Build for both platforms (interactive)
+npm run build
+
+# Build for specific platform
+npm run build:ios
+npm run build:android
+
+# Build with specific profile
+npm run build:dev        # Development build
+npm run build:preview    # Preview build (internal testing)
+npm run build:production # Production build (store release)
+```
+
+#### Detailed Build Options
+
+**Development Build** (for testing with dev client):
+```bash
+eas build --profile development --platform ios
+eas build --profile development --platform android
+```
+
+**Preview Build** (for internal testing):
+```bash
+eas build --profile preview --platform ios      # Creates .ipa for TestFlight
+eas build --profile preview --platform android  # Creates .apk for internal testing
+```
+
+**Production Build** (for App Store/Play Store):
+```bash
+eas build --profile production --platform ios      # Creates .ipa for App Store
+eas build --profile production --platform android  # Creates .aab for Play Store
+```
+
+### Managing Credentials
+
+EAS can automatically manage your credentials (certificates, provisioning profiles, keystores):
+
+- **Automatic (Recommended)**: EAS will generate and manage credentials automatically
+- **Manual**: You can provide your own credentials if needed
+
+To view or manage credentials:
+```bash
+eas credentials
+```
+
+### Submitting to App Stores
+
+After building, you can submit directly to stores using EAS Submit:
+
+```bash
+# Submit iOS app to App Store
+eas submit --platform ios --profile production
+
+# Submit Android app to Play Store
+eas submit --platform android --profile production
+```
+
+**Note**: You'll need to configure store credentials in `eas.json` or use the interactive setup:
+```bash
+eas submit:configure
+```
+
+### Environment Variables
+
+If your app uses environment variables (like Supabase credentials), set them in EAS:
+
+```bash
+# Set environment variables for all builds
+eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value your_url
+
+# Or set per-build-profile
+eas secret:create --scope build --name EXPO_PUBLIC_SUPABASE_URL --value your_url --type string
+```
+
+View secrets:
+```bash
+eas secret:list
+```
+
+### Build Status
+
+Check the status of your builds:
+```bash
+eas build:list
+```
+
+View build logs:
+```bash
+eas build:view [BUILD_ID]
+```
+
+### Local Development vs EAS Build
+
+- **Local Development**: Use `npm run ios` or `npm run android` for quick iteration
+- **EAS Build**: Use for production builds, TestFlight, and store submissions
+
+For more information, see the [EAS Build documentation](https://docs.expo.dev/build/introduction/).
 
 ## 🤝 Contributing
 

@@ -1,19 +1,47 @@
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
-import { Platform } from 'react-native';
+import { Platform, AppState, AppStateStatus } from 'react-native';
 
 // Task name for background timer
 const BACKGROUND_TIMER_TASK = 'BACKGROUND_TIMER_TASK';
 
 // Notification configuration
 Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-        shouldShowBanner: true,
-        shouldShowList: true,
-    }),
+    handleNotification: async (notification) => {
+        // Check if this is a timer completion notification
+        const isTimerCompletion = notification.request.content.data?.type === 'timer_completion';
+        const onlyIfBackground = notification.request.content.data?.onlyIfBackground === true;
+        
+        // If it's a timer completion notification that should only show in background,
+        // check current app state
+        if (isTimerCompletion && onlyIfBackground) {
+            const currentAppState = AppState.currentState;
+            const isBackground = currentAppState !== 'active';
+            
+            // Only show notification if app is in background
+            if (!isBackground) {
+                console.log(
+                    '[NotificationService] Suppressing notification - app is in foreground',
+                );
+                return {
+                    shouldShowAlert: false,
+                    shouldPlaySound: false,
+                    shouldSetBadge: false,
+                    shouldShowBanner: false,
+                    shouldShowList: false,
+                };
+            }
+        }
+        
+        // Default: show notification
+        return {
+            shouldShowAlert: true,
+            shouldPlaySound: true,
+            shouldSetBadge: false,
+            shouldShowBanner: true,
+            shouldShowList: true,
+        };
+    },
 });
 
 export interface TimerNotificationData {
@@ -26,6 +54,8 @@ export interface TimerNotificationData {
 class NotificationService {
     private isInitialized = false;
     private backgroundTimerTask: any = null;
+    private appState: AppStateStatus = AppState.currentState;
+    private appStateListener: any = null;
 
     async initialize(): Promise<boolean> {
         if (this.isInitialized) return true;
@@ -91,6 +121,9 @@ class NotificationService {
             // Register background task
             this.registerBackgroundTask();
 
+            // Track app state changes
+            this.setupAppStateListener();
+
             this.isInitialized = true;
             return true;
         } catch (error) {
@@ -111,8 +144,8 @@ class NotificationService {
                 const { timerPhase, timeLeft, sessionNumber, todoTitle } =
                     data as TimerNotificationData;
 
-                // Send notification when timer completes
-                if (timeLeft <= 0) {
+                // Send notification when timer completes (only in background)
+                if (timeLeft <= 0 && this.isAppInBackground()) {
                     await this.sendTimerCompletionNotification(
                         timerPhase,
                         sessionNumber,
@@ -121,6 +154,27 @@ class NotificationService {
                 }
             }
         });
+    }
+
+    private setupAppStateListener() {
+        // Listen to app state changes
+        this.appStateListener = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+            this.appState = nextAppState;
+        });
+    }
+
+    /**
+     * Check if app is currently in background
+     */
+    isAppInBackground(): boolean {
+        return this.appState !== 'active';
+    }
+
+    /**
+     * Get current app state
+     */
+    getAppState(): AppStateStatus {
+        return this.appState;
     }
 
     async scheduleTimerNotification(data: TimerNotificationData): Promise<string | null> {
@@ -146,6 +200,8 @@ class NotificationService {
             const body = this.getNotificationBody(timerPhase, todoTitle);
 
             // Schedule the notification with high priority
+            // Note: Scheduled notifications will fire even if app is in foreground,
+            // but we'll handle that by checking app state when the notification is received
             const notificationId = await Notifications.scheduleNotificationAsync({
                 content: {
                     title,
@@ -156,6 +212,7 @@ class NotificationService {
                         todoTitle,
                         type: 'timer_completion',
                         completionTime: notificationTime.getTime(),
+                        onlyIfBackground: true, // Flag to check when notification fires
                     },
                     sound: 'default',
                     priority: Notifications.AndroidNotificationPriority.HIGH,
@@ -233,8 +290,17 @@ class NotificationService {
         timerPhase: 'focus' | 'shortBreak' | 'longBreak',
         sessionNumber: number,
         todoTitle?: string,
+        onlyIfBackground: boolean = true,
     ): Promise<void> {
         try {
+            // Only send notification if app is in background (unless explicitly allowed)
+            if (onlyIfBackground && !this.isAppInBackground()) {
+                console.log(
+                    '[NotificationService] Skipping notification - app is in foreground',
+                );
+                return;
+            }
+
             const title = this.getNotificationTitle(timerPhase, sessionNumber);
             const body = this.getNotificationBody(timerPhase, todoTitle);
 
@@ -247,6 +313,7 @@ class NotificationService {
                         sessionNumber,
                         todoTitle,
                         type: 'timer_completion',
+                        onlyIfBackground: onlyIfBackground, // Flag for notification handler
                     },
                     sound: 'default',
                     priority: Notifications.AndroidNotificationPriority.HIGH,
@@ -352,6 +419,16 @@ class NotificationService {
             }
         } catch (error) {
             console.error('Failed to handle notification response:', error);
+        }
+    }
+
+    /**
+     * Cleanup method to remove app state listener
+     */
+    cleanup(): void {
+        if (this.appStateListener) {
+            this.appStateListener.remove();
+            this.appStateListener = null;
         }
     }
 }

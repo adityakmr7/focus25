@@ -14,7 +14,10 @@
       "usesAppleSignIn": true,
       "bundleIdentifier": "com.focus25.app",
       "appleTeamId": "PAYP925PPX",
-      "backgroundModes": ["background-fetch", "audio"],
+      "backgroundModes": [
+        "background-fetch",
+        "audio"
+      ],
       "icon": {
         "light": "./assets/images/ios-light.png",
         "dark": "./assets/images/ios-dark.png",
@@ -31,6 +34,7 @@
       }
     },
     "android": {
+      "package": "com.focus25.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -84,6 +88,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f7aee503-92f3-4b8f-ad2a-197ddd27a3f2"
+      }
+    },
+    "owner": "adityakmr"
   }
 }

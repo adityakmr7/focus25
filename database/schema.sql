@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
   theme TEXT DEFAULT 'system',
   user_name TEXT,
   onboarding_completed BOOLEAN DEFAULT FALSE,
+  has_pro_access BOOLEAN DEFAULT FALSE,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE
 );
 
@@ -59,6 +60,7 @@ CREATE INDEX IF NOT EXISTS idx_todos_created_at ON todos(created_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_completed_at ON sessions(completed_at);
 CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_settings_has_pro_access ON user_settings(has_pro_access);
 
 -- =============================================
 -- ROW LEVEL SECURITY

@@ -2,7 +2,7 @@ import { usePomodoroTimer } from '@/hooks/usePomodoroTimer';
 import { useAppLifecycle } from '@/hooks/useAppLifecycle';
 import { usePomodoroStore } from '@/stores/pomodoro-store';
 import { useSettingsStore } from '@/stores/local-settings-store';
-import { useTodoStore } from '@/stores/local-todo-store';
+import { useUnifiedTodoStore } from '@/hooks/useUnifiedTodoStore';
 import BottomSheet from '@gorhom/bottom-sheet';
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -39,7 +39,7 @@ export default function PomodoroScreen() {
         skipSession,
         updateTimerDuration,
     } = usePomodoroStore();
-    const { loadTodos } = useTodoStore();
+    const { loadTodos } = useUnifiedTodoStore();
     const { focusDuration, breakDuration, soundEffects, notifications } = useSettingsStore();
 
     // Start the timer interval with sound settings

@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { usePomodoroStore } from '@/stores/pomodoro-store';
 import { useSettingsStore } from '@/stores/local-settings-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { backgroundMetronomeService } from '@/services/background-metronome-service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -45,6 +46,7 @@ export function useAppLifecycle() {
 
     const { focusDuration, breakDuration, soundEffects, notifications, metronome } =
         useSettingsStore();
+    const { refreshProStatus, isProUser } = useAuthStore();
 
     // Save timer state to AsyncStorage
     const saveTimerState = useCallback(async () => {
@@ -173,6 +175,17 @@ export function useAppLifecycle() {
                 // App has come to the foreground
                 console.log('App returned to foreground - restoring timer state');
                 await restoreTimerState();
+                
+                // Check subscription status when app resumes (grace period handling)
+                if (isProUser) {
+                    try {
+                        console.log('[AppLifecycle] Checking subscription status on app resume');
+                        await refreshProStatus();
+                    } catch (error) {
+                        console.error('[AppLifecycle] Failed to refresh subscription status:', error);
+                        // Don't block app functionality if subscription check fails
+                    }
+                }
             } else if (nextAppState.match(/inactive|background/)) {
                 // App has gone to the background
                 console.log('App went to background - saving timer state');

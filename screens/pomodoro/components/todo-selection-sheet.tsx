@@ -1,5 +1,5 @@
 import TypographyText from '@/components/TypographyText';
-import { useTodoStore } from '@/stores/local-todo-store';
+import { useUnifiedTodoStore } from '@/hooks/useUnifiedTodoStore';
 import { isToday } from '@/utils/dateUtils';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import React, { forwardRef, useMemo } from 'react';
@@ -14,7 +14,7 @@ interface TodoSelectionSheetProps {
 const TodoSelectionSheet = forwardRef<BottomSheet, TodoSelectionSheetProps>(
     ({ onSelectTodo, selectedTodoId }, ref) => {
         const { theme } = useTheme();
-        const { todos, getActiveTodos } = useTodoStore();
+        const { todos, getActiveTodos } = useUnifiedTodoStore();
         const activeTodos = getActiveTodos();
 
         // Filter todos to only show today's todos

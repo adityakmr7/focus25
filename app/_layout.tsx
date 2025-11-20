@@ -10,7 +10,7 @@ import { revenueCatService } from '@/services/revenuecat-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useSettingsStore } from '@/stores/local-settings-store';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useSegments, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { TouchableOpacity, View, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -20,10 +20,12 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 // Inner component that uses the theme hook
 function AppContent() {
-    const { theme, themeMode } = useTheme();
+    const { themeMode } = useTheme();
     const { onboardingCompleted } = useSettingsStore();
-    const { initializeAuth, isInitialized, loading, error } = useAuthStore();
+    const { initializeAuth, isInitialized, loading, error, user } = useAuthStore();
     const [isSplashScreenReady, setIsSplashScreenReady] = useState(false);
+    const segments = useSegments();
+    const router = useRouter();
 
     // Initialize splash screen and services
     useEffect(() => {
@@ -75,6 +77,30 @@ function AppContent() {
             networkService.cleanup();
         };
     }, [initializeAuth]);
+
+    // Handle route protection based on authentication state
+    useEffect(() => {
+        if (!isSplashScreenReady || !isInitialized || loading) {
+            return; // Don't navigate while loading
+        }
+
+        const currentRoute = segments[0];
+        const inAuthGroup = currentRoute === 'auth';
+
+        if (!user && !inAuthGroup) {
+            // User is not authenticated and not on auth screen, redirect to auth
+            router.replace('/auth' as any);
+        } else if (user && inAuthGroup) {
+            // User is authenticated but on auth screen, redirect to main app
+            // Skip onboarding check for now since onboarding route doesn't exist
+            router.replace('/(tabs)' as any);
+        }
+        // Note: Onboarding check is skipped since onboarding route doesn't exist yet
+        // When onboarding is implemented, uncomment:
+        // else if (user && !onboardingCompleted && !inOnboardingGroup && !inAuthGroup && !inTabsGroup) {
+        //     router.replace('/onboarding' as any);
+        // }
+    }, [user, isInitialized, loading, isSplashScreenReady, segments, onboardingCompleted, router]);
 
     // Show loading screen while splash screen is not ready or auth is initializing
     if (!isSplashScreenReady || !isInitialized || loading) {
@@ -152,7 +178,7 @@ function AppContent() {
                 <SafeAreaProvider>
                     <OfflineIndicator />
                     <Stack>
-                        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+                        <Stack.Screen name="auth" options={{ headerShown: false }} />
                         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                         <Stack.Screen
                             name="(create-todo)"

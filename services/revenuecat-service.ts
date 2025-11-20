@@ -43,8 +43,27 @@ class RevenueCatService {
             await Purchases.configure({ apiKey });
 
             // Fetch initial customer info and cache it.
-            this.customerInfo = await Purchases.getCustomerInfo();
-            this.notifyListeners(this.customerInfo);
+            // Suppress errors if offerings are not configured (expected in development)
+            try {
+                this.customerInfo = await Purchases.getCustomerInfo();
+                this.notifyListeners(this.customerInfo);
+            } catch (customerInfoError: any) {
+                const errorMessage = customerInfoError?.message || String(customerInfoError);
+                if (
+                    errorMessage.includes('configuration') ||
+                    errorMessage.includes('offerings-empty') ||
+                    errorMessage.includes('products registered')
+                ) {
+                    // Configuration issue - expected in development, just log as warning
+                    console.warn(
+                        '[RevenueCatService] Configuration issue detected (expected in development):',
+                        errorMessage,
+                    );
+                } else {
+                    // Other errors should be logged
+                    console.warn('[RevenueCatService] Failed to get customer info:', customerInfoError);
+                }
+            }
 
             // Listen for future updates.
             Purchases.addCustomerInfoUpdateListener((info) => {
@@ -53,8 +72,23 @@ class RevenueCatService {
             });
 
             this.initialized = true;
-        } catch (error) {
-            errorHandlingService.processError(error, { action: 'RevenueCat.initialize' });
+        } catch (error: any) {
+            const errorMessage = error?.message || String(error);
+            // Don't log configuration errors as errors - they're expected in development
+            if (
+                errorMessage.includes('configuration') ||
+                errorMessage.includes('offerings-empty') ||
+                errorMessage.includes('products registered')
+            ) {
+                console.warn(
+                    '[RevenueCatService] Configuration issue during initialization (expected in development):',
+                    errorMessage,
+                );
+                // Still mark as initialized so app can continue
+                this.initialized = true;
+            } else {
+                errorHandlingService.processError(error, { action: 'RevenueCat.initialize' });
+            }
         }
     }
 
@@ -67,7 +101,17 @@ class RevenueCatService {
             this.customerInfo = await Purchases.getCustomerInfo();
             this.notifyListeners(this.customerInfo);
             return this.customerInfo;
-        } catch (error) {
+        } catch (error: any) {
+            const errorMessage = error?.message || String(error);
+            // Don't log configuration errors - they're expected in development
+            if (
+                errorMessage.includes('configuration') ||
+                errorMessage.includes('offerings-empty') ||
+                errorMessage.includes('products registered')
+            ) {
+                // Silently return null for configuration issues
+                return null;
+            }
             errorHandlingService.processError(error, { action: 'RevenueCat.refreshCustomerInfo' });
             return null;
         }
@@ -76,9 +120,42 @@ class RevenueCatService {
     async getOfferings(): Promise<PurchasesOffering | null> {
         try {
             const offerings = await Purchases.getOfferings();
+            
+            // Check if offerings are empty (configuration issue)
+            if (!offerings.current && (!offerings.all || Object.keys(offerings.all).length === 0)) {
+                console.warn(
+                    '[RevenueCatService] No offerings available. This is likely a configuration issue:\n' +
+                    '• Products may not be configured in App Store Connect\n' +
+                    '• StoreKit Configuration file may not be set up\n' +
+                    '• RevenueCat dashboard may not be properly configured\n' +
+                    'See: https://rev.cat/why-are-offerings-empty',
+                );
+                return null;
+            }
+            
             return offerings.current ?? null;
-        } catch (error) {
-            errorHandlingService.processError(error, { action: 'RevenueCat.getOfferings' });
+        } catch (error: any) {
+            // Check if it's a configuration error
+            const errorMessage = error?.message || String(error);
+            if (
+                errorMessage.includes('configuration') ||
+                errorMessage.includes('offerings-empty') ||
+                errorMessage.includes('products registered')
+            ) {
+                console.warn(
+                    '[RevenueCatService] Configuration error detected. This is normal in development if:\n' +
+                    '• Products are not set up in App Store Connect\n' +
+                    '• StoreKit Configuration file is not configured\n' +
+                    '• RevenueCat dashboard is not properly linked\n' +
+                    'Error:', errorMessage,
+                );
+                // Don't log as error in development - it's expected
+                if (!__DEV__) {
+                    errorHandlingService.processError(error, { action: 'RevenueCat.getOfferings' });
+                }
+            } else {
+                errorHandlingService.processError(error, { action: 'RevenueCat.getOfferings' });
+            }
             return null;
         }
     }
@@ -89,6 +166,14 @@ class RevenueCatService {
     ): Promise<PurchasesPackage | null> {
         try {
             const offerings = await Purchases.getOfferings();
+
+            // Check if offerings are empty (configuration issue)
+            if (!offerings.current && (!offerings.all || Object.keys(offerings.all).length === 0)) {
+                console.warn(
+                    '[RevenueCatService] No offerings available when getting package. Configuration issue detected.',
+                );
+                return null;
+            }
 
             // First, try to get the specific offering by ID from all offerings
             let offering: PurchasesOffering | null = offerings.all?.[offeringId] ?? null;
@@ -114,8 +199,28 @@ class RevenueCatService {
 
             // Find the specific package by productId
             return offering.availablePackages?.find((pkg) => pkg.identifier === productId) ?? null;
-        } catch (error) {
-            errorHandlingService.processError(error, { action: 'RevenueCat.getPackageForProduct' });
+        } catch (error: any) {
+            // Check if it's a configuration error
+            const errorMessage = error?.message || String(error);
+            if (
+                errorMessage.includes('configuration') ||
+                errorMessage.includes('offerings-empty') ||
+                errorMessage.includes('products registered')
+            ) {
+                console.warn(
+                    '[RevenueCatService] Configuration error when getting package. This is normal in development.',
+                );
+                // Don't log as error in development - it's expected
+                if (!__DEV__) {
+                    errorHandlingService.processError(error, {
+                        action: 'RevenueCat.getPackageForProduct',
+                    });
+                }
+            } else {
+                errorHandlingService.processError(error, {
+                    action: 'RevenueCat.getPackageForProduct',
+                });
+            }
             return null;
         }
     }
@@ -176,7 +281,17 @@ class RevenueCatService {
             this.customerInfo = customerInfo;
             this.notifyListeners(customerInfo);
             return customerInfo;
-        } catch (error) {
+        } catch (error: any) {
+            const errorMessage = error?.message || String(error);
+            // Don't log configuration errors - they're expected in development
+            if (
+                errorMessage.includes('configuration') ||
+                errorMessage.includes('offerings-empty') ||
+                errorMessage.includes('products registered')
+            ) {
+                // Silently return null for configuration issues
+                return null;
+            }
             errorHandlingService.processError(error, { action: 'RevenueCat.identifyUser' });
             return null;
         }
@@ -198,6 +313,91 @@ class RevenueCatService {
 
     isInitialized(): boolean {
         return this.initialized;
+    }
+
+    async restorePurchases(): Promise<CustomerInfo | null> {
+        if (!this.initialized) {
+            console.warn('[RevenueCatService] Cannot restore purchases: RevenueCat not initialized');
+            return null;
+        }
+
+        try {
+            const customerInfo = await Purchases.restorePurchases();
+            this.customerInfo = customerInfo;
+            this.notifyListeners(customerInfo);
+            return customerInfo;
+        } catch (error) {
+            errorHandlingService.processError(error, { action: 'RevenueCat.restorePurchases' });
+            return null;
+        }
+    }
+
+    /**
+     * Get subscription details from CustomerInfo
+     * Returns subscription status, expiry date, and renewal info
+     */
+    getSubscriptionDetails(entitlementId: string): {
+        isActive: boolean;
+        expiryDate: Date | null;
+        willRenew: boolean;
+        productIdentifier: string | null;
+    } {
+        if (!this.customerInfo) {
+            return {
+                isActive: false,
+                expiryDate: null,
+                willRenew: false,
+                productIdentifier: null,
+            };
+        }
+
+        const entitlement = this.customerInfo.entitlements.active[entitlementId];
+        
+        if (!entitlement) {
+            // Check if there's an inactive entitlement (expired)
+            const inactiveEntitlement = this.customerInfo.entitlements.all[entitlementId];
+            return {
+                isActive: false,
+                expiryDate: inactiveEntitlement?.expirationDate 
+                    ? new Date(inactiveEntitlement.expirationDate) 
+                    : null,
+                willRenew: false,
+                productIdentifier: inactiveEntitlement?.productIdentifier ?? null,
+            };
+        }
+
+        return {
+            isActive: true,
+            expiryDate: entitlement.expirationDate ? new Date(entitlement.expirationDate) : null,
+            willRenew: entitlement.willRenew ?? false,
+            productIdentifier: entitlement.productIdentifier ?? null,
+        };
+    }
+
+    /**
+     * Get the price of a package from the current offering
+     */
+    async getPackagePrice(offeringId: string, productId?: string): Promise<string | null> {
+        try {
+            const pkg = await this.getPackageForProduct(offeringId, productId);
+            if (!pkg) {
+                // Configuration issue - return null gracefully
+                return null;
+            }
+            
+            return pkg.product.priceString ?? null;
+        } catch (error: any) {
+            // Silently handle configuration errors
+            const errorMessage = error?.message || String(error);
+            if (
+                !errorMessage.includes('configuration') &&
+                !errorMessage.includes('offerings-empty') &&
+                !errorMessage.includes('products registered')
+            ) {
+                console.error('[RevenueCatService] Error getting package price:', error);
+            }
+            return null;
+        }
     }
 }
 

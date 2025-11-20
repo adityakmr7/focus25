@@ -1,5 +1,5 @@
 import TypographyText from '@/components/TypographyText';
-import { useTodoStore } from '@/stores/local-todo-store';
+import { useUnifiedTodoStore } from '@/hooks/useUnifiedTodoStore';
 import { useCategoryStore } from '@/stores/category-store';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -19,7 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CreateTodoScreen = () => {
     const { theme } = useTheme();
-    const { createTodo, updateTodo, todos } = useTodoStore();
+    const { createTodo, updateTodo, todos } = useUnifiedTodoStore();
     const { categories } = useCategoryStore();
     const { todoId } = useLocalSearchParams<{ todoId?: string }>();
 

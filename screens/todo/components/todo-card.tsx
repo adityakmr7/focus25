@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View, Text } from 'react-native';
 import { HStack, useTheme } from 'react-native-heroui';
-import { useTodoStore } from '@/stores/local-todo-store';
+import { useUnifiedTodoStore } from '@/hooks/useUnifiedTodoStore';
 
 interface TodoCardProps {
     todo: any;
@@ -13,7 +13,7 @@ interface TodoCardProps {
 
 const SubTaskItem = ({ todo }: { todo: any }) => {
     const { theme } = useTheme();
-    const { updateTodo } = useTodoStore();
+    const { updateTodo } = useUnifiedTodoStore();
     return (
         <HStack ml="xl">
             {Array.isArray((todo as any)?.subtasks) && (todo as any).subtasks.length > 0 && (
@@ -86,7 +86,7 @@ const SubTaskItem = ({ todo }: { todo: any }) => {
 
 const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit }) => {
     const { theme } = useTheme();
-    const { updateTodo } = useTodoStore();
+    const { updateTodo } = useUnifiedTodoStore();
     const categoryColors: Record<string, string> = {
         Work: theme.colors['success-400'],
         Health: theme.colors['primary-400'],

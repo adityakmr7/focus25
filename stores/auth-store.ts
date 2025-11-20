@@ -1,10 +1,15 @@
 import { supabase } from '@/configs/supabase-config';
 import { AppleAuthService } from '@/services/apple-auth-service';
 import { revenueCatService } from '@/services/revenuecat-service';
-import { errorHandlingService, AuthenticationError } from '@/services/error-handling-service';
+import { errorHandlingService } from '@/services/error-handling-service';
+import { analyticsService } from '@/services/analytics-service';
 import { showError, showSuccess } from '@/utils/error-toast';
 import { SUBSCRIPTION_CONSTANTS } from '@/constants/subscription';
 import { useSettingsStore } from '@/stores/local-settings-store';
+import { todoMigrationService } from '@/services/todo-migration-service';
+import { optionalSyncService } from '@/services/optional-sync-service';
+import { useSupabaseTodoStore } from '@/stores/supabase-todo-store';
+import { createSupabaseService } from '@/services/supabase-service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Session, User } from '@supabase/supabase-js';
 import type { CustomerInfo } from 'react-native-purchases';
@@ -35,22 +40,138 @@ export const useAuthStore = create<AuthState>()(
     persist(
         (set, get) => {
             const entitlementId = SUBSCRIPTION_CONSTANTS.PRO_ENTITLEMENT_ID;
+            let syncInProgress = false; // Prevent concurrent Supabase syncs
 
-            const applyProStatus = (info: CustomerInfo | null, override?: boolean) => {
+            const applyProStatus = async (
+                info: CustomerInfo | null,
+                override?: boolean,
+                previousProStatus?: boolean,
+            ) => {
+                const currentProStatus = get().isProUser;
                 const hasPro =
                     override ??
                     (info
                         ? Boolean(info.entitlements?.active?.[entitlementId])
                         : revenueCatService.hasActiveEntitlement(entitlementId));
 
+                const wasPro = previousProStatus ?? currentProStatus;
+                const isUpgrading = !wasPro && hasPro;
+                const isDowngrading = wasPro && !hasPro;
+
                 set({ isProUser: hasPro });
 
                 const settingsStore = useSettingsStore.getState();
                 settingsStore.setHasProAccess(hasPro);
 
+                const { user } = get();
+
+                // Track subscription events
+                if (isUpgrading) {
+                    analyticsService.trackUpgrade(user?.id, {
+                        timestamp: new Date().toISOString(),
+                    });
+                } else if (isDowngrading) {
+                    analyticsService.trackDowngrade(user?.id, {
+                        timestamp: new Date().toISOString(),
+                    });
+                }
+
+                // Sync premium status to Supabase if user is authenticated
+                // Use a flag to prevent concurrent syncs
+                if (user && !syncInProgress) {
+                    syncInProgress = true;
+                    try {
+                        const supabaseService = createSupabaseService(user.id);
+                        await supabaseService.updateSettings({ hasProAccess: hasPro });
+                        console.log('[AuthStore] Premium status synced to Supabase:', hasPro);
+                    } catch (error: any) {
+                        // Handle duplicate key errors gracefully (race condition)
+                        if (error?.code === '23505') {
+                            // Duplicate key - settings might have been created by another process
+                            // Try to update again
+                            try {
+                                const supabaseService = createSupabaseService(user.id);
+                                await supabaseService.updateSettings({ hasProAccess: hasPro });
+                                console.log('[AuthStore] Premium status synced to Supabase (retry):', hasPro);
+                            } catch (retryError) {
+                                // Only log if retry also fails - but don't throw
+                                console.warn(
+                                    '[AuthStore] Failed to sync premium status to Supabase after retry:',
+                                    retryError,
+                                );
+                            }
+                        } else {
+                            // Log other errors but don't fail - premium status update shouldn't be blocked
+                            // Suppress configuration-related errors
+                            const errorMessage = error?.message || String(error);
+                            if (!errorMessage.includes('configuration')) {
+                                console.warn(
+                                    '[AuthStore] Failed to sync premium status to Supabase:',
+                                    error,
+                                );
+                                errorHandlingService.processError(error, {
+                                    action: 'AuthStore.applyProStatus.syncPremiumStatus',
+                                });
+                            }
+                        }
+                    } finally {
+                        syncInProgress = false;
+                    }
+                }
+
                 if (hasPro) {
                     if (!settingsStore.syncWithCloud) {
                         settingsStore.setSyncWithCloud(true);
+                    }
+
+                    // Initialize sync service for pro users
+                    if (user) {
+                        try {
+                            await optionalSyncService.initialize();
+                        } catch (error) {
+                            console.error('[AuthStore] Failed to initialize sync service:', error);
+                        }
+                    }
+
+                    // Migrate local todos to Supabase when upgrading to pro
+                    if (isUpgrading && user) {
+                        try {
+                            console.log('[AuthStore] User upgraded to pro, starting migration...');
+                            const migrationResult =
+                                await todoMigrationService.migrateLocalTodosToSupabase(
+                                    user.id,
+                                    true,
+                                );
+                            if (migrationResult.migratedCount > 0) {
+                                console.log(
+                                    `[AuthStore] Successfully migrated ${migrationResult.migratedCount} todos to Supabase`,
+                                );
+                                // Refresh Supabase todo store after migration
+                                useSupabaseTodoStore.getState().loadTodos();
+
+                                // Track successful migration
+                                analyticsService.trackMigration('migration_completed', user.id, {
+                                    migratedCount: migrationResult.migratedCount,
+                                    totalCount: migrationResult.totalCount,
+                                });
+                            } else if (!migrationResult.success) {
+                                // Track failed migration
+                                analyticsService.trackMigration('migration_failed', user.id, {
+                                    errorCount: migrationResult.errorCount,
+                                    totalCount: migrationResult.totalCount,
+                                });
+                            }
+                            // Note: Migration errors are handled and shown to user by the migration service
+                        } catch (error) {
+                            console.error(
+                                '[AuthStore] Failed to migrate todos to Supabase:',
+                                error,
+                            );
+                            errorHandlingService.processError(error, {
+                                action: 'AuthStore.applyProStatus.migrate',
+                            });
+                            // Don't throw - migration failure shouldn't block pro status update
+                        }
                     }
                 } else {
                     if (settingsStore.syncWithCloud) {
@@ -58,6 +179,16 @@ export const useAuthStore = create<AuthState>()(
                     }
                     if (settingsStore.isAccountBackedUp) {
                         settingsStore.setAccountBackedUp(false);
+                    }
+
+                    // Disable sync service when downgrading
+                    if (isDowngrading) {
+                        try {
+                            await optionalSyncService.disableSync();
+                            console.log('[AuthStore] Sync disabled due to pro downgrade');
+                        } catch (error) {
+                            console.error('[AuthStore] Failed to disable sync service:', error);
+                        }
                     }
                 }
             };
@@ -77,10 +208,10 @@ export const useAuthStore = create<AuthState>()(
                     if (Platform.OS === 'ios' || Platform.OS === 'android') {
                         const existingInfo = revenueCatService.getCustomerInfo();
                         if (existingInfo) {
-                            applyProStatus(existingInfo);
+                            applyProStatus(existingInfo, undefined, get().isProUser);
                         }
                     } else {
-                        applyProStatus(null, false);
+                        applyProStatus(null, false, get().isProUser);
                     }
 
                     // Get initial session
@@ -92,11 +223,62 @@ export const useAuthStore = create<AuthState>()(
                             loading: false,
                         });
 
+                        // Update settings store with user info if signed in
+                        if (session?.user) {
+                            const settingsStore = useSettingsStore.getState();
+                            const user = session.user;
+                            
+                            // Get display name from user metadata or email prefix
+                            const displayName =
+                                user.user_metadata?.display_name ||
+                                (user.email ? user.email.split('@')[0] : '');
+                            
+                            // Get email from user object
+                            const email = user.email || '';
+                            
+                            // Update settings store if values are available and different
+                            if (displayName && displayName !== settingsStore.userName) {
+                                settingsStore.setUserName(displayName);
+                            }
+                            if (email && email !== settingsStore.userEmail) {
+                                settingsStore.setUserEmail(email);
+                            }
+                        }
+
                         // Identify user in RevenueCat if signed in
-                        if ((Platform.OS === 'ios' || Platform.OS === 'android') && session?.user?.id) {
-                            const customerInfo = await revenueCatService.identifyUser(session.user.id);
+                        if (
+                            (Platform.OS === 'ios' || Platform.OS === 'android') &&
+                            session?.user?.id
+                        ) {
+                            const customerInfo = await revenueCatService.identifyUser(
+                                session.user.id,
+                            );
                             if (customerInfo) {
-                                applyProStatus(customerInfo);
+                                await applyProStatus(customerInfo, undefined, get().isProUser);
+                            } else {
+                                // Fallback: Try to load premium status from Supabase if RevenueCat fails
+                                try {
+                                    const supabaseService = createSupabaseService(session.user.id);
+                                    const settings = await supabaseService.getSettings();
+                                    if (settings?.hasProAccess) {
+                                        // Only use Supabase value if RevenueCat didn't provide info
+                                        // This is a fallback, RevenueCat is the source of truth
+                                        console.log(
+                                            '[AuthStore] Loaded premium status from Supabase as fallback',
+                                        );
+                                        await applyProStatus(
+                                            null,
+                                            settings.hasProAccess,
+                                            get().isProUser,
+                                        );
+                                    }
+                                } catch (error) {
+                                    // Silently handle - RevenueCat is primary source
+                                    console.error(
+                                        '[AuthStore] Failed to load premium status from Supabase:',
+                                        error,
+                                    );
+                                }
                             }
                         }
                     });
@@ -114,16 +296,40 @@ export const useAuthStore = create<AuthState>()(
                             error: null,
                         });
 
+                        // Update settings store with user info when signed in
+                        if (session?.user && event !== 'SIGNED_OUT') {
+                            const settingsStore = useSettingsStore.getState();
+                            const user = session.user;
+                            
+                            // Get display name from user metadata or email prefix
+                            const displayName =
+                                user.user_metadata?.display_name ||
+                                (user.email ? user.email.split('@')[0] : '');
+                            
+                            // Get email from user object
+                            const email = user.email || '';
+                            
+                            // Update settings store if values are available and different
+                            if (displayName && displayName !== settingsStore.userName) {
+                                settingsStore.setUserName(displayName);
+                            }
+                            if (email && email !== settingsStore.userEmail) {
+                                settingsStore.setUserEmail(email);
+                            }
+                        }
+
                         // Identify user in RevenueCat when signed in, logout when signed out
                         if (Platform.OS === 'ios' || Platform.OS === 'android') {
                             if (session?.user?.id) {
-                                const customerInfo = await revenueCatService.identifyUser(session.user.id);
+                                const customerInfo = await revenueCatService.identifyUser(
+                                    session.user.id,
+                                );
                                 if (customerInfo) {
-                                    applyProStatus(customerInfo);
+                                    await applyProStatus(customerInfo, undefined, get().isProUser);
                                 }
                             } else if (event === 'SIGNED_OUT') {
                                 await revenueCatService.logoutUser();
-                                applyProStatus(null, false);
+                                await applyProStatus(null, false, get().isProUser);
                             }
                         }
                     });
@@ -131,12 +337,39 @@ export const useAuthStore = create<AuthState>()(
                     let removeRevenueCatListener: (() => void) | undefined;
                     if (Platform.OS === 'ios' || Platform.OS === 'android') {
                         removeRevenueCatListener = revenueCatService.addCustomerInfoListener(
-                            (info) => applyProStatus(info),
+                            (info) => {
+                                // Fire and forget - don't block listener
+                                applyProStatus(info, undefined, get().isProUser).catch((error: any) => {
+                                    const errorMessage = error?.message || String(error);
+                                    // Don't log configuration errors
+                                    if (
+                                        !errorMessage.includes('configuration') &&
+                                        !errorMessage.includes('offerings-empty') &&
+                                        !errorMessage.includes('products registered')
+                                    ) {
+                                        console.warn(
+                                            '[AuthStore] Error in pro status listener:',
+                                            error,
+                                        );
+                                    }
+                                });
+                            },
                         );
 
-                        revenueCatService.refreshCustomerInfo().then((info) => {
+                        // Refresh customer info - suppress configuration errors
+                        revenueCatService.refreshCustomerInfo().then(async (info) => {
                             if (info) {
-                                applyProStatus(info);
+                                await applyProStatus(info, undefined, get().isProUser);
+                            }
+                        }).catch((error: any) => {
+                            // Silently handle configuration errors
+                            const errorMessage = error?.message || String(error);
+                            if (
+                                !errorMessage.includes('configuration') &&
+                                !errorMessage.includes('offerings-empty') &&
+                                !errorMessage.includes('products registered')
+                            ) {
+                                console.warn('[AuthStore] Failed to refresh customer info:', error);
                             }
                         });
                     }
@@ -164,16 +397,36 @@ export const useAuthStore = create<AuthState>()(
                             await new AppleAuthService().signInWithApple();
                         set({ user, loading: false });
 
+                        // Update settings store with user name and email
+                        const settingsStore = useSettingsStore.getState();
+                        
+                        // Get display name from sign-in, user metadata, or email prefix
+                        const finalDisplayName =
+                            displayName ||
+                            user?.user_metadata?.display_name ||
+                            (email ? email.split('@')[0] : '');
+                        
+                        // Get email from sign-in or user object
+                        const finalEmail = email || user?.email || '';
+                        
+                        // Update settings store
+                        if (finalDisplayName) {
+                            settingsStore.setUserName(finalDisplayName);
+                        }
+                        if (finalEmail) {
+                            settingsStore.setUserEmail(finalEmail);
+                        }
+
                         // Identify user in RevenueCat after successful sign-in
                         if ((Platform.OS === 'ios' || Platform.OS === 'android') && user?.id) {
                             const customerInfo = await revenueCatService.identifyUser(user.id);
                             if (customerInfo) {
-                                applyProStatus(customerInfo);
+                                await applyProStatus(customerInfo, undefined, get().isProUser);
                             }
                         }
 
                         await get().refreshProStatus();
-                        return { displayName, email };
+                        return { displayName: finalDisplayName, email: finalEmail };
                     } catch (error: any) {
                         // Don't log or set error for user cancellations
                         const isCancellation =
@@ -199,15 +452,15 @@ export const useAuthStore = create<AuthState>()(
 
                 refreshProStatus: async () => {
                     if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
-                        applyProStatus(null, false);
+                        await applyProStatus(null, false, get().isProUser);
                         return;
                     }
 
                     const info = await revenueCatService.refreshCustomerInfo();
                     if (info) {
-                        applyProStatus(info);
+                        await applyProStatus(info, undefined, get().isProUser);
                     } else {
-                        applyProStatus(null);
+                        await applyProStatus(null, undefined, get().isProUser);
                     }
                 },
 
@@ -223,8 +476,13 @@ export const useAuthStore = create<AuthState>()(
                             await revenueCatService.logoutUser();
                         }
 
+                        // Clear user info from settings store
+                        const settingsStore = useSettingsStore.getState();
+                        settingsStore.setUserName('');
+                        settingsStore.setUserEmail('');
+
                         set({ user: null, session: null, loading: false });
-                        applyProStatus(null, false);
+                        await applyProStatus(null, false, get().isProUser);
                         showSuccess('Signed out successfully');
                     } catch (error: any) {
                         const appError = errorHandlingService.processError(error, {

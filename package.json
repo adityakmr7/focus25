@@ -9,7 +9,12 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "dev": "expo start",
-    "build": "expo build",
+    "build": "eas build",
+    "build:dev": "eas build --profile development",
+    "build:preview": "eas build --profile preview",
+    "build:production": "eas build --profile production",
+    "build:ios": "eas build --platform ios",
+    "build:android": "eas build --platform android",
     "prebuild": "expo prebuild",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "format": "prettier --write ."

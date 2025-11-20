@@ -353,17 +353,38 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => ({
         // Play completion sound
         await playCompletionSound(soundEnabled);
 
-        // Send immediate notification for timer completion if enabled
+        // Check if app is in background
+        const isBackground = notificationService.isAppInBackground();
+
+        // Handle notifications based on app state
         if (notificationsEnabled) {
             try {
-                await notificationService.sendTimerCompletionNotification(
-                    timerPhase,
-                    currentSession,
-                    currentTodoTitle || undefined,
-                );
+                if (isBackground) {
+                    // App is in background - rely on scheduled notification which will fire at completion time
+                    // Don't send immediate notification to avoid duplicates
+                    // The scheduled notification will handle the notification display
+                    console.log(
+                        '[PomodoroStore] Timer completed in background - scheduled notification will fire',
+                    );
+                } else {
+                    // App is in foreground - cancel any scheduled notifications
+                    // since user will see the completion UI
+                    console.log(
+                        '[PomodoroStore] Timer completed in foreground - canceling scheduled notifications',
+                    );
+                    await notificationService.cancelTimerNotifications();
+                }
             } catch (error) {
                 // Silently handle notification errors - they're not critical
                 errorHandlingService.processError(error, { action: 'sendTimerCompletionNotification' });
+            }
+        } else {
+            // Notifications disabled - cancel any scheduled notifications
+            try {
+                await notificationService.cancelTimerNotifications();
+            } catch (error) {
+                // Silently handle cancellation errors
+                console.error('Failed to cancel notifications:', error);
             }
         }
 

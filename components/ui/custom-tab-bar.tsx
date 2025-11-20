@@ -67,7 +67,9 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
                         <View style={{ marginBottom: 2 }}>
                             {options.tabBarIcon({
                                 focused: isFocused,
-                                color: isFocused ? theme.colors.foreground : 'white',
+                                color: isFocused
+                                    ? theme.colors.foreground
+                                    : theme.colors['default-100'],
                                 size: 20,
                             })}
                         </View>
@@ -97,11 +99,13 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
             justifyContent="space-around"
             alignItems="center"
             gap="md"
-            style={{}}
+            style={{
+                height: 0,
+            }}
         >
             <View
                 style={{
-                    bottom: 40,
+                    bottom: 60,
                     flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -113,12 +117,12 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
                 <View
                     style={{
                         flexDirection: 'row',
-                        backgroundColor: theme.colors.foreground,
+                        backgroundColor: theme.colors['default-800'],
                         borderRadius: 30,
                         padding: SPACING['unit-2'],
                         flex: 1,
                         marginRight: 12,
-                        shadowColor: theme.colors.foreground,
+                        // shadowColor: theme.colors.foreground,
                         shadowOffset: {
                             width: 0,
                             height: 4,

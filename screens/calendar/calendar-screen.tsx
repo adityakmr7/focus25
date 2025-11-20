@@ -1,5 +1,5 @@
 import TypographyText from '@/components/TypographyText';
-import { useTodoStore } from '@/stores/local-todo-store';
+import { useUnifiedTodoStore } from '@/hooks/useUnifiedTodoStore';
 import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { HStack, SPACING, VStack, useTheme } from 'react-native-heroui';
@@ -17,7 +17,7 @@ type CalendarEvent = {
 
 const CalendarScreen: React.FC = () => {
   const { theme } = useTheme();
-  const { todos } = useTodoStore();
+  const { todos } = useUnifiedTodoStore();
   const [selectedDate] = useState<Date>(new Date());
 
   const categoryColors: Record<string, { dot: string; card: string }> = {

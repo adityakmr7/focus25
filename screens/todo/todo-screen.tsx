@@ -1,4 +1,4 @@
-import { useTodoStore } from '@/stores/local-todo-store';
+import { useUnifiedTodoStore } from '@/hooks/useUnifiedTodoStore';
 import { groupTodosByDate } from '@/utils/dateUtils';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 const TodoScreen: React.FC = () => {
     const { theme } = useTheme();
-    const { todos, toggleTodo, loadTodos } = useTodoStore();
+    const { todos, toggleTodo, loadTodos } = useUnifiedTodoStore();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
     // Load todos on component mount
