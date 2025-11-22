@@ -1,5 +1,6 @@
+import { useColorTheme } from '@/hooks/useColorTheme';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from 'react-native-heroui';
 import Animated, { SharedValue } from 'react-native-reanimated';
 
@@ -9,7 +10,7 @@ interface PomodoroTimerProps {
 }
 
 export default function PomodoroTimer({ timeLeft, progressValue }: PomodoroTimerProps) {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
 
     const formatTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
@@ -19,9 +20,10 @@ export default function PomodoroTimer({ timeLeft, progressValue }: PomodoroTimer
 
     return (
         <View style={styles.timerContainer}>
+            <Text>Session</Text>
             {/* Timer Text */}
             <View style={styles.timerTextContainer}>
-                <Text style={[styles.timerText, { color: theme.colors['default-800'] }]}>
+                <Text style={[styles.timerText, { color: colors.contentPrimary }]}>
                     {formatTime(timeLeft)}
                 </Text>
             </View>
@@ -34,11 +36,13 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        width: '100%',
+        height: Dimensions.get('window').height * 0.3,
     },
 
     timerText: {
         fontSize: 72,
-        fontWeight: '800',
+        fontWeight: '400',
         textAlign: 'center',
     },
     timerTextContainer: {

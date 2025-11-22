@@ -4,6 +4,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity, View, Text } from 'react-native';
 import { HStack, useTheme } from 'react-native-heroui';
 import { useUnifiedTodoStore } from '@/hooks/useUnifiedTodoStore';
+import { useColorTheme } from '@/hooks/useColorTheme';
 
 interface TodoCardProps {
     todo: any;
@@ -12,7 +13,7 @@ interface TodoCardProps {
 }
 
 const SubTaskItem = ({ todo }: { todo: any }) => {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
     const { updateTodo } = useUnifiedTodoStore();
     return (
         <HStack ml="xl">
@@ -44,9 +45,9 @@ const SubTaskItem = ({ todo }: { todo: any }) => {
                                         style={[
                                             styles.subtaskCheckbox,
                                             {
-                                                borderColor: theme.colors.content3,
+                                                borderColor: colors.surfacePrimary,
                                                 backgroundColor: s.done
-                                                    ? theme.colors['secondary-400']
+                                                    ? colors.secondary
                                                     : 'transparent',
                                             },
                                         ]}
@@ -55,7 +56,7 @@ const SubTaskItem = ({ todo }: { todo: any }) => {
                                             <Ionicons
                                                 name="checkmark"
                                                 size={12}
-                                                color={theme.colors.background}
+                                                color={colors.backgroundPrimary}
                                             />
                                         )}
                                     </TouchableOpacity>
@@ -63,7 +64,7 @@ const SubTaskItem = ({ todo }: { todo: any }) => {
                                         style={[
                                             styles.subtaskText,
                                             {
-                                                color: theme.colors.foreground,
+                                                color: colors.contentPrimary,
                                                 textDecorationLine: s.done
                                                     ? 'line-through'
                                                     : 'none',
@@ -85,12 +86,12 @@ const SubTaskItem = ({ todo }: { todo: any }) => {
 };
 
 const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit }) => {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
     const { updateTodo } = useUnifiedTodoStore();
     const categoryColors: Record<string, string> = {
-        Work: theme.colors['success-400'],
-        Health: theme.colors['primary-400'],
-        Personal: theme.colors['warning-400'],
+        Work: 'green',
+        Health: 'red',
+        Personal: 'yellow',
     };
     console.log('todo', todo);
 
@@ -107,7 +108,7 @@ const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit }) => {
                 style={[
                     styles.rowContainer,
                     {
-                        borderBottomColor: theme.colors.content3,
+                        borderBottomColor: colors.surfacePrimary,
                     },
                 ]}
                 onPress={() => onToggle(todo.id)}
@@ -120,22 +121,21 @@ const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit }) => {
                             styles.checkbox,
                             {
                                 backgroundColor: Boolean(todo.isCompleted)
-                                    ? theme.colors.primary
-                                    : theme.colors.background,
-                                borderColor: theme.colors.content3,
+                                    ? colors.secondary
+                                    : colors.primary,
+                                borderColor: colors.surfacePrimary,
                             },
                         ]}
                     >
                         {Boolean(todo.isCompleted) && (
-                            <Ionicons name="checkmark" size={14} color={theme.colors.background} />
+                            <Ionicons name="checkmark" size={14} color={colors.backgroundPrimary} />
                         )}
                     </View>
 
                     <View style={styles.textContainer}>
                         <TypographyText
                             variant="body"
-                            color="default"
-                            style={styles.title}
+                            style={[styles.title, { color: colors.contentPrimary }]}
                             numberOfLines={2}
                         >
                             {todo.title || 'Untitled Todo'}
@@ -147,10 +147,10 @@ const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit }) => {
                                     style={[
                                         styles.badge,
                                         {
-                                            backgroundColor: theme.colors.content2,
+                                            backgroundColor: colors.backgroundPrimary,
                                             borderColor:
                                                 categoryColors[String(todo.category)] ||
-                                                theme.colors.content3,
+                                                colors.surfacePrimary,
                                             borderWidth: 1,
                                         },
                                     ]}
@@ -162,7 +162,7 @@ const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit }) => {
                                             {
                                                 color:
                                                     categoryColors[String(todo.category)] ||
-                                                    theme.colors.foreground,
+                                                    colors.contentPrimary,
                                             },
                                         ]}
                                     >

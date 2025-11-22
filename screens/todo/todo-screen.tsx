@@ -1,18 +1,20 @@
 import { useUnifiedTodoStore } from '@/hooks/useUnifiedTodoStore';
 import { groupTodosByDate } from '@/utils/dateUtils';
+import { useColorTheme } from '@/hooks/useColorTheme';
+import { Todo } from '@/services/local-database-service';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Box, SPACING, useTheme } from 'react-native-heroui';
+import { Box, SPACING } from 'react-native-heroui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import TodoSectionComponent from './components/todo-section';
 import EmptyState from './components/empty-state';
 import { Ionicons } from '@expo/vector-icons';
 
 const TodoScreen: React.FC = () => {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
     const { todos, toggleTodo, loadTodos } = useUnifiedTodoStore();
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [viewMode] = useState<'grid' | 'list'>('grid');
 
     // Load todos on component mount
     useEffect(() => {
@@ -20,9 +22,26 @@ const TodoScreen: React.FC = () => {
     }, [loadTodos]);
 
     // Group todos by date
-    const todoSections = useMemo(() => {
-        return groupTodosByDate(todos);
+    // Normalize todos to local Todo format for groupTodosByDate
+    const normalizedTodos = useMemo(() => {
+        return todos.map((todo) => {
+            // If it's a Supabase todo, convert it to local format
+            const supabaseTodo = todo as any;
+            if ('created_at' in supabaseTodo && !('createdAt' in supabaseTodo)) {
+                return {
+                    ...supabaseTodo,
+                    createdAt: supabaseTodo.created_at,
+                    priority: supabaseTodo.priority ?? 0,
+                    actualMinutes: supabaseTodo.actualMinutes ?? 0,
+                } as Todo;
+            }
+            return todo as Todo;
+        });
     }, [todos]);
+
+    const todoSections = useMemo(() => {
+        return groupTodosByDate(normalizedTodos);
+    }, [normalizedTodos]);
 
     const handleToggleTodo = useCallback(
         (id: string) => {
@@ -39,7 +58,7 @@ const TodoScreen: React.FC = () => {
     };
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundPrimary }]}>
             <ScrollView
                 contentContainerStyle={{
                     flexGrow: 1,
@@ -67,7 +86,7 @@ const TodoScreen: React.FC = () => {
                 </View>
                 <Box
                     style={{
-                        backgroundColor: theme.colors.foreground,
+                        backgroundColor: colors.contentPrimary,
                         position: 'absolute',
                         bottom: 45,
                         right: 20,
@@ -76,7 +95,7 @@ const TodoScreen: React.FC = () => {
                     p="md"
                 >
                     <TouchableOpacity onPress={onFabPress}>
-                        <Ionicons name="add" size={24} color={theme.colors.background} />
+                        <Ionicons name="add" size={24} color={colors.backgroundPrimary} />
                     </TouchableOpacity>
                 </Box>
             </ScrollView>

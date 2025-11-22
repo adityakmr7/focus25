@@ -1,15 +1,15 @@
 import TypographyText from '@/components/TypographyText';
+import { useColorTheme } from '@/hooks/useColorTheme';
 import { TodoSection } from '@/utils/dateUtils';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useTheme } from 'react-native-heroui';
 
 interface SectionHeaderProps {
     section: TodoSection;
 }
 
 const SectionHeader: React.FC<SectionHeaderProps> = ({ section }) => {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
 
     // Special styling for today's section to match mock
     const isTodaySection = section.title === 'For Today';
@@ -22,15 +22,13 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ section }) => {
             <View style={styles.todayHeader}>
                 <TypographyText
                     variant="title"
-                    color="default"
-                    style={[styles.todayText, { color: theme.colors.foreground }]}
+                    style={[styles.todayText, { color: colors.contentPrimary }]}
                 >
                     Today
                 </TypographyText>
                 <TypographyText
                     variant="title"
-                    color="secondary"
-                    style={[styles.todayDate, { color: theme.colors['default-900'] }]}
+                    style={[styles.todayDate, { color: colors.contentPrimary }]}
                 >
                     {formattedDate}
                 </TypographyText>
@@ -41,10 +39,16 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ section }) => {
     // Fallback for non-today sections
     return (
         <View style={styles.sectionHeader}>
-            <TypographyText variant="title" color="default" style={styles.sectionTitle}>
+            <TypographyText
+                variant="title"
+                style={[styles.sectionTitle, { color: colors.contentPrimary }]}
+            >
                 {section.title}
             </TypographyText>
-            <TypographyText variant="caption" color="secondary" style={styles.sectionCount}>
+            <TypographyText
+                variant="caption"
+                style={[styles.sectionCount, { color: colors.contentPrimary }]}
+            >
                 {section.todos.length} {section.todos.length === 1 ? 'todo' : 'todos'}
             </TypographyText>
         </View>

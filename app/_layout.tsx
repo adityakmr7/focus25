@@ -18,6 +18,8 @@ import { HeroUIProvider, ToastProvider, useTheme } from 'react-native-heroui';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
+import { SwitchThemeProvider } from '@/components/telegram-theme-switch/components/switch-theme';
+import { ThemeProvider } from '@/components/telegram-theme-switch/components/theme-provider';
 // Inner component that uses the theme hook
 function AppContent() {
     const { themeMode } = useTheme();
@@ -38,7 +40,7 @@ function AppContent() {
                 await networkService.initialize();
 
                 // Initialize RevenueCat service (iOS only)
-                await revenueCatService.initialize();
+                // await revenueCatService.initialize();
 
                 // Initialize splash screen service
                 await splashScreenService.initialize();
@@ -213,8 +215,12 @@ export default function RootLayout() {
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <HeroUIProvider key={resolvedTheme} initialTheme={resolvedTheme}>
-                <AppContent />
+            <HeroUIProvider>
+                <SwitchThemeProvider>
+                    <ThemeProvider>
+                        <AppContent />
+                    </ThemeProvider>
+                </SwitchThemeProvider>
             </HeroUIProvider>
         </GestureHandlerRootView>
     );

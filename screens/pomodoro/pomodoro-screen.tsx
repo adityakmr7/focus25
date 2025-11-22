@@ -5,20 +5,18 @@ import { useSettingsStore } from '@/stores/local-settings-store';
 import { useUnifiedTodoStore } from '@/hooks/useUnifiedTodoStore';
 import BottomSheet from '@gorhom/bottom-sheet';
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useTheme } from 'react-native-heroui';
+import { Animated, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PomodoroControls from './components/pomodoro-controls';
-import PomodoroHeader from './components/pomodoro-header';
 import PomodoroTimer from './components/pomodoro-timer';
 import SessionCounter from './components/session-counter';
-import TodoSelectionButton from './components/todo-selection-button';
-import TodoSelectionSheet from './components/todo-selection-sheet';
-
+import HugeIconView from '@/components/ui/huge-icon-view';
+import { RefreshIcon } from '@hugeicons/core-free-icons';
+import { Colors } from '@/constants/Colors';
+import { useColorTheme } from '@/hooks/useColorTheme';
 export default function PomodoroScreen() {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
 
     // Animation values
     const progressValue = useSharedValue(0);
@@ -27,7 +25,6 @@ export default function PomodoroScreen() {
     // Stores
     const {
         currentTodoId,
-        currentTodoTitle,
         selectTodo,
         timerStatus,
         timeLeft,
@@ -47,9 +44,6 @@ export default function PomodoroScreen() {
 
     // Handle app lifecycle events for background timer support
     useAppLifecycle();
-
-    // Bottom sheet ref
-    const bottomSheetRef = useRef<BottomSheet>(null);
 
     // Load todos on mount
     useEffect(() => {
@@ -105,45 +99,37 @@ export default function PomodoroScreen() {
         progressValue.value = withTiming(0, { duration: 500 });
     };
 
-    const handleOpenBottomSheet = () => {
-        bottomSheetRef.current?.expand();
-    };
-
-    const handleSelectTodo = (todoId: string | null, todoTitle: string | null) => {
-        selectTodo(todoId, todoTitle);
-    };
-
     return (
-        <GestureHandlerRootView style={styles.gestureContainer}>
-            <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-                <View style={styles.content}>
-                    <PomodoroHeader />
-                    {/* 
-                    <TodoSelectionButton
-                        selectedTodoTitle={currentTodoTitle}
-                        onPress={handleOpenBottomSheet}
-                    /> */}
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundPrimary }]}>
+            <View
+                style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    paddingHorizontal: 16,
+                    paddingTop: 16,
+                }}
+            >
+                <View />
+                <Animated.View>
+                    <TouchableOpacity onPress={handleReset}>
+                        <HugeIconView icon={RefreshIcon} size={24} color={Colors.light.secondary} />
+                    </TouchableOpacity>
+                </Animated.View>
+            </View>
+            <View style={styles.content}>
+                <PomodoroTimer timeLeft={timeLeft} progressValue={progressValue} />
 
-                    <PomodoroTimer timeLeft={timeLeft} progressValue={progressValue} />
+                <SessionCounter />
 
-                    <SessionCounter />
-
-                    <PomodoroControls
-                        onReset={handleReset}
-                        onPlayPause={handlePlayPause}
-                        onSkip={handleSkip}
-                        buttonScale={buttonScale}
-                        timerStatus={timerStatus}
-                    />
-                </View>
-
-                <TodoSelectionSheet
-                    ref={bottomSheetRef}
-                    onSelectTodo={handleSelectTodo}
-                    selectedTodoId={currentTodoId}
+                <PomodoroControls
+                    onReset={handleReset}
+                    onPlayPause={handlePlayPause}
+                    onSkip={handleSkip}
+                    buttonScale={buttonScale}
+                    timerStatus={timerStatus}
                 />
-            </SafeAreaView>
-        </GestureHandlerRootView>
+            </View>
+        </SafeAreaView>
     );
 }
 

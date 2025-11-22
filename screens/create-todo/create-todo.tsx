@@ -1,6 +1,8 @@
 import TypographyText from '@/components/TypographyText';
 import { useUnifiedTodoStore } from '@/hooks/useUnifiedTodoStore';
 import { useCategoryStore } from '@/stores/category-store';
+import { Subtask } from '@/services/local-database-service';
+import { useColorTheme } from '@/hooks/useColorTheme';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -14,11 +16,11 @@ import {
     Text,
     FlatList,
 } from 'react-native';
-import { Button, HStack, SPACING, VStack, useTheme } from 'react-native-heroui';
+import { Button, HStack, SPACING, VStack } from 'react-native-heroui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CreateTodoScreen = () => {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
     const { createTodo, updateTodo, todos } = useUnifiedTodoStore();
     const { categories } = useCategoryStore();
     const { todoId } = useLocalSearchParams<{ todoId?: string }>();
@@ -27,24 +29,43 @@ const CreateTodoScreen = () => {
     const isEditing = Boolean(todoId);
     const existingTodo = isEditing ? todos.find((todo) => todo.id === todoId) : null;
 
+    // Safely extract local properties with type assertion
+    const todoWithLocalProps = existingTodo as typeof existingTodo & {
+        category?: string;
+        reminderAt?: string | null;
+        subtasks?: Subtask[];
+    };
+
     const [title, setTitle] = useState(existingTodo?.title ?? '');
-    const [selectedCategory, setSelectedCategory] = useState<string>(existingTodo?.category ?? '');
+    const [selectedCategory, setSelectedCategory] = useState<string>(
+        todoWithLocalProps?.category ?? '',
+    );
     const [isLoading, setIsLoading] = useState(false);
-    const [reminderAt, setReminderAt] = useState<string | null>(existingTodo?.reminderAt ?? null);
+    const [reminderAt, setReminderAt] = useState<string | null>(
+        todoWithLocalProps?.reminderAt ?? null,
+    );
     const [showPicker, setShowPicker] = useState(false);
+    const existingSubtasks = (todoWithLocalProps?.subtasks ?? []) as Subtask[];
     const [enableSubtasks, setEnableSubtasks] = useState(
-        Array.isArray(existingTodo?.subtasks) ? existingTodo!.subtasks!.length > 0 : false,
+        Array.isArray(existingSubtasks) && existingSubtasks.length > 0,
     );
     const [newSubtask, setNewSubtask] = useState('');
-    const [subtasks, setSubtasks] = useState((existingTodo?.subtasks ?? []).map((s) => ({ ...s })));
+    const [subtasks, setSubtasks] = useState<Subtask[]>(
+        existingSubtasks.map((s: Subtask) => ({ ...s })),
+    );
 
     // Update form when editing existing todo
     useEffect(() => {
         if (existingTodo) {
             setTitle(existingTodo.title ?? '');
-            setSelectedCategory(existingTodo.category ?? '');
-            setReminderAt(existingTodo.reminderAt ?? null);
-            setSubtasks(existingTodo.subtasks ?? []);
+            const todo = existingTodo as typeof existingTodo & {
+                category?: string;
+                reminderAt?: string | null;
+                subtasks?: Subtask[];
+            };
+            setSelectedCategory(todo.category ?? '');
+            setReminderAt(todo.reminderAt ?? null);
+            setSubtasks(Array.isArray(todo.subtasks) ? todo.subtasks : []);
         }
     }, [existingTodo]);
 
@@ -61,7 +82,7 @@ const CreateTodoScreen = () => {
     const handleAddSubtask = () => {
         const trimmed = newSubtask.trim();
         if (!trimmed) return;
-        setSubtasks((prev) => [
+        setSubtasks((prev: Subtask[]) => [
             ...prev,
             { id: Math.random().toString(36).slice(2), title: trimmed, done: false },
         ]);
@@ -69,11 +90,13 @@ const CreateTodoScreen = () => {
     };
 
     const toggleSubtask = (id: string) => {
-        setSubtasks((prev) => prev.map((s) => (s.id === id ? { ...s, done: !s.done } : s)));
+        setSubtasks((prev: Subtask[]) =>
+            prev.map((s: Subtask) => (s.id === id ? { ...s, done: !s.done } : s)),
+        );
     };
 
     const deleteSubtask = (id: string) => {
-        setSubtasks((prev) => prev.filter((s) => s.id !== id));
+        setSubtasks((prev: Subtask[]) => prev.filter((s: Subtask) => s.id !== id));
     };
 
     const handleSaveTodo = async () => {
@@ -93,13 +116,16 @@ const CreateTodoScreen = () => {
                 // Create new todo
                 await createTodo({
                     title: title.trim(),
+                    description: undefined,
+                    icon: undefined,
                     isCompleted: false,
+                    completedAt: null,
                     category: selectedCategory || undefined,
                     priority: 0,
                     estimatedMinutes: undefined,
                     reminderAt: reminderAt || null,
                     subtasks: enableSubtasks ? subtasks : [],
-                });
+                } as any);
             }
 
             // Reset form and navigate back
@@ -125,7 +151,7 @@ const CreateTodoScreen = () => {
         <SafeAreaView
             style={{
                 flex: 1,
-                backgroundColor: theme.colors.background,
+                backgroundColor: colors.backgroundPrimary,
             }}
         >
             <KeyboardAvoidingView
@@ -141,7 +167,7 @@ const CreateTodoScreen = () => {
                     >
                         <View />
                         <TouchableOpacity onPress={handleCancel}>
-                            <Ionicons name="close" size={24} color={theme.colors.foreground} />
+                            <Ionicons name="close" size={24} color={colors.contentPrimary} />
                         </TouchableOpacity>
                     </HStack>
 
@@ -151,11 +177,11 @@ const CreateTodoScreen = () => {
                             value={title}
                             onChangeText={setTitle}
                             placeholder="Write a new task..."
-                            placeholderTextColor={theme.colors.content3}
+                            placeholderTextColor={colors.contentSecondary}
                             style={{
                                 fontSize: 32,
                                 fontWeight: '700',
-                                color: theme.colors.foreground,
+                                color: colors.contentPrimary,
                             }}
                             autoFocus={true}
                             multiline
@@ -175,11 +201,11 @@ const CreateTodoScreen = () => {
                                     height: 24,
                                     borderRadius: 6,
                                     borderWidth: 1.5,
-                                    borderColor: theme.colors.content3,
+                                    borderColor: colors.contentSecondary,
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     backgroundColor: enableSubtasks
-                                        ? theme.colors['secondary-400']
+                                        ? colors.secondary
                                         : 'transparent',
                                 }}
                             >
@@ -187,11 +213,11 @@ const CreateTodoScreen = () => {
                                     <Ionicons
                                         name="checkmark"
                                         size={16}
-                                        color={theme.colors.background}
+                                        color={colors.backgroundPrimary}
                                     />
                                 )}
                             </TouchableOpacity>
-                            <TypographyText variant="body" color="default">
+                            <TypographyText variant="body" style={{ color: colors.contentPrimary }}>
                                 Add subtask
                             </TypographyText>
                         </HStack>
@@ -203,11 +229,11 @@ const CreateTodoScreen = () => {
                                             value={newSubtask}
                                             onChangeText={setNewSubtask}
                                             placeholder="New subtask"
-                                            placeholderTextColor={theme.colors.content3}
+                                            placeholderTextColor={colors.contentSecondary}
                                             style={{
                                                 paddingHorizontal: 12,
                                                 paddingVertical: 10,
-                                                color: theme.colors.foreground,
+                                                color: colors.contentPrimary,
                                             }}
                                             onSubmitEditing={handleAddSubtask}
                                             returnKeyType="done"
@@ -217,7 +243,7 @@ const CreateTodoScreen = () => {
                                         <Ionicons
                                             name="add-circle"
                                             size={28}
-                                            color={theme.colors['secondary-400']}
+                                            color={colors.secondary}
                                         />
                                     </TouchableOpacity>
                                 </HStack>
@@ -245,12 +271,12 @@ const CreateTodoScreen = () => {
                                                                 : 'square-outline'
                                                         }
                                                         size={22}
-                                                        color={theme.colors.foreground}
+                                                        color={colors.contentPrimary}
                                                     />
                                                 </TouchableOpacity>
                                                 <Text
                                                     style={{
-                                                        color: theme.colors.foreground,
+                                                        color: colors.contentPrimary,
                                                         textDecorationLine: item.done
                                                             ? 'line-through'
                                                             : 'none',
@@ -265,7 +291,7 @@ const CreateTodoScreen = () => {
                                                 <Ionicons
                                                     name="trash-outline"
                                                     size={20}
-                                                    color={theme.colors.content3}
+                                                    color={colors.contentSecondary}
                                                 />
                                             </TouchableOpacity>
                                         </HStack>
@@ -290,18 +316,18 @@ const CreateTodoScreen = () => {
                                                 paddingVertical: 8,
                                                 backgroundColor: isActive
                                                     ? color
-                                                    : theme.colors.content2,
+                                                    : colors.surfacePrimary,
                                                 borderWidth: 1,
                                                 borderColor: isActive
                                                     ? color
-                                                    : theme.colors.content3,
+                                                    : colors.contentSecondary,
                                             }}
                                         >
                                             <Text
                                                 style={{
                                                     color: isActive
-                                                        ? theme.colors.background
-                                                        : theme.colors.foreground,
+                                                        ? colors.backgroundPrimary
+                                                        : colors.contentPrimary,
                                                     fontWeight: '700',
                                                     fontSize: 12,
                                                 }}
@@ -324,18 +350,14 @@ const CreateTodoScreen = () => {
                                 width: 56,
                                 height: 56,
                                 borderRadius: 28,
-                                backgroundColor: theme.colors.content2,
+                                backgroundColor: colors.surfacePrimary,
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 borderWidth: 1,
-                                borderColor: theme.colors.content3,
+                                borderColor: colors.contentSecondary,
                             }}
                         >
-                            <Ionicons
-                                name="time-outline"
-                                size={22}
-                                color={theme.colors.foreground}
-                            />
+                            <Ionicons name="time-outline" size={22} color={colors.contentPrimary} />
                         </TouchableOpacity>
                         <View style={{ flex: 1 }}>
                             <Button
@@ -343,14 +365,14 @@ const CreateTodoScreen = () => {
                                 disabled={!title.trim() || isLoading}
                                 style={{
                                     borderRadius: 24,
-                                    backgroundColor: theme.colors['default-900'],
+                                    backgroundColor: colors.contentPrimary,
                                     paddingVertical: SPACING['unit-3'],
                                 }}
                             >
                                 <TypographyText
                                     variant="body"
                                     style={{
-                                        color: theme.colors.background,
+                                        color: colors.backgroundPrimary,
                                         fontWeight: '700',
                                         fontSize: 16,
                                         lineHeight: 22,

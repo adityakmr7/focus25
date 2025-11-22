@@ -3,24 +3,29 @@
  * They are used to maintain consistency and make it easy to update colors
  */
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
 export const Colors = {
     light: {
-        text: '#11181C',
-        background: '#fff',
-        tint: tintColorLight,
-        icon: '#687076',
-        tabIconDefault: '#687076',
-        tabIconSelected: tintColorLight,
+        primary: '#DCEBE8',
+        secondary: '#2B9180',
+        //background
+        backgroundPrimary: '#FFFFFF',
+        backgroundSecondary: '#F8F8F8',
+        //content
+        contentPrimary: '#000000',
+        contentSecondary: '#6A6A6A',
+        // surface
+        surfacePrimary: '#E4E4E4',
     },
     dark: {
-        text: '#ECEDEE',
-        background: '#151718',
-        tint: tintColorDark,
-        icon: '#9BA1A6',
-        tabIconDefault: '#9BA1A6',
-        tabIconSelected: tintColorDark,
+        primary: '#03110F',
+        secondary: '#CDCFCF',
+        //background
+        backgroundPrimary: '#000000',
+        backgroundSecondary: '#111111',
+        //content
+        contentPrimary: '#FFFFFF',
+        contentSecondary: '#6A6A6A',
+        // surface
+        surfacePrimary: '#222222',
     },
 };

@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { TimerStatus } from '@/stores/pomodoro-store';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import React from 'react';
@@ -43,21 +44,7 @@ export default function PomodoroControls({
                     style={[
                         styles.controlButton,
                         {
-                            backgroundColor: theme.colors.foreground,
-                        },
-                    ]}
-                    onPress={onReset}
-                >
-                    <Icon name="refresh" size={24} color={theme.colors.background} />
-                </TouchableOpacity>
-            </Animated.View>
-
-            <Animated.View style={buttonAnimatedStyle}>
-                <TouchableOpacity
-                    style={[
-                        styles.controlButton,
-                        {
-                            backgroundColor: theme.colors.foreground,
+                            backgroundColor: Colors.light.secondary,
                         },
                     ]}
                     onPress={onPlayPause}
@@ -65,20 +52,6 @@ export default function PomodoroControls({
                     <View style={styles.iconContainer}>
                         <Icon name={getPlayPauseIcon()} size={24} color={theme.colors.background} />
                     </View>
-                </TouchableOpacity>
-            </Animated.View>
-
-            <Animated.View style={buttonAnimatedStyle}>
-                <TouchableOpacity
-                    style={[
-                        styles.controlButton,
-                        {
-                            backgroundColor: theme.colors.foreground,
-                        },
-                    ]}
-                    onPress={onSkip}
-                >
-                    <Icon name="play-skip-forward" size={24} color={theme.colors.background} />
                 </TouchableOpacity>
             </Animated.View>
         </View>

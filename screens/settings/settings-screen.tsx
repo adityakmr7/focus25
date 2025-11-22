@@ -7,251 +7,39 @@ import { notificationService } from '@/services/notification-service';
 import { SUBSCRIPTION_CONSTANTS } from '@/constants/subscription';
 import { showError, showSuccess } from '@/utils/error-toast';
 import React, { useEffect, useState } from 'react';
-import { Linking, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
-import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
-    Card,
-    CardBody,
-    HStack,
-    SPACING,
-    VStack,
-    useTheme,
-    Switch,
-    Button,
-} from 'react-native-heroui';
+    Text,
+    StyleSheet,
+    Linking,
+    Platform,
+    ScrollView,
+    TouchableOpacity,
+    View,
+    Touchable,
+} from 'react-native';
+import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import { HStack, SPACING, VStack, Switch } from 'react-native-heroui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { Host, ContextMenu, Slider, Button as SwiftButton, Picker } from '@expo/ui/swift-ui';
 import Avatar from '@/components/ui/avatar';
-import { LazyRequireImages } from '@/assets/images/lazy-require-image';
-import { Image } from 'expo-image';
 import { APP_CONFIG } from '@/configs/app-config';
+import { SwitchThemeButton } from '@/components/telegram-theme-switch/components/switch-theme';
+import { useColorTheme } from '@/hooks/useColorTheme';
 const Header = () => {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
     return (
-        <HStack alignItems="center" justifyContent="space-between" px="md" py="sm">
-            <TypographyText variant="title" color="default">
-                Settings
-            </TypographyText>
-            <TouchableOpacity
-                style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: theme.borderRadius.lg,
-                    backgroundColor: theme.colors.background,
-                    alignItems: 'center',
-                    justifyContent: 'center',
+        <HStack alignItems="center" pt="unit-6" justifyContent="space-between" px="md" py="sm">
+            <Text style={[styles.title, { color: colors.contentPrimary }]}>Settings</Text>
+            <SwitchThemeButton
+                contentContainerStyle={{
+                    backgroundColor: 'red',
+                    height: 40,
+                    borderRadius: 20,
+                    width: 40,
                 }}
-                disabled
-            >
-                {/* Dots placeholder */}
-                <HStack gap="unit-1">
-                    <View
-                        style={{
-                            width: 4,
-                            height: 4,
-                            borderRadius: theme.borderRadius.sm,
-                            backgroundColor: theme.colors.foreground,
-                        }}
-                    />
-                    <View
-                        style={{
-                            width: 4,
-                            height: 4,
-                            borderRadius: theme.borderRadius.sm,
-                            backgroundColor: theme.colors.foreground,
-                        }}
-                    />
-                    <View
-                        style={{
-                            width: 4,
-                            height: 4,
-                            borderRadius: theme.borderRadius.sm,
-                            backgroundColor: theme.colors.foreground,
-                        }}
-                    />
-                </HStack>
-            </TouchableOpacity>
+            />
         </HStack>
-    );
-};
-
-const SubscriptionCard = ({ handleSeePlanPress }: { handleSeePlanPress: () => void }) => {
-    const { theme } = useTheme();
-
-    return (
-        <Card variant="bordered" style={{ borderRadius: 20 }}>
-            <CardBody>
-                <HStack alignItems="center" justifyContent="space-between" gap="unit-4">
-                    <HStack alignItems="center" gap="unit-3">
-                        <View
-                            style={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: theme.borderRadius.lg,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <Image
-                                source={LazyRequireImages.starImage()}
-                                style={{ width: 40, height: 40 }}
-                            />
-                        </View>
-                        <VStack>
-                            <TypographyText variant="body" weight="semibold">
-                                Upgrade to Premium
-                            </TypographyText>
-                            <TypographyText variant="caption">
-                                Unlock advance feature
-                            </TypographyText>
-                        </VStack>
-                    </HStack>
-                    <TouchableOpacity
-                        onPress={handleSeePlanPress}
-                        style={{
-                            paddingHorizontal: 16,
-                            paddingVertical: 10,
-                            backgroundColor: theme.colors.foreground,
-                            borderRadius: theme.borderRadius.lg,
-                        }}
-                    >
-                        <TypographyText
-                            variant="body"
-                            size="sm"
-                            style={{ color: theme.colors.content1 }}
-                        >
-                            See Plan
-                        </TypographyText>
-                    </TouchableOpacity>
-                </HStack>
-            </CardBody>
-        </Card>
-    );
-};
-
-const SubscriptionStatusCard = ({
-    subscriptionDetails,
-    onManagePress,
-    onRestorePress,
-    isRestoring,
-}: {
-    subscriptionDetails: {
-        isActive: boolean;
-        expiryDate: Date | null;
-        willRenew: boolean;
-        productIdentifier: string | null;
-    };
-    onManagePress: () => void;
-    onRestorePress: () => void;
-    isRestoring: boolean;
-}) => {
-    const { theme } = useTheme();
-
-    const formatDate = (date: Date | null): string => {
-        if (!date) return 'N/A';
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-        });
-    };
-
-    return (
-        <Card variant="bordered" style={{ borderRadius: 20 }}>
-            <CardBody>
-                <VStack gap="unit-4">
-                    <HStack alignItems="center" justifyContent="space-between" gap="unit-4">
-                        <HStack alignItems="center" gap="unit-3">
-                            <View
-                                style={{
-                                    width: 40,
-                                    height: 40,
-                                    borderRadius: theme.borderRadius.lg,
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <Image
-                                    source={LazyRequireImages.starImage()}
-                                    style={{ width: 40, height: 40 }}
-                                />
-                            </View>
-                            <VStack>
-                                <TypographyText variant="body" weight="semibold">
-                                    Flowzy Premium
-                                </TypographyText>
-                                <TypographyText variant="caption">
-                                    {subscriptionDetails.isActive
-                                        ? 'Active Subscription'
-                                        : 'Expired'}
-                                </TypographyText>
-                            </VStack>
-                        </HStack>
-                        <View
-                            style={{
-                                paddingHorizontal: 12,
-                                paddingVertical: 6,
-                                borderRadius: 12,
-                                backgroundColor: subscriptionDetails.isActive
-                                    ? theme.colors.success
-                                    : theme.colors.danger,
-                            }}
-                        >
-                            <TypographyText
-                                variant="caption"
-                                style={{
-                                    color: '#fff',
-                                    fontWeight: '600',
-                                }}
-                            >
-                                {subscriptionDetails.isActive ? 'Active' : 'Expired'}
-                            </TypographyText>
-                        </View>
-                    </HStack>
-
-                    {subscriptionDetails.expiryDate && (
-                        <VStack gap="unit-1">
-                            <TypographyText variant="caption" style={{ opacity: 0.7 }}>
-                                {subscriptionDetails.willRenew ? 'Renews on' : 'Expired on'}
-                            </TypographyText>
-                            <TypographyText variant="body" weight="semibold">
-                                {formatDate(subscriptionDetails.expiryDate)}
-                            </TypographyText>
-                        </VStack>
-                    )}
-
-                    <HStack gap="unit-2" mt="xs">
-                        {Platform.OS !== 'web' && (
-                            <>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onPress={onManagePress}
-                                    style={{ flex: 1 }}
-                                >
-                                    <TypographyText variant="body" size="sm">
-                                        Manage
-                                    </TypographyText>
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onPress={onRestorePress}
-                                    isLoading={isRestoring}
-                                    isDisabled={isRestoring}
-                                    style={{ flex: 1 }}
-                                >
-                                    <TypographyText variant="body" size="sm">
-                                        Restore
-                                    </TypographyText>
-                                </Button>
-                            </>
-                        )}
-                    </HStack>
-                </VStack>
-            </CardBody>
-        </Card>
     );
 };
 
@@ -267,7 +55,7 @@ const ABOUT_OPTIONS = [
     },
 ];
 const SettingsScreen = () => {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
     const {
         focusDuration,
         breakDuration,
@@ -508,8 +296,65 @@ const SettingsScreen = () => {
             Linking.openURL(APP_CONFIG.FEEDBACK_FORM_URL);
         }
     };
+
+    const ProPlanCard = () => {
+        return (
+            <View
+                style={{
+                    backgroundColor: colors.primary,
+                    padding: 16,
+                    borderRadius: 16,
+                }}
+            >
+                <LinearGradient
+                    // Background Linear Gradient
+                    colors={['#00866E', '#00E2BA']}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        borderRadius: 16,
+                    }}
+                />
+                <Text
+                    style={{
+                        paddingVertical: 16,
+                        fontSize: 18,
+                        fontWeight: '600',
+                        color: colors.backgroundPrimary,
+                    }}
+                >
+                    Power up with flowzy premium
+                </Text>
+                <TouchableOpacity>
+                    <View
+                        style={{
+                            borderRadius: 18,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            backgroundColor: '#3D9888',
+                            paddingVertical: 8,
+                            paddingHorizontal: 16,
+                            marginTop: 24,
+                        }}
+                    >
+                        <Text
+                            style={{
+                                color: colors.backgroundPrimary,
+                                fontSize: 16,
+                            }}
+                        >
+                            Upgrade to Premium
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
+        );
+    };
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.backgroundPrimary }}>
             <Header />
             <ScrollView
                 contentContainerStyle={{
@@ -518,6 +363,7 @@ const SettingsScreen = () => {
                 }}
                 style={{ flex: 1 }}
             >
+                <ProPlanCard />
                 {(userName || userEmail) && (
                     <VStack alignItems="center" gap="unit-2" py="md">
                         <View
@@ -526,324 +372,247 @@ const SettingsScreen = () => {
                                 height: 86,
                                 borderRadius: 43,
                                 overflow: 'hidden',
-                                backgroundColor: theme.colors.background,
+                                backgroundColor: colors.backgroundPrimary,
                                 alignItems: 'center',
                                 justifyContent: 'center',
                             }}
                         >
                             <Avatar
+                                backgroundColor={colors.backgroundSecondary}
+                                textColor={colors.contentSecondary}
                                 size={86}
                                 label={userName || (userEmail ? userEmail.split('@')[0] : 'User')}
                             />
                         </View>
-                        <TypographyText variant="title" color="default">
+                        <TypographyText variant="title" style={{ color: colors.contentPrimary }}>
                             {userName || (userEmail ? userEmail.split('@')[0] : 'User')}
                         </TypographyText>
                         {userEmail && (
-                            <TypographyText variant="body" color="default" size="sm">
+                            <TypographyText
+                                variant="body"
+                                style={{ color: colors.contentSecondary }}
+                                size="sm"
+                            >
                                 {userEmail}
                             </TypographyText>
                         )}
                     </VStack>
                 )}
 
-                {/* Conditionally render subscription card based on pro status */}
-                {isProUser && subscriptionDetails ? (
-                    <SubscriptionStatusCard
-                        subscriptionDetails={subscriptionDetails}
-                        onManagePress={handleManageSubscription}
-                        onRestorePress={handleRestorePurchases}
-                        isRestoring={isRestoring}
-                    />
-                ) : (
-                    <SubscriptionCard handleSeePlanPress={handleSeePlanPress} />
-                )}
-
                 {/* Sessions */}
                 <VStack gap="unit-3" mt="lg">
-                    <TypographyText variant="title" color="default">
+                    <TypographyText
+                        style={{ color: colors.contentPrimary }}
+                        variant="title"
+                        color="default"
+                    >
                         Sessions
                     </TypographyText>
-                    <Card variant="bordered" style={{ borderRadius: 16 }}>
-                        <CardBody>
-                            <VStack gap="unit-2">
-                                {/* Flow Duration - dropdown */}
-                                <HStack alignItems="center" justifyContent="space-between" py="xs">
-                                    <TypographyText variant="body">Flow Duration</TypographyText>
-                                    <Host style={{ width: 80, height: 36 }}>
-                                        <ContextMenu>
-                                            <ContextMenu.Items>
-                                                <Picker
-                                                    label="Flow Duration"
-                                                    options={DURATION_OPTIONS.map(
-                                                        (m) => `${m} min`,
-                                                    )}
-                                                    variant="inline"
-                                                    selectedIndex={focusIndex}
-                                                    onOptionSelected={({
-                                                        nativeEvent: { index },
-                                                    }) => {
-                                                        setFocusIndex(index);
-                                                        setFocusDuration(DURATION_OPTIONS[index]);
-                                                    }}
-                                                />
-                                            </ContextMenu.Items>
-                                            <ContextMenu.Trigger>
-                                                <SwiftButton variant="bordered">
-                                                    {`${DURATION_OPTIONS[focusIndex]} min`}
-                                                </SwiftButton>
-                                            </ContextMenu.Trigger>
-                                        </ContextMenu>
-                                    </Host>
-                                </HStack>
-
-                                {/* Break Duration - dropdown */}
-                                <HStack alignItems="center" justifyContent="space-between" py="xs">
-                                    <TypographyText variant="body">Break Duration</TypographyText>
-                                    <Host style={{ width: 80, height: 36 }}>
-                                        <ContextMenu activationMethod="singlePress">
-                                            <ContextMenu.Items>
-                                                <Picker
-                                                    label="Break Duration"
-                                                    options={DURATION_OPTIONS.map(
-                                                        (m) => `${m} min`,
-                                                    )}
-                                                    variant="inline"
-                                                    selectedIndex={breakIndex}
-                                                    onOptionSelected={({
-                                                        nativeEvent: { index },
-                                                    }) => {
-                                                        setBreakIndex(index);
-                                                        setBreakDuration(DURATION_OPTIONS[index]);
-                                                    }}
-                                                />
-                                            </ContextMenu.Items>
-                                            <ContextMenu.Trigger>
-                                                <SwiftButton variant="bordered">
-                                                    {`${DURATION_OPTIONS[breakIndex]} min`}
-                                                </SwiftButton>
-                                            </ContextMenu.Trigger>
-                                        </ContextMenu>
-                                    </Host>
-                                </HStack>
-                            </VStack>
-                        </CardBody>
-                    </Card>
+                    <View
+                        style={{
+                            backgroundColor: colors.backgroundSecondary,
+                            paddingHorizontal: 16,
+                            paddingVertical: 16,
+                            borderRadius: 16,
+                        }}
+                    >
+                        <VStack gap="unit-2">
+                            {/* Flow Duration - dropdown */}
+                            <HStack alignItems="center" justifyContent="space-between" py="xs">
+                                <TypographyText
+                                    style={{ color: colors.contentPrimary }}
+                                    variant="body"
+                                >
+                                    Flow Duration
+                                </TypographyText>
+                                <Host style={{ width: 80, height: 36 }}>
+                                    <ContextMenu>
+                                        <ContextMenu.Items>
+                                            <Picker
+                                                color={colors.contentPrimary}
+                                                label="Flow Duration"
+                                                options={DURATION_OPTIONS.map((m) => `${m} min`)}
+                                                variant="inline"
+                                                selectedIndex={focusIndex}
+                                                onOptionSelected={({ nativeEvent: { index } }) => {
+                                                    setFocusIndex(index);
+                                                    setFocusDuration(DURATION_OPTIONS[index]);
+                                                }}
+                                            />
+                                        </ContextMenu.Items>
+                                        <ContextMenu.Trigger>
+                                            <SwiftButton
+                                                color={colors.secondary}
+                                                variant="bordered"
+                                            >
+                                                {`${DURATION_OPTIONS[focusIndex]} min`}
+                                            </SwiftButton>
+                                        </ContextMenu.Trigger>
+                                    </ContextMenu>
+                                </Host>
+                            </HStack>
+                            <View
+                                style={{
+                                    height: 1,
+                                    backgroundColor: colors.surfacePrimary,
+                                }}
+                            />
+                            {/* Break Duration - dropdown */}
+                            <HStack alignItems="center" justifyContent="space-between" py="xs">
+                                <TypographyText
+                                    variant="body"
+                                    style={{ color: colors.contentPrimary }}
+                                >
+                                    Break Duration
+                                </TypographyText>
+                                <Host style={{ width: 80, height: 36 }}>
+                                    <ContextMenu activationMethod="singlePress">
+                                        <ContextMenu.Items>
+                                            <Picker
+                                                color={colors.contentPrimary}
+                                                label="Break Duration"
+                                                options={DURATION_OPTIONS.map((m) => `${m} min`)}
+                                                variant="inline"
+                                                selectedIndex={breakIndex}
+                                                onOptionSelected={({ nativeEvent: { index } }) => {
+                                                    setBreakIndex(index);
+                                                    setBreakDuration(DURATION_OPTIONS[index]);
+                                                }}
+                                            />
+                                        </ContextMenu.Items>
+                                        <ContextMenu.Trigger>
+                                            <SwiftButton
+                                                color={colors.secondary}
+                                                variant="bordered"
+                                            >
+                                                {`${DURATION_OPTIONS[breakIndex]} min`}
+                                            </SwiftButton>
+                                        </ContextMenu.Trigger>
+                                    </ContextMenu>
+                                </Host>
+                            </HStack>
+                        </VStack>
+                    </View>
                 </VStack>
 
                 {/* General */}
                 <VStack gap="unit-3" mt="lg">
-                    <TypographyText variant="title" color="default">
+                    <TypographyText variant="title" style={{ color: colors.contentPrimary }}>
                         General
                     </TypographyText>
-                    <Card variant="bordered" style={{ borderRadius: 16 }}>
-                        <CardBody>
-                            <VStack gap="unit-2">
-                                <HStack alignItems="center" justifyContent="space-between" py="xs">
-                                    <TypographyText variant="body">Notifications</TypographyText>
-                                    <Switch
-                                        size="md"
-                                        value={notifications}
-                                        onChange={handleNotificationsChange}
-                                    />
-                                </HStack>
-                                <HStack alignItems="center" justifyContent="space-between" py="xs">
-                                    <TypographyText variant="body">Metronome</TypographyText>
-                                    <Switch
-                                        size="md"
-                                        value={metronome}
-                                        onChange={handleMetronomeChange}
-                                    />
-                                </HStack>
-                                <Host style={{ minHeight: 60 }}>
-                                    <Slider
-                                        value={metronomeVolume}
-                                        onValueChange={handleMetronomeVolumeChange}
-                                    />
-                                </Host>
-                                <HStack alignItems="center" justifyContent="space-between" py="xs">
-                                    <TypographyText variant="body">Appearance</TypographyText>
-                                    <Host style={{ width: 90, height: 36 }}>
-                                        <ContextMenu>
-                                            <ContextMenu.Items>
-                                                {(
-                                                    [
-                                                        {
-                                                            label: 'System',
-                                                            value: 'system' as const,
-                                                        },
-                                                        { label: 'Dark', value: 'dark' as const },
-                                                        { label: 'Light', value: 'light' as const },
-                                                    ] as const
-                                                ).map((opt) => (
-                                                    <SwiftButton
-                                                        key={opt.value}
-                                                        onPress={() => setThemeMode(opt.value)}
-                                                    >
-                                                        {opt.label}
-                                                    </SwiftButton>
-                                                ))}
-                                            </ContextMenu.Items>
-                                            <ContextMenu.Trigger>
-                                                <SwiftButton variant="bordered">
-                                                    {themeMode === 'system'
-                                                        ? 'System'
-                                                        : themeMode === 'dark'
-                                                          ? 'Dark'
-                                                          : 'Light'}
-                                                </SwiftButton>
-                                            </ContextMenu.Trigger>
-                                        </ContextMenu>
-                                    </Host>
-                                </HStack>
-                            </VStack>
-                        </CardBody>
-                    </Card>
+                    <View
+                        style={{
+                            backgroundColor: colors.backgroundSecondary,
+                            paddingHorizontal: 16,
+                            paddingVertical: 16,
+                            borderRadius: 16,
+                        }}
+                    >
+                        <VStack gap="unit-2">
+                            <HStack alignItems="center" justifyContent="space-between" py="xs">
+                                <TypographyText
+                                    variant="body"
+                                    style={{ color: colors.contentPrimary }}
+                                >
+                                    Notifications
+                                </TypographyText>
+                                <Switch
+                                    size="md"
+                                    value={notifications}
+                                    onChange={handleNotificationsChange}
+                                />
+                            </HStack>
+                            <View
+                                style={{
+                                    height: 1,
+                                    backgroundColor: colors.surfacePrimary,
+                                }}
+                            />
+                            <HStack alignItems="center" justifyContent="space-between" py="xs">
+                                <TypographyText
+                                    variant="body"
+                                    style={{ color: colors.contentPrimary }}
+                                >
+                                    Metronome
+                                </TypographyText>
+                                <Switch
+                                    size="md"
+                                    value={metronome}
+                                    onChange={handleMetronomeChange}
+                                />
+                            </HStack>
+
+                            <Host style={{ minHeight: 60 }}>
+                                <Slider
+                                    color={colors.secondary}
+                                    value={metronomeVolume}
+                                    onValueChange={handleMetronomeVolumeChange}
+                                />
+                            </Host>
+                            <View
+                                style={{
+                                    height: 1,
+                                    backgroundColor: colors.surfacePrimary,
+                                }}
+                            />
+                        </VStack>
+                    </View>
                 </VStack>
-
-                {/* Cloud Sync - Only for Pro Users */}
-                {isProUser && syncStatus !== null && (
-                    <VStack gap="unit-3" mt="lg">
-                        <TypographyText variant="title" color="default">
-                            Cloud Sync
-                        </TypographyText>
-                        <Card variant="bordered" style={{ borderRadius: 16 }}>
-                            <CardBody>
-                                <VStack gap="unit-3">
-                                    <HStack
-                                        alignItems="center"
-                                        justifyContent="space-between"
-                                        py="xs"
-                                    >
-                                        <VStack gap="unit-1">
-                                            <TypographyText variant="body" weight="semibold">
-                                                Sync Status
-                                            </TypographyText>
-                                            <TypographyText
-                                                variant="caption"
-                                                style={{ opacity: 0.7 }}
-                                            >
-                                                {syncStatus.enabled ? 'Enabled' : 'Disabled'}
-                                            </TypographyText>
-                                        </VStack>
-                                        <View
-                                            style={{
-                                                paddingHorizontal: 12,
-                                                paddingVertical: 6,
-                                                borderRadius: 12,
-                                                backgroundColor: syncStatus.enabled
-                                                    ? theme.colors.success
-                                                    : theme.colors.default,
-                                            }}
-                                        >
-                                            <TypographyText
-                                                variant="caption"
-                                                style={{
-                                                    color: '#fff',
-                                                    fontWeight: '600',
-                                                }}
-                                            >
-                                                {syncStatus.enabled ? 'Active' : 'Inactive'}
-                                            </TypographyText>
-                                        </View>
-                                    </HStack>
-
-                                    {syncStatus.lastSyncAt && (
-                                        <HStack
-                                            alignItems="center"
-                                            justifyContent="space-between"
-                                            py="xs"
-                                        >
-                                            <TypographyText variant="body">
-                                                Last Sync
-                                            </TypographyText>
-                                            <TypographyText variant="body" style={{ opacity: 0.7 }}>
-                                                {formatSyncTime(syncStatus.lastSyncAt)}
-                                            </TypographyText>
-                                        </HStack>
-                                    )}
-
-                                    {syncStatus.unsyncedChanges > 0 && (
-                                        <HStack
-                                            alignItems="center"
-                                            justifyContent="space-between"
-                                            py="xs"
-                                        >
-                                            <TypographyText variant="body">
-                                                Unsynced Changes
-                                            </TypographyText>
-                                            <View
-                                                style={{
-                                                    paddingHorizontal: 8,
-                                                    paddingVertical: 4,
-                                                    borderRadius: 8,
-                                                    backgroundColor: theme.colors.warning,
-                                                }}
-                                            >
-                                                <TypographyText
-                                                    variant="caption"
-                                                    style={{
-                                                        color: '#fff',
-                                                        fontWeight: '600',
-                                                    }}
-                                                >
-                                                    {syncStatus.unsyncedChanges}
-                                                </TypographyText>
-                                            </View>
-                                        </HStack>
-                                    )}
-
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onPress={handleManualSync}
-                                        isLoading={isSyncing}
-                                        isDisabled={isSyncing || !syncStatus.enabled}
-                                        style={{ marginTop: SPACING['unit-2'] }}
-                                    >
-                                        <TypographyText variant="body" size="sm">
-                                            {isSyncing ? 'Syncing...' : 'Sync Now'}
-                                        </TypographyText>
-                                    </Button>
-                                </VStack>
-                            </CardBody>
-                        </Card>
-                    </VStack>
-                )}
 
                 {/* About */}
                 <VStack gap="unit-3" mt="lg">
-                    <TypographyText variant="title" color="default">
+                    <TypographyText variant="title" style={{ color: colors.contentPrimary }}>
                         About
                     </TypographyText>
-                    {ABOUT_OPTIONS.map(({ label, id }, index) => (
-                        <Card
-                            onPress={() => handleAboutCardPress(id)}
-                            key={label}
-                            variant="bordered"
-                            style={{ borderRadius: 16 }}
-                        >
-                            <CardBody>
-                                <HStack alignItems="center" justifyContent="space-between">
-                                    <TypographyText variant="body">{label}</TypographyText>
-                                    <View
-                                        style={{
-                                            width: 8,
-                                            height: 8,
-                                            borderRightWidth: 2,
-                                            borderTopWidth: 2,
-                                            borderColor: theme.colors.foreground,
-                                            transform: [{ rotate: '45deg' }],
-                                        }}
-                                    />
-                                </HStack>
-                            </CardBody>
-                        </Card>
-                    ))}
+                    <View
+                        style={{
+                            backgroundColor: colors.backgroundSecondary,
+                            paddingHorizontal: 16,
+                            paddingVertical: 16,
+                            borderRadius: 16,
+                        }}
+                    >
+                        {ABOUT_OPTIONS.map(({ label, id }, index) => (
+                            <React.Fragment key={index}>
+                                <VStack py="md">
+                                    <HStack alignItems="center" justifyContent="space-between">
+                                        <TypographyText
+                                            variant="body"
+                                            style={{ color: colors.contentPrimary }}
+                                        >
+                                            {label}
+                                        </TypographyText>
+                                        <View
+                                            style={{
+                                                width: 8,
+                                                height: 8,
+                                                borderRightWidth: 2,
+                                                borderTopWidth: 2,
+                                                borderColor: colors.surfacePrimary,
+                                                transform: [{ rotate: '45deg' }],
+                                            }}
+                                        />
+                                    </HStack>
+                                </VStack>
+                                <View
+                                    style={{
+                                        height: 1,
+                                        backgroundColor: colors.surfacePrimary,
+                                    }}
+                                />
+                            </React.Fragment>
+                        ))}
+                    </View>
                 </VStack>
             </ScrollView>
         </SafeAreaView>
     );
 };
 
+const styles = StyleSheet.create({
+    title: {
+        fontSize: 42,
+        fontWeight: '600',
+    },
+});
 export default SettingsScreen;
