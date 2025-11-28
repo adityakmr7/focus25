@@ -92,7 +92,6 @@ const SwitchThemeButton: React.FC<SwitchThemeButtonProps> = ({ style, contentCon
                             {
                                 height: MAX_THEME_ANIMATION_SIZE,
                                 width: MAX_THEME_ANIMATION_SIZE,
-                                backgroundColor: 'yellow',
                             },
                         ]}
                         source={require('../../assets/switch-theme.json')}

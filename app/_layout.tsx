@@ -20,9 +20,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { SwitchThemeProvider } from '@/components/telegram-theme-switch/components/switch-theme';
 import { ThemeProvider } from '@/components/telegram-theme-switch/components/theme-provider';
+import { useColorTheme } from '@/hooks/useColorTheme';
 // Inner component that uses the theme hook
 function AppContent() {
-    const { themeMode } = useTheme();
+    const colors = useColorTheme();
     const { onboardingCompleted } = useSettingsStore();
     const { initializeAuth, isInitialized, loading, error, user } = useAuthStore();
     const [isSplashScreenReady, setIsSplashScreenReady] = useState(false);
@@ -40,7 +41,7 @@ function AppContent() {
                 await networkService.initialize();
 
                 // Initialize RevenueCat service (iOS only)
-                // await revenueCatService.initialize();
+                await revenueCatService.initialize();
 
                 // Initialize splash screen service
                 await splashScreenService.initialize();
@@ -157,14 +158,14 @@ function AppContent() {
                         style={{
                             paddingHorizontal: 24,
                             paddingVertical: 12,
-                            backgroundColor: '#007AFF',
+                            backgroundColor: colors.backgroundSecondary,
                             borderRadius: 8,
                             marginTop: 16,
                         }}
                     >
                         <TypographyText
                             variant="body"
-                            style={{ color: 'white', textAlign: 'center' }}
+                            style={{ color: colors.contentPrimary, textAlign: 'center' }}
                         >
                             Try Again
                         </TypographyText>
@@ -192,7 +193,7 @@ function AppContent() {
                         />
                         <Stack.Screen name="+not-found" />
                     </Stack>
-                    <StatusBar style={themeMode === 'dark' ? 'light' : 'dark'} />
+                    <StatusBar style={colors.backgroundPrimary === '#FFFFFF' ? 'light' : 'dark'} />
                 </SafeAreaProvider>
             </ToastProvider>
         </GlobalErrorBoundary>
@@ -203,11 +204,6 @@ export default function RootLayout() {
     const [loaded] = useFonts({
         SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     });
-    const systemColorScheme = useColorScheme();
-    const { themeMode } = useSettingsStore();
-    const resolvedTheme =
-        themeMode === 'system' ? (systemColorScheme === 'dark' ? 'dark' : 'light') : themeMode;
-
     if (!loaded) {
         // Async font loading only occurs in development.
         return null;

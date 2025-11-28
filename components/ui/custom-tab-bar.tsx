@@ -4,6 +4,7 @@ import { Dimensions, TouchableOpacity, View } from 'react-native';
 import { Box, HStack, SPACING, useTheme } from 'react-native-heroui';
 import Animated from 'react-native-reanimated';
 import TypographyText from '../TypographyText';
+import { useColorTheme } from '@/hooks/useColorTheme';
 
 interface CustomTabBarProps {
     state: any;
@@ -18,6 +19,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
     navigation,
     onFabPress,
 }) => {
+    const colors = useColorTheme();
     const { theme } = useTheme();
 
     const renderTabItem = (route: any, index: number) => {
@@ -53,8 +55,8 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
                         paddingHorizontal: 16,
                         borderRadius: 20,
                         backgroundColor: isFocused
-                            ? theme.colors.background
-                            : theme.colors.foreground,
+                            ? colors.backgroundSecondary
+                            : colors.backgroundPrimary,
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         flexDirection: 'row',
@@ -67,9 +69,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
                         <View style={{ marginBottom: 2 }}>
                             {options.tabBarIcon({
                                 focused: isFocused,
-                                color: isFocused
-                                    ? theme.colors.foreground
-                                    : theme.colors['default-100'],
+                                color: isFocused ? colors.contentPrimary : colors.contentSecondary,
                                 size: 20,
                             })}
                         </View>
@@ -82,7 +82,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
                                 fontSize: 10,
                                 marginHorizontal: SPACING['unit-1.5'],
                                 fontWeight: '500',
-                                color: theme.colors.foreground,
+                                color: colors.contentPrimary,
                             }}
                         >
                             {label}
@@ -117,7 +117,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
                 <View
                     style={{
                         flexDirection: 'row',
-                        backgroundColor: theme.colors['default-800'],
+                        backgroundColor: colors.backgroundPrimary,
                         borderRadius: 30,
                         padding: SPACING['unit-2'],
                         flex: 1,

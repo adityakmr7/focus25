@@ -7,9 +7,10 @@ import { useAuthStore } from '@/stores/auth-store';
 import { router } from 'expo-router';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { showError } from '@/utils/error-toast';
+import { useColorTheme } from '@/hooks/useColorTheme';
 
 export default function AuthScreen() {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
     const { signInWithApple, user, loading } = useAuthStore();
     const [isAppleAvailable, setIsAppleAvailable] = useState(false);
 
@@ -38,71 +39,67 @@ export default function AuthScreen() {
     };
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
             <View style={styles.content}>
-                <VStack gap="unit-8" alignItems="center">
-                    {/* App Logo/Branding */}
-                    <VStack gap="unit-4" alignItems="center" mt="xl">
-                        <TypographyText variant="title" size="2xl" weight="bold">
-                            Flowzy
-                        </TypographyText>
-                        <TypographyText
-                            variant="body"
-                            size="lg"
-                            style={{ textAlign: 'center', opacity: 0.7 }}
-                        >
-                            Focus on what matters
-                        </TypographyText>
-                    </VStack>
+                <View style={{ flex: 0.5 }} />
+                <VStack flex={1} gap="unit-4" alignItems="center" mt="xl">
+                    <TypographyText
+                        style={{ color: colors.contentPrimary }}
+                        variant="title"
+                        size="2xl"
+                        weight="bold"
+                    >
+                        Flowzy
+                    </TypographyText>
+                    <TypographyText
+                        variant="body"
+                        size="lg"
+                        style={{
+                            textAlign: 'center',
+                            opacity: 0.7,
+                            color: colors.contentSecondary,
+                        }}
+                    >
+                        Focus on what matters
+                    </TypographyText>
+                </VStack>
 
-                    {/* Sign In Section */}
-                    <VStack gap="unit-6" style={styles.signInSection}>
-                        <TypographyText variant="title" size="lg" weight="bold">
-                            Welcome
-                        </TypographyText>
-                        <TypographyText
-                            variant="body"
-                            style={{ opacity: 0.7, textAlign: 'center' }}
-                        >
-                            Sign in with Apple to get started and sync your todos across all your
-                            devices.
-                        </TypographyText>
-
-                        {/* Apple Sign-In Button */}
-                        {Platform.OS === 'ios' && isAppleAvailable && (
-                            <View style={styles.appleButtonContainer}>
-                                <AppleAuthentication.AppleAuthenticationButton
-                                    buttonType={
-                                        AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
-                                    }
-                                    buttonStyle={
-                                        AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
-                                    }
-                                    cornerRadius={8}
-                                    style={styles.appleButton}
-                                    onPress={handleAppleSignIn}
-                                />
-                            </View>
-                        )}
-
-                        {/* Fallback for non-iOS or when Apple Sign-In is not available */}
-                        {(!isAppleAvailable || Platform.OS !== 'ios') && (
-                            <Button
-                                size="lg"
-                                variant="solid"
+                {/* Sign In Section */}
+                <VStack gap="unit-6" style={styles.signInSection}>
+                    {/* Apple Sign-In Button */}
+                    {Platform.OS === 'ios' && isAppleAvailable && (
+                        <View style={styles.appleButtonContainer}>
+                            <AppleAuthentication.AppleAuthenticationButton
+                                buttonType={
+                                    AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+                                }
+                                buttonStyle={
+                                    AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                                }
+                                cornerRadius={8}
+                                style={styles.appleButton}
                                 onPress={handleAppleSignIn}
-                                isLoading={loading}
-                                isDisabled={loading}
-                                style={styles.fallbackButton}
-                            >
-                                <TypographyText variant="body" style={{ color: '#fff' }}>
-                                    {Platform.OS === 'ios'
-                                        ? 'Sign in with Apple'
-                                        : 'Sign in (Apple Sign-In not available)'}
-                                </TypographyText>
-                            </Button>
-                        )}
-                    </VStack>
+                            />
+                        </View>
+                    )}
+
+                    {/* Fallback for non-iOS or when Apple Sign-In is not available */}
+                    {(!isAppleAvailable || Platform.OS !== 'ios') && (
+                        <Button
+                            size="lg"
+                            variant="solid"
+                            onPress={handleAppleSignIn}
+                            isLoading={loading}
+                            isDisabled={loading}
+                            style={styles.fallbackButton}
+                        >
+                            <TypographyText variant="body" style={{ color: colors.contentPrimary }}>
+                                {Platform.OS === 'ios'
+                                    ? 'Sign in with Apple'
+                                    : 'Sign in (Apple Sign-In not available)'}
+                            </TypographyText>
+                        </Button>
+                    )}
                 </VStack>
             </View>
         </SafeAreaView>

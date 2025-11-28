@@ -5,13 +5,13 @@ import { StyleSheet, View } from 'react-native';
 import TypographyText from '@/components/TypographyText';
 import { TaskAdd01Icon } from '@hugeicons/core-free-icons';
 import HugeIconView from '@/components/ui/huge-icon-view';
+import { useColorTheme } from '@/hooks/useColorTheme';
 interface EmptyStateProps {
     viewMode?: 'grid' | 'list';
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({ viewMode = 'grid' }) => {
-    const { theme } = useTheme();
-
+    const colors = useColorTheme();
     const handleCreateTodo = () => {
         router.push('/(create-todo)/create-todo');
     };
@@ -21,7 +21,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ viewMode = 'grid' }) => {
             <Card
                 onPress={handleCreateTodo}
                 variant="flat"
-                style={[{ backgroundColor: theme.colors.background }]}
+                style={[{ backgroundColor: colors.backgroundPrimary }]}
             >
                 <CardHeader style={styles.header}>
                     <HugeIconView size={40} icon={TaskAdd01Icon} />
@@ -30,14 +30,14 @@ const EmptyState: React.FC<EmptyStateProps> = ({ viewMode = 'grid' }) => {
                 <CardBody style={styles.body}>
                     <TypographyText
                         variant="title"
-                        style={[styles.title, { color: theme.colors.foreground }]}
+                        style={[styles.title, { color: colors.contentPrimary }]}
                     >
                         No todos yet
                     </TypographyText>
 
                     <TypographyText
                         variant="body"
-                        style={[styles.subtitle, { color: theme.colors.foreground }]}
+                        style={[styles.subtitle, { color: colors.contentPrimary }]}
                     >
                         {viewMode === 'grid'
                             ? 'Start organizing your day by creating your first todo. Break down your goals into manageable tasks and stay productive!'

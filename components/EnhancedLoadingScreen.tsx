@@ -1,4 +1,5 @@
 import TypographyText from '@/components/TypographyText';
+import { useColorTheme } from '@/hooks/useColorTheme';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, StyleSheet, View } from 'react-native';
 import { useTheme } from 'react-native-heroui';
@@ -45,7 +46,7 @@ const INSPIRATIONAL_QUOTES = [
 ];
 
 const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = () => {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
     const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
     const [fadeAnim] = useState(new Animated.Value(1));
 
@@ -74,15 +75,21 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = () => {
     const currentQuote = INSPIRATIONAL_QUOTES[currentQuoteIndex];
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
             <View style={styles.content}>
                 {/* Quote Section */}
                 <View style={styles.quoteSection}>
                     <Animated.View style={[styles.quoteContainer, { opacity: fadeAnim }]}>
-                        <TypographyText variant="body" color="default" style={styles.quote}>
+                        <TypographyText
+                            variant="body"
+                            style={[styles.quote, { color: colors.contentPrimary }]}
+                        >
                             {`"${currentQuote.quote}"`}
                         </TypographyText>
-                        <TypographyText variant="caption" color="secondary" style={styles.author}>
+                        <TypographyText
+                            variant="caption"
+                            style={[styles.author, { color: colors.contentPrimary }]}
+                        >
                             — {currentQuote.author}
                         </TypographyText>
                     </Animated.View>
@@ -90,7 +97,7 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = () => {
 
                 {/* Spinner */}
                 <View style={styles.spinnerContainer}>
-                    <ActivityIndicator size="small" color={theme.colors.foreground} />
+                    <ActivityIndicator size="small" color={colors.contentPrimary} />
                 </View>
             </View>
         </SafeAreaView>
@@ -100,7 +107,6 @@ const EnhancedLoadingScreen: React.FC<EnhancedLoadingScreenProps> = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
     },
     content: {
         flex: 1,

@@ -16,7 +16,6 @@ import {
     ScrollView,
     TouchableOpacity,
     View,
-    Touchable,
 } from 'react-native';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { HStack, SPACING, VStack, Switch } from 'react-native-heroui';
@@ -33,7 +32,6 @@ const Header = () => {
             <Text style={[styles.title, { color: colors.contentPrimary }]}>Settings</Text>
             <SwitchThemeButton
                 contentContainerStyle={{
-                    backgroundColor: 'red',
                     height: 40,
                     borderRadius: 20,
                     width: 40,
@@ -52,6 +50,14 @@ const ABOUT_OPTIONS = [
     {
         id: 'feedback-and-support',
         label: 'Feedback & Support',
+    },
+    {
+        id: 'terms-and-conditions',
+        label: 'Terms & Conditions',
+    },
+    {
+        id: 'privacy-policy',
+        label: 'Privacy Policy',
     },
 ];
 const SettingsScreen = () => {
@@ -72,7 +78,7 @@ const SettingsScreen = () => {
         notifications,
         setNotifications,
     } = useSettingsStore();
-    const { isProUser, refreshProStatus } = useAuthStore();
+    const { isProUser, refreshProStatus, signOut } = useAuthStore();
     const [isRestoring, setIsRestoring] = useState(false);
     const [syncStatus, setSyncStatus] = useState<{
         enabled: boolean;
@@ -294,6 +300,19 @@ const SettingsScreen = () => {
             Linking.openURL(APP_CONFIG.APP_RATING_URL);
         } else if (id === 'feedback-and-support') {
             Linking.openURL(APP_CONFIG.FEEDBACK_FORM_URL);
+        } else if (id === 'terms-and-conditions') {
+            Linking.openURL(APP_CONFIG.TERM_CONDITIONS_URL);
+        } else if (id === 'privacy-policy') {
+            Linking.openURL(APP_CONFIG.PRIVACY_POLICY_URL);
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            await signOut();
+        } catch (error) {
+            // Error is already handled in signOut function
+            console.error('Logout error:', error);
         }
     };
 
@@ -301,14 +320,16 @@ const SettingsScreen = () => {
         return (
             <View
                 style={{
-                    backgroundColor: colors.primary,
+                    backgroundColor: colors.secondary,
                     padding: 16,
                     borderRadius: 16,
                 }}
             >
                 <LinearGradient
                     // Background Linear Gradient
-                    colors={['#00866E', '#00E2BA']}
+                    colors={['#007B66', '#258F7E']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
                     style={{
                         position: 'absolute',
                         top: 0,
@@ -323,26 +344,25 @@ const SettingsScreen = () => {
                         paddingVertical: 16,
                         fontSize: 18,
                         fontWeight: '600',
-                        color: colors.backgroundPrimary,
+                        color: colors.contentPrimary,
                     }}
                 >
                     Power up with flowzy premium
                 </Text>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={handleSeePlanPress}>
                     <View
                         style={{
                             borderRadius: 18,
                             justifyContent: 'center',
                             alignItems: 'center',
-                            backgroundColor: '#3D9888',
+                            backgroundColor: colors.primary,
                             paddingVertical: 8,
                             paddingHorizontal: 16,
-                            marginTop: 24,
                         }}
                     >
                         <Text
                             style={{
-                                color: colors.backgroundPrimary,
+                                color: colors.contentPrimary,
                                 fontSize: 16,
                             }}
                         >
@@ -574,36 +594,70 @@ const SettingsScreen = () => {
                     >
                         {ABOUT_OPTIONS.map(({ label, id }, index) => (
                             <React.Fragment key={index}>
-                                <VStack py="md">
-                                    <HStack alignItems="center" justifyContent="space-between">
-                                        <TypographyText
-                                            variant="body"
-                                            style={{ color: colors.contentPrimary }}
-                                        >
-                                            {label}
-                                        </TypographyText>
-                                        <View
-                                            style={{
-                                                width: 8,
-                                                height: 8,
-                                                borderRightWidth: 2,
-                                                borderTopWidth: 2,
-                                                borderColor: colors.surfacePrimary,
-                                                transform: [{ rotate: '45deg' }],
-                                            }}
-                                        />
-                                    </HStack>
-                                </VStack>
-                                <View
-                                    style={{
-                                        height: 1,
-                                        backgroundColor: colors.surfacePrimary,
-                                    }}
-                                />
+                                <TouchableOpacity onPress={() => handleAboutCardPress(id)}>
+                                    <VStack py="md">
+                                        <HStack alignItems="center" justifyContent="space-between">
+                                            <TypographyText
+                                                variant="body"
+                                                style={{ color: colors.contentPrimary }}
+                                            >
+                                                {label}
+                                            </TypographyText>
+                                            <View
+                                                style={{
+                                                    width: 8,
+                                                    height: 8,
+                                                    borderRightWidth: 2,
+                                                    borderTopWidth: 2,
+                                                    borderColor: colors.surfacePrimary,
+                                                    transform: [{ rotate: '45deg' }],
+                                                }}
+                                            />
+                                        </HStack>
+                                    </VStack>
+                                </TouchableOpacity>
+                                {index < ABOUT_OPTIONS.length - 1 && (
+                                    <View
+                                        style={{
+                                            height: 1,
+                                            backgroundColor: colors.surfacePrimary,
+                                        }}
+                                    />
+                                )}
                             </React.Fragment>
                         ))}
                     </View>
                 </VStack>
+
+                {/* Logout */}
+                {(userName || userEmail) && (
+                    <VStack gap="unit-3" mt="lg">
+                        <View
+                            style={{
+                                backgroundColor: colors.backgroundSecondary,
+                                paddingHorizontal: 16,
+                                paddingVertical: 16,
+                                borderRadius: 16,
+                            }}
+                        >
+                            <TouchableOpacity onPress={handleLogout}>
+                                <VStack py="md">
+                                    <HStack alignItems="center" justifyContent="center">
+                                        <TypographyText
+                                            variant="body"
+                                            style={{
+                                                color: '#FF3B30',
+                                                fontWeight: '600',
+                                            }}
+                                        >
+                                            Log Out
+                                        </TypographyText>
+                                    </HStack>
+                                </VStack>
+                            </TouchableOpacity>
+                        </View>
+                    </VStack>
+                )}
             </ScrollView>
         </SafeAreaView>
     );

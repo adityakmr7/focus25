@@ -1,5 +1,3 @@
-import Color from 'color';
-
 export const DarkPalette = {
     primary: '#03110F',
     secondary: '#CDCFCF',
