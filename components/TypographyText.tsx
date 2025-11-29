@@ -1,8 +1,8 @@
-import type { TextStyle } from "react-native";
-import type { Theme } from "react-native-heroui";
-import { createStyledText } from "react-native-heroui";
+import React from 'react';
+import { Text, TextProps, TextStyle, StyleSheet } from 'react-native';
+import { useColorTheme } from '@/hooks/useColorTheme';
 
-export interface TypographyTextProps {
+export interface TypographyTextProps extends TextProps {
   variant?: "body" | "heading" | "title" | "caption" | "label";
   size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
   weight?: "normal" | "medium" | "semibold" | "bold";
@@ -15,90 +15,110 @@ export interface TypographyTextProps {
     | "default";
 }
 
-const TypographyText = createStyledText<TypographyTextProps>(
-  (theme: Theme) => ({
-    color: theme.colors.foreground,
-    fontSize: theme.typography.fontSizes.md,
-  }),
-  (theme: Theme, props: TypographyTextProps): TextStyle => {
-    const styles: TextStyle = {};
+const FONT_SIZES = {
+  xs: 12,
+  sm: 14,
+  md: 16,
+  lg: 18,
+  xl: 20,
+  "2xl": 24,
+  "3xl": 30,
+};
 
-    // Handle variant
-    switch (props.variant) {
-      case "heading":
-        styles.fontSize = theme.typography.fontSizes["2xl"];
-        styles.fontWeight = "700";
-        styles.lineHeight = theme.typography.fontSizes["2xl"] * 1.2;
-        break;
-      case "title":
-        styles.fontSize = theme.typography.fontSizes.xl;
-        styles.fontWeight = "600";
-        styles.lineHeight = theme.typography.fontSizes.xl * 1.3;
-        break;
-      case "caption":
-        styles.fontSize = theme.typography.fontSizes.sm;
-        styles.fontWeight = "400";
-        styles.opacity = 0.7;
-        break;
-      case "label":
-        styles.fontSize = theme.typography.fontSizes.sm;
-        styles.fontWeight = "500";
-        break;
-      case "body":
-      default:
-        styles.fontSize = theme.typography.fontSizes.md;
-        styles.fontWeight = "400";
-    }
+const TypographyText: React.FC<TypographyTextProps> = ({
+  variant = "body",
+  size,
+  weight,
+  color = "default",
+  style,
+  children,
+  ...props
+}) => {
+  const colors = useColorTheme();
+  
+  const textStyle: TextStyle = {
+    color: colors.contentPrimary,
+  };
 
-    // Handle explicit size override
-    if (props.size) {
-      styles.fontSize = theme.typography.fontSizes[props.size];
-    }
-
-    // Handle weight
-    if (props.weight) {
-      switch (props.weight) {
-        case "normal":
-          styles.fontWeight = "400";
-          break;
-        case "medium":
-          styles.fontWeight = "500";
-          break;
-        case "semibold":
-          styles.fontWeight = "600";
-          break;
-        case "bold":
-          styles.fontWeight = "700";
-          break;
-      }
-    }
-
-    // Handle color
-    if (props.color) {
-      switch (props.color) {
-        case "primary":
-          styles.color = theme.colors.primary;
-          break;
-        case "secondary":
-          styles.color = theme.colors.secondary;
-          break;
-        case "success":
-          styles.color = theme.colors.success;
-          break;
-        case "warning":
-          styles.color = theme.colors.warning;
-          break;
-        case "danger":
-          styles.color = theme.colors.danger;
-          break;
-        case "default":
-          styles.color = theme.colors.foreground;
-          break;
-      }
-    }
-
-    return styles;
+  // Handle variant
+  switch (variant) {
+    case "heading":
+      textStyle.fontSize = FONT_SIZES["2xl"];
+      textStyle.fontWeight = "700";
+      textStyle.lineHeight = FONT_SIZES["2xl"] * 1.2;
+      break;
+    case "title":
+      textStyle.fontSize = FONT_SIZES.xl;
+      textStyle.fontWeight = "600";
+      textStyle.lineHeight = FONT_SIZES.xl * 1.3;
+      break;
+    case "caption":
+      textStyle.fontSize = FONT_SIZES.sm;
+      textStyle.fontWeight = "400";
+      textStyle.opacity = 0.7;
+      break;
+    case "label":
+      textStyle.fontSize = FONT_SIZES.sm;
+      textStyle.fontWeight = "500";
+      break;
+    case "body":
+    default:
+      textStyle.fontSize = FONT_SIZES.md;
+      textStyle.fontWeight = "400";
   }
-);
+
+  // Handle explicit size override
+  if (size) {
+    textStyle.fontSize = FONT_SIZES[size];
+  }
+
+  // Handle weight
+  if (weight) {
+    switch (weight) {
+      case "normal":
+        textStyle.fontWeight = "400";
+        break;
+      case "medium":
+        textStyle.fontWeight = "500";
+        break;
+      case "semibold":
+        textStyle.fontWeight = "600";
+        break;
+      case "bold":
+        textStyle.fontWeight = "700";
+        break;
+    }
+  }
+
+  // Handle color
+  if (color) {
+    switch (color) {
+      case "primary":
+        textStyle.color = colors.secondary;
+        break;
+      case "secondary":
+        textStyle.color = colors.contentSecondary;
+        break;
+      case "success":
+        textStyle.color = colors.secondary;
+        break;
+      case "warning":
+        textStyle.color = "#FFA500";
+        break;
+      case "danger":
+        textStyle.color = colors.danger;
+        break;
+      case "default":
+        textStyle.color = colors.contentPrimary;
+        break;
+    }
+  }
+
+  return (
+    <Text style={[textStyle, style]} {...props}>
+      {children}
+    </Text>
+  );
+};
 
 export default TypographyText;

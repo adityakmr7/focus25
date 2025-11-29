@@ -2,7 +2,6 @@ import TypographyText from '@/components/TypographyText';
 import { useColorTheme } from '@/hooks/useColorTheme';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { useTheme } from 'react-native-heroui';
 
 interface AuthLoadingScreenProps {
     message?: string;

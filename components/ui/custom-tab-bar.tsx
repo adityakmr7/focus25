@@ -1,11 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Dimensions, TouchableOpacity, View } from 'react-native';
-import { Box, HStack, SPACING, useTheme } from 'react-native-heroui';
 import Animated from 'react-native-reanimated';
 import TypographyText from '../TypographyText';
 import { useColorTheme } from '@/hooks/useColorTheme';
-
+import { HStack } from './HStack';
 interface CustomTabBarProps {
     state: any;
     descriptors: any;
@@ -20,7 +19,6 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
     onFabPress,
 }) => {
     const colors = useColorTheme();
-    const { theme } = useTheme();
 
     const renderTabItem = (route: any, index: number) => {
         const { options } = descriptors[route.key];
@@ -51,7 +49,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
                     onPress={onPress}
                     style={{
                         flex: 1,
-                        paddingVertical: SPACING['unit-2'],
+                        paddingVertical: 8,
                         paddingHorizontal: 16,
                         borderRadius: 20,
                         backgroundColor: isFocused
@@ -80,7 +78,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
                             color="default"
                             style={{
                                 fontSize: 10,
-                                marginHorizontal: SPACING['unit-1.5'],
+                                marginHorizontal: 6,
                                 fontWeight: '500',
                                 color: colors.contentPrimary,
                             }}
@@ -119,7 +117,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
                         flexDirection: 'row',
                         backgroundColor: colors.backgroundPrimary,
                         borderRadius: 30,
-                        padding: SPACING['unit-2'],
+                        padding: 8,
                         flex: 1,
                         marginRight: 12,
                         // shadowColor: theme.colors.foreground,

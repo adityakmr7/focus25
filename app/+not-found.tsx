@@ -1,33 +1,30 @@
-import TypographyText from "@/components/TypographyText";
-import { Link, Stack } from "expo-router";
-import { StyleSheet } from "react-native";
-import { Box } from "react-native-heroui";
-
+import TypographyText from '@/components/TypographyText';
+import { Link, Stack } from 'expo-router';
+import { StyleSheet } from 'react-native';
+import { View } from 'react-native';
 export default function NotFoundScreen() {
-  return (
-    <>
-      <Stack.Screen options={{ title: "Oops!" }} />
-      <Box style={styles.container}>
-        <TypographyText variant="title">
-          This screen does not exist.
-        </TypographyText>
-        <Link href="/" style={styles.link}>
-          <TypographyText variant="label">Go to home screen!</TypographyText>
-        </Link>
-      </Box>
-    </>
-  );
+    return (
+        <>
+            <Stack.Screen options={{ title: 'Oops!' }} />
+            <View style={styles.container}>
+                <TypographyText variant="title">This screen does not exist.</TypographyText>
+                <Link href="/" style={styles.link}>
+                    <TypographyText variant="label">Go to home screen!</TypographyText>
+                </Link>
+            </View>
+        </>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+    },
+    link: {
+        marginTop: 15,
+        paddingVertical: 15,
+    },
 });

@@ -1,7 +1,6 @@
-import { useTheme, Button, Card, CardBody, CardHeader } from 'react-native-heroui';
 import { router } from 'expo-router';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import TypographyText from '@/components/TypographyText';
 import { TaskAdd01Icon } from '@hugeicons/core-free-icons';
 import HugeIconView from '@/components/ui/huge-icon-view';
@@ -18,16 +17,15 @@ const EmptyState: React.FC<EmptyStateProps> = ({ viewMode = 'grid' }) => {
 
     return (
         <View style={styles.container}>
-            <Card
+            <TouchableOpacity
                 onPress={handleCreateTodo}
-                variant="flat"
                 style={[{ backgroundColor: colors.backgroundPrimary }]}
             >
-                <CardHeader style={styles.header}>
+                <View style={styles.header}>
                     <HugeIconView size={40} icon={TaskAdd01Icon} />
-                </CardHeader>
+                </View>
 
-                <CardBody style={styles.body}>
+                <View style={styles.body}>
                     <TypographyText
                         variant="title"
                         style={[styles.title, { color: colors.contentPrimary }]}
@@ -43,8 +41,8 @@ const EmptyState: React.FC<EmptyStateProps> = ({ viewMode = 'grid' }) => {
                             ? 'Start organizing your day by creating your first todo. Break down your goals into manageable tasks and stay productive!'
                             : 'Create your first todo to get started. You can organize them by priority, due date, or category.'}
                     </TypographyText>
-                </CardBody>
-            </Card>
+                </View>
+            </TouchableOpacity>
         </View>
     );
 };

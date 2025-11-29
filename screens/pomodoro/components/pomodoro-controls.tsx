@@ -1,9 +1,9 @@
 import { Colors } from '@/constants/Colors';
+import { useColorTheme } from '@/hooks/useColorTheme';
 import { TimerStatus } from '@/stores/pomodoro-store';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { useTheme } from 'react-native-heroui';
 import Animated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 
 interface PomodoroControlsProps {
@@ -21,7 +21,7 @@ export default function PomodoroControls({
     buttonScale,
     timerStatus,
 }: PomodoroControlsProps) {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
 
     const buttonAnimatedStyle = useAnimatedStyle(() => {
         return {
@@ -50,7 +50,11 @@ export default function PomodoroControls({
                     onPress={onPlayPause}
                 >
                     <View style={styles.iconContainer}>
-                        <Icon name={getPlayPauseIcon()} size={24} color={theme.colors.background} />
+                        <Icon
+                            name={getPlayPauseIcon()}
+                            size={24}
+                            color={colors.backgroundPrimary}
+                        />
                     </View>
                 </TouchableOpacity>
             </Animated.View>

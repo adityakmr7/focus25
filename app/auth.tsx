@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Platform, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, VStack, HStack, SPACING, useTheme } from 'react-native-heroui';
 import TypographyText from '@/components/TypographyText';
 import { useAuthStore } from '@/stores/auth-store';
-import { router } from 'expo-router';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { showError } from '@/utils/error-toast';
 import { useColorTheme } from '@/hooks/useColorTheme';
-
+import { SPACING } from '@/constants/spacing';
+import { VStack } from '@/components/ui/VStack';
+import { Button } from '@/components/ui/Button';
 export default function AuthScreen() {
     const colors = useColorTheme();
     const { signInWithApple, user, loading } = useAuthStore();

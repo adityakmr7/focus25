@@ -4,8 +4,8 @@ import { useSettingsStore } from '@/stores/local-settings-store';
 import { router } from 'expo-router';
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useTheme } from 'react-native-heroui';
 import AuthLoadingScreen from './AuthLoadingScreen';
+import { useColorTheme } from '@/hooks/useColorTheme';
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
@@ -26,8 +26,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireOnboarding = true }) => {
     const { user, isInitialized, loading } = useAuthStore();
     const { onboardingCompleted } = useSettingsStore();
-    const { theme } = useTheme();
-
+    const colors = useColorTheme();
     useEffect(() => {
         // If auth is initialized and user is not authenticated, redirect to auth
         if (isInitialized && !user) {
@@ -53,7 +52,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireOnboar
     // If user is not authenticated, show access denied message
     if (!user) {
         return (
-            <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+            <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
                 <TypographyText variant="title" style={styles.title}>
                     Access Denied
                 </TypographyText>

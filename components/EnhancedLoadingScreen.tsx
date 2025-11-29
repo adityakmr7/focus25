@@ -2,7 +2,6 @@ import TypographyText from '@/components/TypographyText';
 import { useColorTheme } from '@/hooks/useColorTheme';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, StyleSheet, View } from 'react-native';
-import { useTheme } from 'react-native-heroui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface EnhancedLoadingScreenProps {

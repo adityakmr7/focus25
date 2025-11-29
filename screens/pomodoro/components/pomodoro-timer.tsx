@@ -1,7 +1,6 @@
 import { useColorTheme } from '@/hooks/useColorTheme';
 import React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
-import { useTheme } from 'react-native-heroui';
 import Animated, { SharedValue } from 'react-native-reanimated';
 
 interface PomodoroTimerProps {

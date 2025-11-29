@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import TypographyText from './TypographyText';
-import { useTheme } from 'react-native-heroui';
+import { useColorTheme } from '@/hooks/useColorTheme';
 
 interface PremiumBadgeProps {
     size?: 'sm' | 'md' | 'lg';
@@ -13,11 +13,8 @@ interface PremiumBadgeProps {
  * Displays a badge indicating a premium feature
  * Can be used to mark premium features throughout the app
  */
-const PremiumBadge: React.FC<PremiumBadgeProps> = ({
-    size = 'sm',
-    variant = 'default',
-}) => {
-    const { theme } = useTheme();
+const PremiumBadge: React.FC<PremiumBadgeProps> = ({ size = 'sm', variant = 'default' }) => {
+    const colors = useColorTheme();
 
     const sizeStyles = {
         sm: { paddingHorizontal: 6, paddingVertical: 2, fontSize: 10 },
@@ -33,9 +30,9 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
                 styles.badge,
                 {
                     backgroundColor:
-                        variant === 'default' ? theme.colors.primary : 'transparent',
+                        variant === 'default' ? colors.backgroundPrimary : 'transparent',
                     borderWidth: variant === 'outline' ? 1 : 0,
-                    borderColor: variant === 'outline' ? theme.colors.primary : 'transparent',
+                    borderColor: variant === 'outline' ? colors.surfacePrimary : 'transparent',
                     paddingHorizontal: currentSize.paddingHorizontal,
                     paddingVertical: currentSize.paddingVertical,
                 },
@@ -44,7 +41,7 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
             <TypographyText
                 variant="caption"
                 style={{
-                    color: variant === 'default' ? '#fff' : theme.colors.primary,
+                    color: variant === 'default' ? colors.contentPrimary : colors.contentPrimary,
                     fontSize: currentSize.fontSize,
                     fontWeight: '600',
                 }}
@@ -64,4 +61,3 @@ const styles = StyleSheet.create({
 });
 
 export default PremiumBadge;
-

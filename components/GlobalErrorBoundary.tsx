@@ -1,8 +1,8 @@
 import TypographyText from '@/components/TypographyText';
+import { useColorTheme } from '@/hooks/useColorTheme';
 import { errorHandlingService } from '@/services/error-handling-service';
 import React, { Component, ReactNode } from 'react';
 import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
-import { useTheme } from 'react-native-heroui';
 
 interface Props {
     children: ReactNode;
@@ -98,10 +98,9 @@ function ErrorBoundaryScreen({
     onReset,
     onReload,
 }: ErrorBoundaryScreenProps) {
-    const { theme } = useTheme();
-
+    const colors = useColorTheme();
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
@@ -109,14 +108,14 @@ function ErrorBoundaryScreen({
                 <View style={styles.content}>
                     <TypographyText
                         variant="title"
-                        style={[styles.title, { color: theme.colors.foreground }]}
+                        style={[styles.title, { color: colors.contentPrimary }]}
                     >
                         Oops! Something went wrong
                     </TypographyText>
 
                     <TypographyText
                         variant="body"
-                        style={[styles.message, { color: theme.colors.foreground }]}
+                        style={[styles.message, { color: colors.contentPrimary }]}
                     >
                         {appError?.userMessage || 'An unexpected error occurred. Please try again.'}
                     </TypographyText>
@@ -126,14 +125,14 @@ function ErrorBoundaryScreen({
                             <TypographyText
                                 variant="body"
                                 size="sm"
-                                style={[styles.devTitle, { color: theme.colors.foreground }]}
+                                style={[styles.devTitle, { color: colors.contentPrimary }]}
                             >
                                 Debug Information (Dev Mode):
                             </TypographyText>
                             <TypographyText
                                 variant="body"
                                 size="sm"
-                                style={[styles.devText, { color: theme.colors.foreground }]}
+                                style={[styles.devText, { color: colors.contentPrimary }]}
                             >
                                 {error.toString()}
                             </TypographyText>
@@ -141,7 +140,7 @@ function ErrorBoundaryScreen({
                                 <TypographyText
                                     variant="body"
                                     size="sm"
-                                    style={[styles.devText, { color: theme.colors.foreground }]}
+                                    style={[styles.devText, { color: colors.contentPrimary }]}
                                 >
                                     {errorInfo.componentStack}
                                 </TypographyText>
@@ -155,7 +154,7 @@ function ErrorBoundaryScreen({
                             style={[
                                 styles.button,
                                 styles.primaryButton,
-                                { backgroundColor: theme.colors.primary },
+                                { backgroundColor: colors.primary },
                             ]}
                         >
                             <TypographyText
@@ -171,12 +170,12 @@ function ErrorBoundaryScreen({
                             style={[
                                 styles.button,
                                 styles.secondaryButton,
-                                { borderColor: theme.colors['default-200'] },
+                                { borderColor: colors.surfacePrimary },
                             ]}
                         >
                             <TypographyText
                                 variant="body"
-                                style={[styles.buttonText, { color: theme.colors.foreground }]}
+                                style={[styles.buttonText, { color: colors.contentPrimary }]}
                             >
                                 Reload App
                             </TypographyText>

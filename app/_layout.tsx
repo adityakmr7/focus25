@@ -14,7 +14,6 @@ import { Stack, useSegments, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { TouchableOpacity, View, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { HeroUIProvider, ToastProvider, useTheme } from 'react-native-heroui';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
@@ -177,25 +176,23 @@ function AppContent() {
 
     return (
         <GlobalErrorBoundary>
-            <ToastProvider>
-                <SafeAreaProvider>
-                    <OfflineIndicator />
-                    <Stack>
-                        <Stack.Screen name="auth" options={{ headerShown: false }} />
-                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                        <Stack.Screen
-                            name="(create-todo)"
-                            options={{ headerShown: false, presentation: 'modal' }}
-                        />
-                        <Stack.Screen
-                            name="plan"
-                            options={{ headerShown: false, presentation: 'modal' }}
-                        />
-                        <Stack.Screen name="+not-found" />
-                    </Stack>
-                    <StatusBar style={colors.backgroundPrimary === '#FFFFFF' ? 'light' : 'dark'} />
-                </SafeAreaProvider>
-            </ToastProvider>
+            <SafeAreaProvider>
+                <OfflineIndicator />
+                <Stack>
+                    <Stack.Screen name="auth" options={{ headerShown: false }} />
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen
+                        name="(create-todo)"
+                        options={{ headerShown: false, presentation: 'modal' }}
+                    />
+                    <Stack.Screen
+                        name="plan"
+                        options={{ headerShown: false, presentation: 'modal' }}
+                    />
+                    <Stack.Screen name="+not-found" />
+                </Stack>
+                <StatusBar style={colors.backgroundPrimary === '#FFFFFF' ? 'light' : 'dark'} />
+            </SafeAreaProvider>
         </GlobalErrorBoundary>
     );
 }
@@ -211,13 +208,11 @@ export default function RootLayout() {
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <HeroUIProvider>
-                <SwitchThemeProvider>
-                    <ThemeProvider>
-                        <AppContent />
-                    </ThemeProvider>
-                </SwitchThemeProvider>
-            </HeroUIProvider>
+            <SwitchThemeProvider>
+                <ThemeProvider>
+                    <AppContent />
+                </ThemeProvider>
+            </SwitchThemeProvider>
         </GestureHandlerRootView>
     );
 }

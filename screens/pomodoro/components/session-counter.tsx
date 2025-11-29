@@ -3,7 +3,6 @@ import { useColorTheme } from '@/hooks/useColorTheme';
 import { usePomodoroStore } from '@/stores/pomodoro-store';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useTheme } from 'react-native-heroui';
 
 const SessionCounter: React.FC = () => {
     const colors = useColorTheme();

@@ -6,11 +6,12 @@ import { useAuthStore } from '@/stores/auth-store';
 import { showError, showSuccess } from '@/utils/error-toast';
 import React, { useEffect, useState } from 'react';
 import { Linking, Platform, ScrollView, View } from 'react-native';
-import { Button, Card, CardBody, HStack, SPACING, VStack, useTheme } from 'react-native-heroui';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useColorTheme } from '@/hooks/useColorTheme';
+import { HStack } from '@/components/ui/HStack';
 
 const FeatureRow: React.FC<{ text: string }> = ({ text }) => {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
     return (
         <HStack alignItems="center" gap="unit-3">
             <View
@@ -28,7 +29,7 @@ const FeatureRow: React.FC<{ text: string }> = ({ text }) => {
 };
 
 const PlanScreen = () => {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
     const [isLoading, setIsLoading] = useState(false);
     const [isRestoring, setIsRestoring] = useState(false);
     const [packagePrice, setPackagePrice] = useState<string | null>(null);

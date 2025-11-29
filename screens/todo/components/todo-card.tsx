@@ -2,7 +2,6 @@ import TypographyText from '@/components/TypographyText';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View, Text } from 'react-native';
-import { HStack, useTheme } from 'react-native-heroui';
 import { useUnifiedTodoStore } from '@/hooks/useUnifiedTodoStore';
 import { useColorTheme } from '@/hooks/useColorTheme';
 
@@ -16,7 +15,7 @@ const SubTaskItem = ({ todo }: { todo: any }) => {
     const colors = useColorTheme();
     const { updateTodo } = useUnifiedTodoStore();
     return (
-        <HStack ml="xl">
+        <View style={styles.subtaskWrapper}>
             {Array.isArray((todo as any)?.subtasks) && (todo as any).subtasks.length > 0 && (
                 <View style={styles.subtasksContainer}>
                     {(todo as any).subtasks.map(
@@ -81,7 +80,7 @@ const SubTaskItem = ({ todo }: { todo: any }) => {
                     )}
                 </View>
             )}
-        </HStack>
+        </View>
     );
 };
 
@@ -93,7 +92,6 @@ const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit }) => {
         Health: 'red',
         Personal: 'yellow',
     };
-    console.log('todo', todo);
 
     // Safety check for todo object
     if (!todo || !todo.id) {
@@ -115,7 +113,7 @@ const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit }) => {
                 onLongPress={() => onEdit(todo)}
                 activeOpacity={0.8}
             >
-                <HStack alignItems="center" gap="md">
+                <View style={styles.todoRow}>
                     <View
                         style={[
                             styles.checkbox,
@@ -173,7 +171,7 @@ const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit }) => {
                         )}
                     </View>
                     {/* Subtasks */}
-                </HStack>
+                </View>
             </TouchableOpacity>
             <SubTaskItem todo={todo} />
         </>
@@ -242,6 +240,14 @@ const styles = StyleSheet.create({
     subtaskText: {
         fontSize: 13,
         fontWeight: '500',
+    },
+    subtaskWrapper: {
+        marginLeft: 32,
+    },
+    todoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
     },
 });
 

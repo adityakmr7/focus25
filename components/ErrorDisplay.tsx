@@ -2,8 +2,8 @@ import TypographyText from '@/components/TypographyText';
 import { errorHandlingService } from '@/services/error-handling-service';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useTheme } from 'react-native-heroui';
 import RetryButton from './RetryButton';
+import { useColorTheme } from '@/hooks/useColorTheme';
 
 interface ErrorDisplayProps {
     error: Error | unknown;
@@ -24,7 +24,7 @@ export default function ErrorDisplay({
     message,
     showRetry = true,
 }: ErrorDisplayProps) {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
     const appError = errorHandlingService.processError(error, context);
 
     // Use custom message if provided, otherwise use processed error message
@@ -36,11 +36,11 @@ export default function ErrorDisplay({
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
             <View style={styles.content}>
                 <TypographyText
                     variant="body"
-                    style={[styles.message, { color: theme.colors.foreground }]}
+                    style={[styles.message, { color: colors.contentPrimary }]}
                 >
                     {displayMessage}
                 </TypographyText>

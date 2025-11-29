@@ -3,7 +3,7 @@
  * Provides standardized toast notifications for errors and user feedback
  */
 
-import { toast } from 'react-native-heroui';
+import { Alert } from 'react-native';
 import {
     errorHandlingService,
     AppError,
@@ -31,56 +31,29 @@ export function showError(error: Error | unknown, context?: Record<string, unkno
         return;
     }
 
-    // Determine duration based on severity
-    let duration = TOAST_DURATION.MEDIUM;
-    if (appError.severity === ErrorSeverity.CRITICAL || appError.severity === ErrorSeverity.HIGH) {
-        duration = TOAST_DURATION.LONG;
-    } else if (appError.severity === ErrorSeverity.LOW) {
-        duration = TOAST_DURATION.SHORT;
-    }
-
-    toast.show({
-        title: getErrorTitle(appError),
-        description: appError.userMessage,
-        duration,
-        variant: 'error',
-    });
+    const title = getErrorTitle(appError);
+    Alert.alert(title, appError.userMessage);
 }
 
 /**
  * Show success toast
  */
 export function showSuccess(message: string, title?: string): void {
-    toast.show({
-        title: title || 'Success',
-        description: message,
-        duration: TOAST_DURATION.SHORT,
-        variant: 'success',
-    });
+    Alert.alert(title || 'Success', message);
 }
 
 /**
  * Show warning toast
  */
 export function showWarning(message: string, title?: string): void {
-    toast.show({
-        title: title || 'Warning',
-        description: message,
-        duration: TOAST_DURATION.MEDIUM,
-        variant: 'warning',
-    });
+    Alert.alert(title || 'Warning', message);
 }
 
 /**
  * Show info toast
  */
 export function showInfo(message: string, title?: string): void {
-    toast.show({
-        title: title || 'Info',
-        description: message,
-        duration: TOAST_DURATION.SHORT,
-        variant: 'info',
-    });
+    Alert.alert(title || 'Info', message);
 }
 
 /**
@@ -104,16 +77,11 @@ export function showErrorWithRetry(
         return;
     }
 
-    toast.show({
-        title: getErrorTitle(appError),
-        description: appError.userMessage,
-        duration: TOAST_DURATION.LONG,
-        variant: 'error',
-        action: {
-            label: 'Retry',
-            onPress: onRetry,
-        },
-    });
+    const title = getErrorTitle(appError);
+    Alert.alert(title, appError.userMessage, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Retry', onPress: onRetry },
+    ]);
 }
 
 /**
@@ -135,4 +103,3 @@ function getErrorTitle(appError: AppError): string {
             return 'Error';
     }
 }
-

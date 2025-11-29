@@ -5,7 +5,6 @@ import { Todo } from '@/services/local-database-service';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Box, SPACING } from 'react-native-heroui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import TodoSectionComponent from './components/todo-section';
 import EmptyState from './components/empty-state';
@@ -62,7 +61,7 @@ const TodoScreen: React.FC = () => {
             <ScrollView
                 contentContainerStyle={{
                     flexGrow: 1,
-                    paddingBottom: SPACING['unit-18'],
+                    paddingBottom: 72,
                 }}
                 style={{ flex: 1 }}
             >
@@ -85,20 +84,19 @@ const TodoScreen: React.FC = () => {
                     )}
                 </View>
             </ScrollView>
-            <Box
-                style={{
-                    backgroundColor: colors.contentPrimary,
-                    position: 'absolute',
-                    bottom: 100,
-                    right: 20,
-                }}
-                borderRadius="full"
-                p="md"
+            <View
+                style={[
+                    styles.fab,
+                    {
+                        backgroundColor: colors.contentPrimary,
+                        bottom: 45,
+                    },
+                ]}
             >
-                <TouchableOpacity onPress={onFabPress}>
+                <TouchableOpacity onPress={onFabPress} style={styles.fabButton}>
                     <Ionicons name="add" size={24} color={colors.backgroundPrimary} />
                 </TouchableOpacity>
-            </Box>
+            </View>
         </SafeAreaView>
     );
 };
@@ -113,22 +111,28 @@ const styles = StyleSheet.create({
         paddingTop: 20,
     },
     todoSections: {
-        gap: SPACING['unit-2'],
+        gap: 8,
     },
     fab: {
         position: 'absolute',
         right: 20,
-        bottom: 24,
         width: 56,
         height: 56,
-        borderRadius: 14,
+        borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
+        padding: 16,
         shadowColor: '#000',
         shadowOpacity: 0.15,
         shadowRadius: 12,
         shadowOffset: { width: 0, height: 4 },
         elevation: 3,
+    },
+    fabButton: {
+        width: '100%',
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });
 

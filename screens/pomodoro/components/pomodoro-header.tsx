@@ -1,7 +1,7 @@
 import TypographyText from "@/components/TypographyText";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { SPACING } from "react-native-heroui";
+import { SPACING } from "@/constants/spacing";
 
 export default function PomodoroHeader() {
   return (

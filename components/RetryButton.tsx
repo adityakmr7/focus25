@@ -1,6 +1,6 @@
 import TypographyText from '@/components/TypographyText';
+import { useColorTheme } from '@/hooks/useColorTheme';
 import React from 'react';
-import { useTheme } from 'react-native-heroui';
 import { StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 
 interface RetryButtonProps {
@@ -18,7 +18,7 @@ export default function RetryButton({
     isLoading = false,
     label = 'Retry',
 }: RetryButtonProps) {
-    const { theme } = useTheme();
+    const colors = useColorTheme();
 
     return (
         <TouchableOpacity
@@ -27,7 +27,7 @@ export default function RetryButton({
             style={[
                 styles.button,
                 {
-                    backgroundColor: theme.colors.primary,
+                    backgroundColor: colors.backgroundPrimary,
                     opacity: isLoading ? 0.6 : 1,
                 },
             ]}

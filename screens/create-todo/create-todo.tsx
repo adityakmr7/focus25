@@ -15,9 +15,11 @@ import {
     Text,
     FlatList,
 } from 'react-native';
-import { Button, HStack, SPACING, VStack } from 'react-native-heroui';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { SPACING } from '@/constants/spacing';
+import { HStack } from '@/components/ui/HStack';
+import { VStack } from '@/components/ui/VStack';
+import { Button } from '@/components/ui/Button';
 const CreateTodoScreen = () => {
     const colors = useColorTheme();
     const { createTodo, updateTodo, todos } = useUnifiedTodoStore();

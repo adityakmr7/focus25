@@ -8,6 +8,7 @@ import { SUBSCRIPTION_CONSTANTS } from '@/constants/subscription';
 import { showError, showSuccess } from '@/utils/error-toast';
 import React, { useEffect, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Switch } from '@/components/ui/Switch';
 import {
     Text,
     StyleSheet,
@@ -18,13 +19,15 @@ import {
     View,
 } from 'react-native';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
-import { HStack, SPACING, VStack, Switch } from 'react-native-heroui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Host, ContextMenu, Slider, Button as SwiftButton, Picker } from '@expo/ui/swift-ui';
 import Avatar from '@/components/ui/avatar';
 import { APP_CONFIG } from '@/configs/app-config';
 import { SwitchThemeButton } from '@/components/telegram-theme-switch/components/switch-theme';
 import { useColorTheme } from '@/hooks/useColorTheme';
+import { HStack } from '@/components/ui/HStack';
+import { VStack } from '@/components/ui/VStack';
+import { SPACING } from '@/constants/spacing';
 const Header = () => {
     const colors = useColorTheme();
     return (
