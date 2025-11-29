@@ -20,12 +20,7 @@ const SIZE_MAP = {
     },
 };
 
-export const Switch: React.FC<SwitchProps> = ({
-    value,
-    onChange,
-    size = 'md',
-    ...props
-}) => {
+export const Switch: React.FC<SwitchProps> = ({ value, onChange, size = 'md', ...props }) => {
     const colors = useColorTheme();
 
     // iOS uses tintColor for the on state and backgroundColor for the track
@@ -50,13 +45,7 @@ export const Switch: React.FC<SwitchProps> = ({
         ...props,
     };
 
-    return (
-        <RNSwitch
-            {...switchProps}
-            style={[SIZE_MAP[size], props.style]}
-        />
-    );
+    return <RNSwitch {...switchProps} style={[SIZE_MAP[size], props.style]} />;
 };
 
 export default Switch;
-

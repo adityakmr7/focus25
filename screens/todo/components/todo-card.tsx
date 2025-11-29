@@ -2,6 +2,14 @@ import TypographyText from '@/components/TypographyText';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View, Text } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated';
 import { useUnifiedTodoStore } from '@/hooks/useUnifiedTodoStore';
 import { useColorTheme } from '@/hooks/useColorTheme';
 
@@ -9,6 +17,7 @@ interface TodoCardProps {
     todo: any;
     onToggle: (id: string) => void;
     onEdit: (todo: any) => void;
+    onDelete: (id: string) => void;
 }
 
 const SubTaskItem = ({ todo }: { todo: any }) => {
@@ -84,9 +93,13 @@ const SubTaskItem = ({ todo }: { todo: any }) => {
     );
 };
 
-const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit }) => {
+const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit, onDelete }) => {
     const colors = useColorTheme();
     const { updateTodo } = useUnifiedTodoStore();
+    const translateX = useSharedValue(0);
+    const deleteOpacity = useSharedValue(0);
+    const SWIPE_THRESHOLD = -80;
+
     const categoryColors: Record<string, string> = {
         Work: 'green',
         Health: 'red',
@@ -98,91 +111,186 @@ const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit }) => {
         return null;
     }
 
+    const panGesture = Gesture.Pan()
+        .activeOffsetX([-10, 10])
+        .onStart(() => {
+            translateX.value = 0;
+            deleteOpacity.value = 0;
+        })
+        .onUpdate((event) => {
+            const clampedTranslateX = Math.min(0, event.translationX);
+            translateX.value = clampedTranslateX;
+
+            // Show delete background as user swipes
+            const progress = Math.abs(clampedTranslateX) / Math.abs(SWIPE_THRESHOLD);
+            deleteOpacity.value = Math.min(1, progress);
+        })
+        .onEnd((event) => {
+            const shouldDelete = event.translationX <= SWIPE_THRESHOLD;
+
+            if (shouldDelete) {
+                // Animate out and delete
+                translateX.value = withTiming(-400, { duration: 300 });
+                deleteOpacity.value = withTiming(1, { duration: 300 });
+                runOnJS(onDelete)(todo.id);
+            } else {
+                // Snap back to original position
+                translateX.value = withSpring(0, { damping: 15, stiffness: 300 });
+                deleteOpacity.value = withTiming(0, { duration: 200 });
+            }
+        });
+
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateX: translateX.value }],
+        };
+    });
+
+    const deleteBackgroundStyle = useAnimatedStyle(() => {
+        return {
+            opacity: deleteOpacity.value,
+        };
+    });
+
     // Minimalist row layout (list) to match mock
     return (
         <>
-            <TouchableOpacity
-                key={todo.id}
-                style={[
-                    styles.rowContainer,
-                    {
-                        borderBottomColor: colors.surfacePrimary,
-                    },
-                ]}
-                onPress={() => onToggle(todo.id)}
-                onLongPress={() => onEdit(todo)}
-                activeOpacity={0.8}
-            >
-                <View style={styles.todoRow}>
-                    <View
+            <View style={styles.todoContainer}>
+                <Animated.View
+                    style={[
+                        styles.deleteBackground,
+                        deleteBackgroundStyle,
+                        { backgroundColor: colors.danger },
+                    ]}
+                >
+                    <View style={styles.deleteContent}>
+                        <Ionicons name="trash" size={24} color={colors.backgroundPrimary} />
+                        <Text style={[styles.deleteText, { color: colors.backgroundPrimary }]}>
+                            Delete
+                        </Text>
+                    </View>
+                </Animated.View>
+                <GestureDetector gesture={panGesture}>
+                    <Animated.View
                         style={[
-                            styles.checkbox,
+                            styles.rowContainer,
                             {
-                                backgroundColor: Boolean(todo.isCompleted)
-                                    ? colors.secondary
-                                    : colors.primary,
-                                borderColor: colors.surfacePrimary,
+                                borderBottomColor: colors.surfacePrimary,
+                                backgroundColor: colors.backgroundPrimary,
                             },
+                            animatedStyle,
                         ]}
                     >
-                        {Boolean(todo.isCompleted) && (
-                            <Ionicons name="checkmark" size={14} color={colors.backgroundPrimary} />
-                        )}
-                    </View>
-
-                    <View style={styles.textContainer}>
-                        <TypographyText
-                            variant="body"
-                            style={[styles.title, { color: colors.contentPrimary }]}
-                            numberOfLines={2}
+                        <TouchableOpacity
+                            style={styles.todoContentWrapper}
+                            onPress={() => onToggle(todo.id)}
+                            onLongPress={() => onEdit(todo)}
+                            activeOpacity={0.8}
                         >
-                            {todo.title || 'Untitled Todo'}
-                        </TypographyText>
-
-                        {todo?.category && (
-                            <View style={styles.badgeRow}>
+                            <View style={styles.todoRow}>
                                 <View
                                     style={[
-                                        styles.badge,
+                                        styles.checkbox,
                                         {
-                                            backgroundColor: colors.backgroundPrimary,
-                                            borderColor:
-                                                categoryColors[String(todo.category)] ||
-                                                colors.surfacePrimary,
-                                            borderWidth: 1,
+                                            backgroundColor: Boolean(todo.isCompleted)
+                                                ? colors.secondary
+                                                : colors.primary,
+                                            borderColor: colors.surfacePrimary,
                                         },
                                     ]}
                                 >
+                                    {Boolean(todo.isCompleted) && (
+                                        <Ionicons
+                                            name="checkmark"
+                                            size={14}
+                                            color={colors.backgroundPrimary}
+                                        />
+                                    )}
+                                </View>
+
+                                <View style={styles.textContainer}>
                                     <TypographyText
-                                        variant="caption"
-                                        style={[
-                                            styles.badgeText,
-                                            {
-                                                color:
-                                                    categoryColors[String(todo.category)] ||
-                                                    colors.contentPrimary,
-                                            },
-                                        ]}
+                                        variant="body"
+                                        style={[styles.title, { color: colors.contentPrimary }]}
+                                        numberOfLines={2}
                                     >
-                                        {String(todo.category)}
+                                        {todo.title || 'Untitled Todo'}
                                     </TypographyText>
+
+                                    {todo?.category && (
+                                        <View style={styles.badgeRow}>
+                                            <View
+                                                style={[
+                                                    styles.badge,
+                                                    {
+                                                        backgroundColor: colors.backgroundPrimary,
+                                                        borderColor:
+                                                            categoryColors[String(todo.category)] ||
+                                                            colors.surfacePrimary,
+                                                        borderWidth: 1,
+                                                    },
+                                                ]}
+                                            >
+                                                <TypographyText
+                                                    variant="caption"
+                                                    style={[
+                                                        styles.badgeText,
+                                                        {
+                                                            color:
+                                                                categoryColors[String(todo.category)] ||
+                                                                colors.contentPrimary,
+                                                        },
+                                                    ]}
+                                                >
+                                                    {String(todo.category)}
+                                                </TypographyText>
+                                            </View>
+                                        </View>
+                                    )}
                                 </View>
                             </View>
-                        )}
-                    </View>
-                    {/* Subtasks */}
-                </View>
             </TouchableOpacity>
-            <SubTaskItem todo={todo} />
+        </Animated.View>
+    </GestureDetector>
+</View>
+<SubTaskItem todo={todo} />
         </>
     );
 };
 
 const styles = StyleSheet.create({
+    todoContainer: {
+        position: 'relative',
+        width: '100%',
+    },
     rowContainer: {
         width: '100%',
         paddingVertical: 16,
         borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    todoContentWrapper: {
+        width: '100%',
+    },
+    deleteBackground: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        borderRadius: 0,
+        justifyContent: 'center',
+        alignItems: 'flex-end',
+        paddingRight: 20,
+        zIndex: -1,
+    },
+    deleteContent: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+    },
+    deleteText: {
+        fontSize: 12,
+        fontWeight: '600',
     },
     rowLeft: {
         flexDirection: 'column',

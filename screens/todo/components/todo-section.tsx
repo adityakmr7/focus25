@@ -9,6 +9,7 @@ interface TodoSectionProps {
     viewMode: 'grid' | 'list';
     onToggleTodo: (id: string) => void;
     onEditTodo: (todo: any) => void;
+    onDeleteTodo: (id: string) => void;
 }
 
 const TodoSectionComponent: React.FC<TodoSectionProps> = ({
@@ -16,6 +17,7 @@ const TodoSectionComponent: React.FC<TodoSectionProps> = ({
     viewMode,
     onToggleTodo,
     onEditTodo,
+    onDeleteTodo,
 }) => {
     const isGrid = viewMode === 'grid';
 
@@ -31,6 +33,7 @@ const TodoSectionComponent: React.FC<TodoSectionProps> = ({
                             todo={todo}
                             onToggle={onToggleTodo}
                             onEdit={onEditTodo}
+                            onDelete={onDeleteTodo}
                         />
                     ))}
             </View>

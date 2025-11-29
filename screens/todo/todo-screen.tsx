@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 const TodoScreen: React.FC = () => {
     const colors = useColorTheme();
-    const { todos, toggleTodo, loadTodos } = useUnifiedTodoStore();
+    const { todos, toggleTodo, loadTodos, deleteTodo } = useUnifiedTodoStore();
     const [viewMode] = useState<'grid' | 'list'>('grid');
 
     // Load todos on component mount
@@ -52,6 +52,17 @@ const TodoScreen: React.FC = () => {
     const handleEditTodo = useCallback((todo: any) => {
         router.push(`/(create-todo)/create-todo?todoId=${todo.id}`);
     }, []);
+
+    const handleDeleteTodo = useCallback(
+        async (id: string) => {
+            try {
+                await deleteTodo(id);
+            } catch (error) {
+                console.error('Failed to delete todo:', error);
+            }
+        },
+        [deleteTodo],
+    );
     const onFabPress = () => {
         router.push('/(create-todo)/create-todo');
     };
@@ -76,6 +87,7 @@ const TodoScreen: React.FC = () => {
                                     viewMode={viewMode}
                                     onToggleTodo={handleToggleTodo}
                                     onEditTodo={handleEditTodo}
+                                    onDeleteTodo={handleDeleteTodo}
                                 />
                             ))}
                         </View>
