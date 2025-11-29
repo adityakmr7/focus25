@@ -4,7 +4,6 @@ import { useCategoryStore } from '@/stores/category-store';
 import { Subtask } from '@/services/local-database-service';
 import { useColorTheme } from '@/hooks/useColorTheme';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -44,7 +43,6 @@ const CreateTodoScreen = () => {
     const [reminderAt, setReminderAt] = useState<string | null>(
         todoWithLocalProps?.reminderAt ?? null,
     );
-    const [showPicker, setShowPicker] = useState(false);
     const existingSubtasks = (todoWithLocalProps?.subtasks ?? []) as Subtask[];
     const [enableSubtasks, setEnableSubtasks] = useState(
         Array.isArray(existingSubtasks) && existingSubtasks.length > 0,
@@ -102,6 +100,7 @@ const CreateTodoScreen = () => {
     const handleSaveTodo = async () => {
         if (!title.trim()) return;
 
+        console.log('subtasks', subtasks);
         setIsLoading(true);
         try {
             if (isEditing && todoId) {
@@ -343,22 +342,6 @@ const CreateTodoScreen = () => {
 
                     {/* Action Buttons */}
                     <HStack gap="md" style={{ marginBottom: 20 }}>
-                        {/* Reminder button like mock (left circle) */}
-                        <TouchableOpacity
-                            onPress={() => setShowPicker(true)}
-                            style={{
-                                width: 56,
-                                height: 56,
-                                borderRadius: 28,
-                                backgroundColor: colors.surfacePrimary,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderWidth: 1,
-                                borderColor: colors.contentSecondary,
-                            }}
-                        >
-                            <Ionicons name="time-outline" size={22} color={colors.contentPrimary} />
-                        </TouchableOpacity>
                         <View style={{ flex: 1 }}>
                             <Button
                                 onPress={handleSaveTodo}
@@ -383,17 +366,6 @@ const CreateTodoScreen = () => {
                             </Button>
                         </View>
                     </HStack>
-                    {showPicker && (
-                        <DateTimePicker
-                            value={reminderAt ? new Date(reminderAt) : new Date()}
-                            mode="datetime"
-                            display={Platform.OS === 'ios' ? 'inline' : 'default'}
-                            onChange={(_, date) => {
-                                setShowPicker(false);
-                                if (date) setReminderAt(date.toISOString());
-                            }}
-                        />
-                    )}
                 </View>
             </KeyboardAvoidingView>
         </SafeAreaView>

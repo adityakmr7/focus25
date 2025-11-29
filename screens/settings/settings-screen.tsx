@@ -70,8 +70,6 @@ const SettingsScreen = () => {
         userName,
         metronome,
         userEmail,
-        themeMode,
-        setThemeMode,
         setMetronome,
         setMetronomeVolume,
         metronomeVolume,
@@ -79,13 +77,11 @@ const SettingsScreen = () => {
         setNotifications,
     } = useSettingsStore();
     const { isProUser, refreshProStatus, signOut } = useAuthStore();
-    const [isRestoring, setIsRestoring] = useState(false);
     const [syncStatus, setSyncStatus] = useState<{
         enabled: boolean;
         lastSyncAt?: string;
         unsyncedChanges: number;
     } | null>(null);
-    const [isSyncing, setIsSyncing] = useState(false);
 
     // Get subscription details if user is pro
     const subscriptionDetails = isProUser
@@ -129,123 +125,6 @@ const SettingsScreen = () => {
         //         from: 'settings',
         //     },
         // });
-    };
-
-    const handleManageSubscription = () => {
-        // Open App Store subscription management
-        if (Platform.OS === 'ios') {
-            Linking.openURL('https://apps.apple.com/account/subscriptions');
-        } else if (Platform.OS === 'android') {
-            Linking.openURL('https://play.google.com/store/account/subscriptions');
-        } else {
-            showError(new Error('Subscription management is only available on iOS and Android.'), {
-                action: 'handleManageSubscription.platformCheck',
-            });
-        }
-    };
-
-    const handleRestorePurchases = async () => {
-        if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
-            showError(new Error('Restore purchases is only available on iOS and Android.'), {
-                action: 'handleRestorePurchases.platformCheck',
-            });
-            return;
-        }
-
-        setIsRestoring(true);
-        try {
-            // Ensure RevenueCat is initialized
-            if (!revenueCatService.isInitialized()) {
-                await revenueCatService.initialize();
-            }
-
-            const customerInfo = await revenueCatService.restorePurchases();
-
-            if (customerInfo) {
-                // Check if restore found an active subscription
-                const hasActiveSubscription = revenueCatService.hasActiveEntitlement(
-                    SUBSCRIPTION_CONSTANTS.PRO_ENTITLEMENT_ID,
-                );
-
-                if (hasActiveSubscription) {
-                    await refreshProStatus();
-                    showSuccess('Purchases restored successfully!', 'Restore Successful');
-                } else {
-                    showError(
-                        new Error(
-                            'No active subscription found. If you have an active subscription, please contact support.',
-                        ),
-                        {
-                            action: 'handleRestorePurchases.noSubscription',
-                        },
-                    );
-                }
-            } else {
-                showError(new Error('Failed to restore purchases. Please try again.'), {
-                    action: 'handleRestorePurchases.failed',
-                });
-            }
-        } catch (error: any) {
-            showError(error, {
-                action: 'handleRestorePurchases',
-            });
-        } finally {
-            setIsRestoring(false);
-        }
-    };
-
-    const handleManualSync = async () => {
-        if (!isProUser) {
-            showError(new Error('Cloud sync is only available for Premium users.'), {
-                action: 'handleManualSync.notPro',
-            });
-            return;
-        }
-
-        setIsSyncing(true);
-        try {
-            const success = await optionalSyncService.forceSync();
-            if (success) {
-                showSuccess('Sync completed successfully', 'Sync Complete');
-                // Refresh sync status
-                const status = await optionalSyncService.getSyncStatus();
-                setSyncStatus(status);
-            } else {
-                showError(new Error('Sync failed. Please check your connection and try again.'), {
-                    action: 'handleManualSync.failed',
-                });
-            }
-        } catch (error) {
-            showError(error, {
-                action: 'handleManualSync',
-            });
-        } finally {
-            setIsSyncing(false);
-        }
-    };
-
-    const formatSyncTime = (dateString?: string): string => {
-        if (!dateString) return 'Never';
-        try {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffMs = now.getTime() - date.getTime();
-            const diffMins = Math.floor(diffMs / 60000);
-            const diffHours = Math.floor(diffMs / 3600000);
-            const diffDays = Math.floor(diffMs / 86400000);
-
-            if (diffMins < 1) return 'Just now';
-            if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
-            if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-            if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
-            return date.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-            });
-        } catch {
-            return 'Unknown';
-        }
     };
 
     const [focusIndex, setFocusIndex] = useState(
@@ -383,7 +262,7 @@ const SettingsScreen = () => {
                 }}
                 style={{ flex: 1 }}
             >
-                <ProPlanCard />
+                {!isProUser && <ProPlanCard />}
                 {(userName || userEmail) && (
                     <VStack alignItems="center" gap="unit-2" py="md">
                         <View
@@ -646,7 +525,7 @@ const SettingsScreen = () => {
                                         <TypographyText
                                             variant="body"
                                             style={{
-                                                color: '#FF3B30',
+                                                color: colors.danger,
                                                 fontWeight: '600',
                                             }}
                                         >

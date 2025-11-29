@@ -9,6 +9,7 @@ export const DarkPalette = {
     contentSecondary: '#6A6A6A',
     // surface
     surfacePrimary: '#222222',
+    danger: '#FF3B30',
 };
 
 export const LightPalette = {
@@ -22,4 +23,5 @@ export const LightPalette = {
     contentSecondary: '#6A6A6A',
     // surface
     surfacePrimary: '#E4E4E4',
+    danger: '#FF3B30',
 };

@@ -79,6 +79,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
                 createdAt: new Date().toISOString(),
                 completedAt: null,
                 actualMinutes: 0,
+                subtasks: todoData.subtasks ?? [],
             };
 
             set((state) => ({
@@ -110,7 +111,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            const appError = errorHandlingService.processError(error, { action: 'updateTodo', todoId: id });
+            const appError = errorHandlingService.processError(error, {
+                action: 'updateTodo',
+                todoId: id,
+            });
             set({
                 error: appError.userMessage || 'Failed to update todo',
                 isLoading: false,
@@ -138,7 +142,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
                 todos: state.todos.map((todo) => (todo.id === id ? { ...todo, ...updates } : todo)),
             }));
         } catch (error) {
-            const appError = errorHandlingService.processError(error, { action: 'toggleTodo', todoId: id });
+            const appError = errorHandlingService.processError(error, {
+                action: 'toggleTodo',
+                todoId: id,
+            });
             set({
                 error: appError.userMessage || 'Failed to toggle todo',
             });
@@ -161,7 +168,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
             }));
             showSuccess('Todo deleted successfully');
         } catch (error) {
-            const appError = errorHandlingService.processError(error, { action: 'deleteTodo', todoId: id });
+            const appError = errorHandlingService.processError(error, {
+                action: 'deleteTodo',
+                todoId: id,
+            });
             set({
                 error: appError.userMessage || 'Failed to delete todo',
                 isLoading: false,
@@ -189,7 +199,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
             }));
             showSuccess('Completed todos deleted successfully');
         } catch (error) {
-            const appError = errorHandlingService.processError(error, { action: 'deleteCompletedTodos' });
+            const appError = errorHandlingService.processError(error, {
+                action: 'deleteCompletedTodos',
+            });
             set({
                 error: appError.userMessage || 'Failed to delete completed todos',
                 isLoading: false,

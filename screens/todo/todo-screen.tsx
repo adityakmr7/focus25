@@ -84,21 +84,21 @@ const TodoScreen: React.FC = () => {
                         <EmptyState viewMode={viewMode} />
                     )}
                 </View>
-                <Box
-                    style={{
-                        backgroundColor: colors.contentPrimary,
-                        position: 'absolute',
-                        bottom: 45,
-                        right: 20,
-                    }}
-                    borderRadius="full"
-                    p="md"
-                >
-                    <TouchableOpacity onPress={onFabPress}>
-                        <Ionicons name="add" size={24} color={colors.backgroundPrimary} />
-                    </TouchableOpacity>
-                </Box>
             </ScrollView>
+            <Box
+                style={{
+                    backgroundColor: colors.contentPrimary,
+                    position: 'absolute',
+                    bottom: 100,
+                    right: 20,
+                }}
+                borderRadius="full"
+                p="md"
+            >
+                <TouchableOpacity onPress={onFabPress}>
+                    <Ionicons name="add" size={24} color={colors.backgroundPrimary} />
+                </TouchableOpacity>
+            </Box>
         </SafeAreaView>
     );
 };
