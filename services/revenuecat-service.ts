@@ -399,6 +399,119 @@ class RevenueCatService {
             return null;
         }
     }
+
+    /**
+     * Get subscription period information from a package
+     * Returns subscription period in a human-readable format
+     */
+    async getSubscriptionPeriod(offeringId: string, productId?: string): Promise<string | null> {
+        try {
+            const pkg = await this.getPackageForProduct(offeringId, productId);
+            if (!pkg) {
+                return null;
+            }
+
+            // Get subscription period from product
+            const product = pkg.product;
+            
+            // Check if product has subscription period information
+            // RevenueCat product may have subscriptionPeriod property (if available in types)
+            // We'll use type assertion to access it safely
+            const productAny = product as any;
+            if (productAny.subscriptionPeriod) {
+                const period = String(productAny.subscriptionPeriod);
+                // period might be in ISO 8601 duration format (e.g., "P1M" for 1 month)
+                if (period.includes('M')) {
+                    const months = parseInt(period.replace(/[^0-9]/g, '')) || 1;
+                    return months === 1 ? 'Monthly' : `${months} months`;
+                } else if (period.includes('Y')) {
+                    const years = parseInt(period.replace(/[^0-9]/g, '')) || 1;
+                    return years === 1 ? 'Yearly' : `${years} years`;
+                } else if (period.includes('W')) {
+                    const weeks = parseInt(period.replace(/[^0-9]/g, '')) || 1;
+                    return weeks === 1 ? 'Weekly' : `${weeks} weeks`;
+                } else if (period.includes('D')) {
+                    const days = parseInt(period.replace(/[^0-9]/g, '')) || 1;
+                    return days === 1 ? 'Daily' : `${days} days`;
+                }
+            }
+
+            // Fallback: check product identifier for common patterns
+            const identifier = product.identifier?.toLowerCase() || '';
+            if (identifier.includes('month') || identifier.includes('monthly')) {
+                return 'Monthly';
+            } else if (identifier.includes('year') || identifier.includes('yearly') || identifier.includes('annual')) {
+                return 'Yearly';
+            } else if (identifier.includes('week') || identifier.includes('weekly')) {
+                return 'Weekly';
+            }
+
+            // Default to monthly if we can't determine (based on app's subscription model)
+            return 'Monthly';
+        } catch (error: any) {
+            // Silently handle configuration errors
+            const errorMessage = error?.message || String(error);
+            if (
+                !errorMessage.includes('configuration') &&
+                !errorMessage.includes('offerings-empty') &&
+                !errorMessage.includes('products registered')
+            ) {
+                console.error('[RevenueCatService] Error getting subscription period:', error);
+            }
+            // Default to monthly (based on app's subscription model)
+            return 'Monthly';
+        }
+    }
+
+    /**
+     * Get full package information including price and period
+     */
+    async getPackageInfo(offeringId: string, productId?: string): Promise<{
+        price: string | null;
+        period: string | null;
+        priceString: string | null;
+    }> {
+        try {
+            const pkg = await this.getPackageForProduct(offeringId, productId);
+            if (!pkg) {
+                return {
+                    price: null,
+                    period: null,
+                    priceString: null,
+                };
+            }
+
+            const price = pkg.product.priceString ?? null;
+            const period = await this.getSubscriptionPeriod(offeringId, productId);
+            
+            // Create a formatted price string with period
+            let priceString = price;
+            if (price && period) {
+                const periodLower = period.toLowerCase();
+                if (periodLower.includes('month')) {
+                    priceString = `${price}/month`;
+                } else if (periodLower.includes('year')) {
+                    priceString = `${price}/year`;
+                } else if (periodLower.includes('week')) {
+                    priceString = `${price}/week`;
+                } else {
+                    priceString = `${price}/${period.toLowerCase()}`;
+                }
+            }
+
+            return {
+                price,
+                period,
+                priceString,
+            };
+        } catch (error: any) {
+            return {
+                price: null,
+                period: null,
+                priceString: null,
+            };
+        }
+    }
 }
 
 export const revenueCatService = new RevenueCatService();

@@ -1,6 +1,6 @@
-# Focus25 Documentation Site
+# Flowzy Documentation Site
 
-This directory contains the GitHub Pages documentation website for Focus25, including Terms of Service, Privacy Policy, and Help & Support pages.
+This directory contains the GitHub Pages documentation website for Flowzy, including Terms of Service, Privacy Policy, and Help & Support pages.
 
 ## 🚀 Setup Instructions
 
@@ -114,4 +114,4 @@ For questions about this documentation setup:
 
 ---
 
-**Ready to launch?** Your Focus25 documentation site is ready for GitHub Pages deployment! 🎉
+**Ready to launch?** Your Flowzy documentation site is ready for GitHub Pages deployment! 🎉

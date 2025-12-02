@@ -1,8 +1,8 @@
-# GitHub Pages Configuration for Focus25 Documentation
+# GitHub Pages Configuration for Flowzy Documentation
 
 # Site settings
-title: "Focus25 - Productivity & Pomodoro Timer"
-description: "Master your focus with Flow State - The ultimate productivity app combining the Pomodoro Technique with flow state tracking, ambient music, and comprehensive analytics."
+title: "Flowzy - Productivity & Pomodoro Timer"
+description: "Enter your flow state with Flowzy - The ultimate productivity app combining the Pomodoro Technique with flow state tracking, ambient music, and comprehensive analytics."
 url: "https://adityakumar.github.io" # Replace with your GitHub username
 baseurl: "/flow-clone" # Replace with your repository name
 
@@ -30,13 +30,13 @@ include:
 
 # SEO settings
 lang: en_US
-author: Focus25 Team
+author: Flowzy Team
 twitter:
-  username: focus25app
+  username: flowzyapp
   card: summary_large_image
 
 # Social media and contact
-email: support@focus25app.com
+email: support@flowzyapp.com
 github_username: adityakumar
 
 # Custom variables

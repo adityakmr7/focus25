@@ -1,6 +1,39 @@
-// Focus25 Website JavaScript
+// Flowzy Website JavaScript
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Theme Toggle Functionality
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const themeText = document.getElementById('themeText');
+    
+    // Get saved theme or default to light
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+    
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        });
+    }
+    
+    function updateThemeIcon(theme) {
+        if (themeIcon && themeText) {
+            if (theme === 'dark') {
+                themeIcon.textContent = '☀️';
+                themeText.textContent = 'Light';
+            } else {
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'Dark';
+            }
+        }
+    }
+    
     // Smooth scrolling for anchor links
     const links = document.querySelectorAll('a[href^="#"]');
     
@@ -27,19 +60,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const header = document.querySelector('.header');
     let lastScrollTop = 0;
 
-    window.addEventListener('scroll', function() {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        
-        if (scrollTop > 100) {
-            header.style.background = 'rgba(255, 255, 255, 0.98)';
-            header.style.borderBottom = '1px solid rgba(0, 0, 0, 0.15)';
-        } else {
-            header.style.background = 'rgba(255, 255, 255, 0.95)';
-            header.style.borderBottom = '1px solid rgba(0, 0, 0, 0.1)';
-        }
-        
-        lastScrollTop = scrollTop;
-    });
+    if (header) {
+        window.addEventListener('scroll', function() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            
+            if (scrollTop > 100) {
+                header.style.background = isDark 
+                    ? 'rgba(0, 0, 0, 0.98)' 
+                    : 'rgba(255, 255, 255, 0.98)';
+                header.style.borderBottom = isDark
+                    ? '1px solid rgba(255, 255, 255, 0.1)'
+                    : '1px solid rgba(0, 0, 0, 0.15)';
+            } else {
+                header.style.background = isDark
+                    ? 'rgba(0, 0, 0, 0.95)'
+                    : 'rgba(255, 255, 255, 0.95)';
+                header.style.borderBottom = isDark
+                    ? '1px solid rgba(255, 255, 255, 0.05)'
+                    : '1px solid rgba(0, 0, 0, 0.1)';
+            }
+            
+            lastScrollTop = scrollTop;
+        });
+    }
 
     // Animation on scroll
     const observerOptions = {
@@ -181,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const style = document.createElement('style');
     style.textContent = `
         .keyboard-navigation *:focus {
-            outline: 2px solid #2563eb !important;
+            outline: 2px solid var(--secondary) !important;
             outline-offset: 2px !important;
         }
     `;

@@ -95,22 +95,11 @@ const SubTaskItem = ({ todo }: { todo: any }) => {
 
 const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit, onDelete }) => {
     const colors = useColorTheme();
-    const { updateTodo } = useUnifiedTodoStore();
     const translateX = useSharedValue(0);
     const deleteOpacity = useSharedValue(0);
     const SWIPE_THRESHOLD = -80;
 
-    const categoryColors: Record<string, string> = {
-        Work: 'green',
-        Health: 'red',
-        Personal: 'yellow',
-    };
-
-    // Safety check for todo object
-    if (!todo || !todo.id) {
-        return null;
-    }
-
+    // All hooks must be called before any conditional returns
     const panGesture = Gesture.Pan()
         .activeOffsetX([-10, 10])
         .onStart(() => {
@@ -132,7 +121,7 @@ const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit, onDelete })
                 // Animate out and delete
                 translateX.value = withTiming(-400, { duration: 300 });
                 deleteOpacity.value = withTiming(1, { duration: 300 });
-                runOnJS(onDelete)(todo.id);
+                runOnJS(onDelete)(todo?.id || '');
             } else {
                 // Snap back to original position
                 translateX.value = withSpring(0, { damping: 15, stiffness: 300 });
@@ -151,6 +140,17 @@ const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit, onDelete })
             opacity: deleteOpacity.value,
         };
     });
+
+    const categoryColors: Record<string, string> = {
+        Work: 'green',
+        Health: 'red',
+        Personal: 'yellow',
+    };
+
+    // Safety check for todo object - must be after all hooks
+    if (!todo || !todo.id) {
+        return null;
+    }
 
     // Minimalist row layout (list) to match mock
     return (
@@ -237,8 +237,9 @@ const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit, onDelete })
                                                         styles.badgeText,
                                                         {
                                                             color:
-                                                                categoryColors[String(todo.category)] ||
-                                                                colors.contentPrimary,
+                                                                categoryColors[
+                                                                    String(todo.category)
+                                                                ] || colors.contentPrimary,
                                                         },
                                                     ]}
                                                 >
@@ -249,11 +250,11 @@ const TodoCard: React.FC<TodoCardProps> = ({ todo, onToggle, onEdit, onDelete })
                                     )}
                                 </View>
                             </View>
-            </TouchableOpacity>
-        </Animated.View>
-    </GestureDetector>
-</View>
-<SubTaskItem todo={todo} />
+                        </TouchableOpacity>
+                    </Animated.View>
+                </GestureDetector>
+            </View>
+            <SubTaskItem todo={todo} />
         </>
     );
 };

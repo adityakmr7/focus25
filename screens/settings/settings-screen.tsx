@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Host, ContextMenu, Slider, Button as SwiftButton, Picker } from '@expo/ui/swift-ui';
 import Avatar from '@/components/ui/avatar';
 import { APP_CONFIG } from '@/configs/app-config';
@@ -107,27 +108,14 @@ const SettingsScreen = () => {
     }, [isProUser]);
 
     const handleSeePlanPress = async () => {
-        try {
-            const paywallResult = await RevenueCatUI.presentPaywallIfNeeded({
-                requiredEntitlementIdentifier: 'flowzy_premium',
-            });
-
-            if (
-                paywallResult === PAYWALL_RESULT.PURCHASED ||
-                paywallResult === PAYWALL_RESULT.RESTORED
-            ) {
-                console.log('User has access to pro features');
-                // Handle successful purchase or restore here
-            }
-        } catch (error) {
-            console.error('Error presenting paywall:', error);
-        }
-        // router.push({
-        //     pathname: '/plan',
-        //     params: {
-        //         from: 'settings',
-        //     },
-        // });
+        // Navigate to custom plan screen that shows all required Apple subscription information
+        // This ensures Apple reviewers can verify all required information is displayed
+        router.push({
+            pathname: '/plan',
+            params: {
+                from: 'settings',
+            },
+        });
     };
 
     const [focusIndex, setFocusIndex] = useState(

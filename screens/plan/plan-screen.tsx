@@ -5,10 +5,14 @@ import { analyticsService } from '@/services/analytics-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { showError, showSuccess } from '@/utils/error-toast';
 import React, { useEffect, useState } from 'react';
-import { Linking, Platform, ScrollView, View } from 'react-native';
+import { Linking, Platform, ScrollView, View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorTheme } from '@/hooks/useColorTheme';
 import { HStack } from '@/components/ui/HStack';
+import { VStack } from '@/components/ui/VStack';
+import { Button } from '@/components/ui/Button';
+import { SPACING } from '@/constants/spacing';
+import { APP_CONFIG } from '@/configs/app-config';
 
 const FeatureRow: React.FC<{ text: string }> = ({ text }) => {
     const colors = useColorTheme();
@@ -19,7 +23,7 @@ const FeatureRow: React.FC<{ text: string }> = ({ text }) => {
                     width: 8,
                     height: 8,
                     borderRadius: 4,
-                    backgroundColor: theme.colors.primary,
+                    backgroundColor: colors.primary,
                     marginTop: 6,
                 }}
             />
@@ -33,6 +37,7 @@ const PlanScreen = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isRestoring, setIsRestoring] = useState(false);
     const [packagePrice, setPackagePrice] = useState<string | null>(null);
+    const [subscriptionPeriod, setSubscriptionPeriod] = useState<string | null>(null);
     const { isProUser, refreshProStatus } = useAuthStore();
 
     // Get subscription details if user is pro
@@ -40,19 +45,20 @@ const PlanScreen = () => {
         ? revenueCatService.getSubscriptionDetails(SUBSCRIPTION_CONSTANTS.PRO_ENTITLEMENT_ID)
         : null;
 
-    // Load package price on mount
+    // Load package price and period on mount
     useEffect(() => {
-        const loadPrice = async () => {
-            if (!isProUser && Platform.OS !== 'web') {
-                const price = await revenueCatService.getPackagePrice(
+        const loadPackageInfo = async () => {
+            if (Platform.OS !== 'web') {
+                const packageInfo = await revenueCatService.getPackageInfo(
                     SUBSCRIPTION_CONSTANTS.PRO_OFFERING_ID,
                     SUBSCRIPTION_CONSTANTS.PRO_PRODUCT_ID,
                 );
-                setPackagePrice(price);
+                setPackagePrice(packageInfo.price);
+                setSubscriptionPeriod(packageInfo.period);
             }
         };
-        loadPrice();
-    }, [isProUser]);
+        loadPackageInfo();
+    }, []);
 
     const handleUpgradeToPro = async () => {
         if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
@@ -178,6 +184,7 @@ const PlanScreen = () => {
             }
 
             const customerInfo = await revenueCatService.restorePurchases();
+            const { user } = useAuthStore.getState();
 
             if (customerInfo) {
                 // Check if restore found an active subscription
@@ -244,7 +251,7 @@ const PlanScreen = () => {
     // Show subscription status for pro users
     if (isProUser && subscriptionDetails) {
         return (
-            <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: colors.backgroundPrimary }}>
                 <ScrollView
                     contentContainerStyle={{
                         paddingTop: SPACING['unit-8'],
@@ -261,90 +268,146 @@ const PlanScreen = () => {
                         <VStack gap="unit-2" mt="xs">
                             <HStack gap="unit-1">
                                 <TypographyText variant="title" weight="bold" color="primary">
-                                    Flowzy Premium
+                                    {SUBSCRIPTION_CONSTANTS.PRO_DISPLAY_NAME}
                                 </TypographyText>
                             </HStack>
                             <TypographyText variant="body" size="sm">
-                                You're currently subscribed to Flowzy Premium
+                                You&apos;re currently subscribed to{' '}
+                                {SUBSCRIPTION_CONSTANTS.PRO_DISPLAY_NAME}
                             </TypographyText>
                         </VStack>
 
-                        <Card variant="bordered" style={{ borderRadius: 20, overflow: 'hidden' }}>
-                            <CardBody>
-                                <VStack gap="unit-4">
-                                    <VStack gap="unit-3">
-                                        <HStack alignItems="center" justifyContent="space-between">
-                                            <TypographyText variant="body" weight="semibold">
-                                                Status
-                                            </TypographyText>
-                                            <View
+                        <View
+                            style={{
+                                borderRadius: 20,
+                                borderWidth: 1,
+                                borderColor: colors.surfacePrimary,
+                                backgroundColor: colors.backgroundSecondary,
+                                padding: SPACING['unit-4'],
+                            }}
+                        >
+                            <VStack gap="unit-4">
+                                <VStack gap="unit-3">
+                                    <HStack alignItems="center" justifyContent="space-between">
+                                        <TypographyText variant="body" weight="semibold">
+                                            Status
+                                        </TypographyText>
+                                        <View
+                                            style={{
+                                                paddingHorizontal: 12,
+                                                paddingVertical: 6,
+                                                borderRadius: 12,
+                                                backgroundColor: subscriptionDetails.isActive
+                                                    ? '#10B981'
+                                                    : colors.danger || '#EF4444',
+                                            }}
+                                        >
+                                            <TypographyText
+                                                variant="caption"
                                                 style={{
-                                                    paddingHorizontal: 12,
-                                                    paddingVertical: 6,
-                                                    borderRadius: 12,
-                                                    backgroundColor: subscriptionDetails.isActive
-                                                        ? theme.colors.success
-                                                        : theme.colors.danger,
+                                                    color: '#fff',
+                                                    fontWeight: '600',
                                                 }}
                                             >
-                                                <TypographyText
-                                                    variant="caption"
-                                                    style={{
-                                                        color: '#fff',
-                                                        fontWeight: '600',
-                                                    }}
-                                                >
-                                                    {subscriptionDetails.isActive
-                                                        ? 'Active'
-                                                        : 'Expired'}
-                                                </TypographyText>
-                                            </View>
+                                                {subscriptionDetails.isActive
+                                                    ? 'Active'
+                                                    : 'Expired'}
+                                            </TypographyText>
+                                        </View>
+                                    </HStack>
+
+                                    {subscriptionDetails.expiryDate && (
+                                        <HStack alignItems="center" justifyContent="space-between">
+                                            <TypographyText variant="body" weight="semibold">
+                                                {subscriptionDetails.willRenew
+                                                    ? 'Renews on'
+                                                    : 'Expires on'}
+                                            </TypographyText>
+                                            <TypographyText variant="body">
+                                                {formatDate(subscriptionDetails.expiryDate)}
+                                            </TypographyText>
                                         </HStack>
+                                    )}
 
-                                        {subscriptionDetails.expiryDate && (
-                                            <HStack
-                                                alignItems="center"
-                                                justifyContent="space-between"
-                                            >
-                                                <TypographyText variant="body" weight="semibold">
-                                                    {subscriptionDetails.willRenew
-                                                        ? 'Renews on'
-                                                        : 'Expires on'}
-                                                </TypographyText>
-                                                <TypographyText variant="body">
-                                                    {formatDate(subscriptionDetails.expiryDate)}
-                                                </TypographyText>
-                                            </HStack>
-                                        )}
+                                    {subscriptionDetails.productIdentifier && (
+                                        <HStack alignItems="center" justifyContent="space-between">
+                                            <TypographyText variant="body" weight="semibold">
+                                                Subscription Period
+                                            </TypographyText>
+                                            <TypographyText variant="body">
+                                                {subscriptionPeriod || 'Monthly'}
+                                            </TypographyText>
+                                        </HStack>
+                                    )}
+                                    {packagePrice && (
+                                        <HStack alignItems="center" justifyContent="space-between">
+                                            <TypographyText variant="body" weight="semibold">
+                                                Price
+                                            </TypographyText>
+                                            <TypographyText variant="body">
+                                                {packagePrice}/
+                                                {subscriptionPeriod?.toLowerCase() || 'month'}
+                                            </TypographyText>
+                                        </HStack>
+                                    )}
+                                </VStack>
 
-                                        {subscriptionDetails.productIdentifier && (
-                                            <HStack
-                                                alignItems="center"
-                                                justifyContent="space-between"
-                                            >
-                                                <TypographyText variant="body" weight="semibold">
-                                                    Plan
-                                                </TypographyText>
-                                                <TypographyText variant="body">
-                                                    {subscriptionDetails.productIdentifier}
-                                                </TypographyText>
-                                            </HStack>
-                                        )}
-                                    </VStack>
-
-                                    <VStack gap="unit-2">
-                                        <TypographyText variant="label">
-                                            Premium Features
-                                        </TypographyText>
-                                        <VStack gap="unit-3">
-                                            <FeatureRow text="Seamless Cloud Synchronization" />
-                                            <FeatureRow text="Unlimited Todos" />
-                                            <FeatureRow text="Fully Customizable Dashboards" />
-                                        </VStack>
+                                <VStack gap="unit-2">
+                                    <TypographyText variant="label">
+                                        Premium Features
+                                    </TypographyText>
+                                    <VStack gap="unit-3">
+                                        <FeatureRow text="Seamless Cloud Synchronization" />
+                                        <FeatureRow text="Unlimited Todos" />
+                                        <FeatureRow text="Fully Customizable Dashboards" />
                                     </VStack>
                                 </VStack>
-                            </CardBody>
-                        </Card>
+                            </VStack>
+                        </View>
+
+                        {/* Privacy Policy and Terms of Use Links - Required by Apple */}
+                        <VStack gap="unit-2" mt="unit-2">
+                            <HStack gap="unit-3" justifyContent="center" alignItems="center">
+                                <TouchableOpacity
+                                    onPress={() => Linking.openURL(APP_CONFIG.PRIVACY_POLICY_URL)}
+                                    activeOpacity={0.7}
+                                >
+                                    <TypographyText
+                                        variant="body"
+                                        size="sm"
+                                        style={{
+                                            color: colors.primary,
+                                            textDecorationLine: 'underline',
+                                        }}
+                                    >
+                                        Privacy Policy
+                                    </TypographyText>
+                                </TouchableOpacity>
+                                <View
+                                    style={{
+                                        width: 4,
+                                        height: 4,
+                                        borderRadius: 2,
+                                        backgroundColor: colors.surfacePrimary,
+                                    }}
+                                />
+                                <TouchableOpacity
+                                    onPress={() => Linking.openURL(APP_CONFIG.TERM_CONDITIONS_URL)}
+                                    activeOpacity={0.7}
+                                >
+                                    <TypographyText
+                                        variant="body"
+                                        size="sm"
+                                        style={{
+                                            color: colors.primary,
+                                            textDecorationLine: 'underline',
+                                        }}
+                                    >
+                                        Terms of Use
+                                    </TypographyText>
+                                </TouchableOpacity>
+                            </HStack>
+                        </VStack>
                     </VStack>
                 </ScrollView>
 
@@ -381,7 +444,7 @@ const PlanScreen = () => {
 
     // Show upgrade UI for non-pro users
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.backgroundPrimary }}>
             <ScrollView
                 contentContainerStyle={{
                     paddingTop: SPACING['unit-8'],
@@ -401,7 +464,7 @@ const PlanScreen = () => {
                                 Upgrade to
                             </TypographyText>
                             <TypographyText variant="title" weight="bold" color="primary">
-                                Flowzy Premium
+                                {SUBSCRIPTION_CONSTANTS.PRO_DISPLAY_NAME}
                             </TypographyText>
                         </HStack>
                         <TypographyText variant="body" size="sm">
@@ -409,37 +472,117 @@ const PlanScreen = () => {
                         </TypographyText>
                     </VStack>
 
-                    <Card variant="bordered" style={{ borderRadius: 20, overflow: 'hidden' }}>
-                        <CardBody>
-                            <VStack gap="unit-4">
-                                <VStack gap="unit-1">
-                                    <HStack gap="unit-1" alignItems="baseline">
-                                        <TypographyText variant="title" weight="bold">
-                                            {packagePrice || '$2.99'}
-                                        </TypographyText>
-                                        {packagePrice && (
-                                            <TypographyText
-                                                variant="body"
-                                                size="sm"
-                                                style={{ opacity: 0.7 }}
-                                            >
-                                                /month
-                                            </TypographyText>
-                                        )}
-                                    </HStack>
-                                </VStack>
+                    <View
+                        style={{
+                            borderRadius: 20,
+                            borderWidth: 1,
+                            borderColor: colors.surfacePrimary,
+                            backgroundColor: colors.backgroundSecondary,
+                            padding: SPACING['unit-4'],
+                        }}
+                    >
+                        <VStack gap="unit-4">
+                            {/* Subscription Title - Required by Apple */}
+                            <VStack gap="unit-1">
+                                <TypographyText variant="title" weight="bold" color="primary">
+                                    {SUBSCRIPTION_CONSTANTS.PRO_DISPLAY_NAME}
+                                </TypographyText>
+                            </VStack>
 
-                                <VStack gap="unit-2">
-                                    <TypographyText variant="label">Features</TypographyText>
-                                    <VStack gap="unit-3">
-                                        <FeatureRow text="Seamless Cloud Synchronization" />
-                                        <FeatureRow text="Unlimited Todos" />
-                                        <FeatureRow text="Fully Customizable Dashboards" />
-                                    </VStack>
+                            {/* Subscription Length - Required by Apple */}
+                            <VStack gap="unit-1">
+                                <TypographyText variant="body" size="md">
+                                    {subscriptionPeriod || 'Monthly'} auto-renewable subscription
+                                </TypographyText>
+                            </VStack>
+
+                            {/* Price and Price per Unit - Required by Apple */}
+                            <VStack gap="unit-1">
+                                <TypographyText
+                                    variant="body"
+                                    weight="semibold"
+                                    style={{ opacity: 0.9 }}
+                                >
+                                    Price
+                                </TypographyText>
+                                <HStack gap="unit-1" alignItems="baseline">
+                                    <TypographyText variant="title" weight="bold">
+                                        {packagePrice || '$2.99'}
+                                    </TypographyText>
+                                    <TypographyText
+                                        variant="body"
+                                        size="sm"
+                                        style={{ opacity: 0.7 }}
+                                    >
+                                        /{subscriptionPeriod?.toLowerCase() || 'month'}
+                                    </TypographyText>
+                                </HStack>
+                            </VStack>
+
+                            <VStack gap="unit-2">
+                                <TypographyText variant="label">Features</TypographyText>
+                                <VStack gap="unit-3">
+                                    <FeatureRow text="Seamless Cloud Synchronization" />
+                                    <FeatureRow text="Unlimited Todos" />
+                                    <FeatureRow text="Fully Customizable Dashboards" />
                                 </VStack>
                             </VStack>
-                        </CardBody>
-                    </Card>
+                        </VStack>
+                    </View>
+
+                    {/* Privacy Policy and Terms of Use Links */}
+                    <VStack gap="unit-2" mt="unit-2">
+                        <HStack gap="unit-3" justifyContent="center" alignItems="center">
+                            <TouchableOpacity
+                                onPress={() => Linking.openURL(APP_CONFIG.PRIVACY_POLICY_URL)}
+                                activeOpacity={0.7}
+                            >
+                                <TypographyText
+                                    variant="body"
+                                    size="sm"
+                                    style={{
+                                        color: colors.primary,
+                                        textDecorationLine: 'underline',
+                                    }}
+                                >
+                                    Privacy Policy
+                                </TypographyText>
+                            </TouchableOpacity>
+                            <View
+                                style={{
+                                    width: 4,
+                                    height: 4,
+                                    borderRadius: 2,
+                                    backgroundColor: colors.surfacePrimary,
+                                }}
+                            />
+                            <TouchableOpacity
+                                onPress={() => Linking.openURL(APP_CONFIG.TERM_CONDITIONS_URL)}
+                                activeOpacity={0.7}
+                            >
+                                <TypographyText
+                                    variant="body"
+                                    size="sm"
+                                    style={{
+                                        color: colors.primary,
+                                        textDecorationLine: 'underline',
+                                    }}
+                                >
+                                    Terms of Use
+                                </TypographyText>
+                            </TouchableOpacity>
+                        </HStack>
+                        <TypographyText
+                            variant="caption"
+                            style={{
+                                textAlign: 'center',
+                                opacity: 0.7,
+                                marginTop: SPACING['unit-1'],
+                            }}
+                        >
+                            By subscribing, you agree to our Terms of Use and Privacy Policy
+                        </TypographyText>
+                    </VStack>
                 </VStack>
             </ScrollView>
 
@@ -457,7 +600,7 @@ const PlanScreen = () => {
                     isLoading={isLoading}
                     isDisabled={isLoading || Platform.OS === 'web'}
                 >
-                    <TypographyText variant="body" style={{ color: '#fff' }}>
+                    <TypographyText variant="body" style={{ color: colors.surfacePrimary }}>
                         Upgrade to Premium
                     </TypographyText>
                 </Button>
