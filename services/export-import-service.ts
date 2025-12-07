@@ -1,13 +1,13 @@
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
-import { localDatabaseService } from '@/services/local-database-service';
+import { localDatabaseService, type Todo, type Session, type UserSettings } from '@/services/local-database-service';
 import { Alert } from 'react-native';
 
 export interface ExportData {
-    todos: any[];
-    sessions: any[];
-    settings: any;
+    todos: Todo[];
+    sessions: Session[];
+    settings: UserSettings | null;
     exportDate: string;
     appVersion: string;
 }
@@ -109,7 +109,7 @@ class ExportImportService {
             await localDatabaseService.importData({
                 todos: importData.todos,
                 sessions: importData.sessions,
-                settings: importData.settings,
+                settings: importData.settings || undefined,
             });
 
             console.log('Data imported successfully');
@@ -133,21 +133,89 @@ class ExportImportService {
     }
 
     /**
-     * Validate import data structure
+     * Validate import data structure with comprehensive type checking
      */
-    private validateImportData(data: any): boolean {
+    private validateImportData(data: unknown): data is ExportData {
         try {
-            return (
-                data &&
-                typeof data === 'object' &&
-                Array.isArray(data.todos) &&
-                Array.isArray(data.sessions) &&
-                data.settings &&
-                typeof data.settings === 'object' &&
-                data.exportDate &&
-                data.appVersion
-            );
-        } catch {
+            // Check if data is an object
+            if (!data || typeof data !== 'object') {
+                console.error('Import validation failed: data is not an object');
+                return false;
+            }
+
+            const importData = data as Record<string, unknown>;
+
+            // Validate required top-level fields
+            if (!Array.isArray(importData.todos)) {
+                console.error('Import validation failed: todos is not an array');
+                return false;
+            }
+
+            if (!Array.isArray(importData.sessions)) {
+                console.error('Import validation failed: sessions is not an array');
+                return false;
+            }
+
+            if (!importData.settings || typeof importData.settings !== 'object') {
+                console.error('Import validation failed: settings is not an object');
+                return false;
+            }
+
+            if (!importData.exportDate || typeof importData.exportDate !== 'string') {
+                console.error('Import validation failed: exportDate is missing or invalid');
+                return false;
+            }
+
+            if (!importData.appVersion || typeof importData.appVersion !== 'string') {
+                console.error('Import validation failed: appVersion is missing or invalid');
+                return false;
+            }
+
+            // Validate each todo has required fields
+            for (const todo of importData.todos) {
+                if (!todo || typeof todo !== 'object') {
+                    console.error('Import validation failed: invalid todo object');
+                    return false;
+                }
+                const todoObj = todo as Record<string, unknown>;
+                if (!todoObj.id || typeof todoObj.id !== 'string') {
+                    console.error('Import validation failed: todo missing id');
+                    return false;
+                }
+                if (!todoObj.title || typeof todoObj.title !== 'string') {
+                    console.error('Import validation failed: todo missing title');
+                    return false;
+                }
+                if (typeof todoObj.isCompleted !== 'boolean') {
+                    console.error('Import validation failed: todo missing isCompleted');
+                    return false;
+                }
+            }
+
+            // Validate each session has required fields
+            for (const session of importData.sessions) {
+                if (!session || typeof session !== 'object') {
+                    console.error('Import validation failed: invalid session object');
+                    return false;
+                }
+                const sessionObj = session as Record<string, unknown>;
+                if (!sessionObj.id || typeof sessionObj.id !== 'string') {
+                    console.error('Import validation failed: session missing id');
+                    return false;
+                }
+                if (!sessionObj.type || typeof sessionObj.type !== 'string') {
+                    console.error('Import validation failed: session missing type');
+                    return false;
+                }
+                if (typeof sessionObj.duration !== 'number') {
+                    console.error('Import validation failed: session missing duration');
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Import validation error:', error);
             return false;
         }
     }

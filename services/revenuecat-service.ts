@@ -6,6 +6,7 @@ import Purchases, {
     PurchasesPackage,
 } from 'react-native-purchases';
 import { errorHandlingService } from './error-handling-service';
+import { getErrorMessage, isConfigurationError } from '@/utils/type-guards';
 
 type CustomerInfoListener = (info: CustomerInfo) => void;
 
@@ -33,13 +34,19 @@ class RevenueCatService {
                 console.warn('[RevenueCatService] Missing EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID');
                 return;
             }
+        } else if (Platform.OS === 'web') {
+            // Web platform - use mock implementation for development/testing
+            console.warn('[RevenueCatService] Web platform detected - using mock implementation (free user)');
+            this.initialized = true;
+            this.customerInfo = null; // Mock free user
+            return;
         } else {
             console.warn('[RevenueCatService] Unsupported platform:', Platform.OS);
             return;
         }
 
         try {
-            Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.INFO);
+            Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
             await Purchases.configure({ apiKey });
 
             // Fetch initial customer info and cache it.
@@ -47,17 +54,12 @@ class RevenueCatService {
             try {
                 this.customerInfo = await Purchases.getCustomerInfo();
                 this.notifyListeners(this.customerInfo);
-            } catch (customerInfoError: any) {
-                const errorMessage = customerInfoError?.message || String(customerInfoError);
-                if (
-                    errorMessage.includes('configuration') ||
-                    errorMessage.includes('offerings-empty') ||
-                    errorMessage.includes('products registered')
-                ) {
+            } catch (customerInfoError) {
+                if (isConfigurationError(customerInfoError)) {
                     // Configuration issue - expected in development, just log as warning
                     console.warn(
                         '[RevenueCatService] Configuration issue detected (expected in development):',
-                        errorMessage,
+                        getErrorMessage(customerInfoError),
                     );
                 } else {
                     // Other errors should be logged
@@ -72,17 +74,12 @@ class RevenueCatService {
             });
 
             this.initialized = true;
-        } catch (error: any) {
-            const errorMessage = error?.message || String(error);
+        } catch (error) {
             // Don't log configuration errors as errors - they're expected in development
-            if (
-                errorMessage.includes('configuration') ||
-                errorMessage.includes('offerings-empty') ||
-                errorMessage.includes('products registered')
-            ) {
+            if (isConfigurationError(error)) {
                 console.warn(
                     '[RevenueCatService] Configuration issue during initialization (expected in development):',
-                    errorMessage,
+                    getErrorMessage(error),
                 );
                 // Still mark as initialized so app can continue
                 this.initialized = true;
@@ -101,14 +98,9 @@ class RevenueCatService {
             this.customerInfo = await Purchases.getCustomerInfo();
             this.notifyListeners(this.customerInfo);
             return this.customerInfo;
-        } catch (error: any) {
-            const errorMessage = error?.message || String(error);
+        } catch (error) {
             // Don't log configuration errors - they're expected in development
-            if (
-                errorMessage.includes('configuration') ||
-                errorMessage.includes('offerings-empty') ||
-                errorMessage.includes('products registered')
-            ) {
+            if (isConfigurationError(error)) {
                 // Silently return null for configuration issues
                 return null;
             }
@@ -134,20 +126,15 @@ class RevenueCatService {
             }
             
             return offerings.current ?? null;
-        } catch (error: any) {
+        } catch (error) {
             // Check if it's a configuration error
-            const errorMessage = error?.message || String(error);
-            if (
-                errorMessage.includes('configuration') ||
-                errorMessage.includes('offerings-empty') ||
-                errorMessage.includes('products registered')
-            ) {
+            if (isConfigurationError(error)) {
                 console.warn(
                     '[RevenueCatService] Configuration error detected. This is normal in development if:\n' +
                     '• Products are not set up in App Store Connect\n' +
                     '• StoreKit Configuration file is not configured\n' +
                     '• RevenueCat dashboard is not properly linked\n' +
-                    'Error:', errorMessage,
+                    'Error:', getErrorMessage(error),
                 );
                 // Don't log as error in development - it's expected
                 if (!__DEV__) {
@@ -199,14 +186,9 @@ class RevenueCatService {
 
             // Find the specific package by productId
             return offering.availablePackages?.find((pkg) => pkg.identifier === productId) ?? null;
-        } catch (error: any) {
+        } catch (error) {
             // Check if it's a configuration error
-            const errorMessage = error?.message || String(error);
-            if (
-                errorMessage.includes('configuration') ||
-                errorMessage.includes('offerings-empty') ||
-                errorMessage.includes('products registered')
-            ) {
+            if (isConfigurationError(error)) {
                 console.warn(
                     '[RevenueCatService] Configuration error when getting package. This is normal in development.',
                 );
@@ -231,9 +213,9 @@ class RevenueCatService {
             this.customerInfo = customerInfo;
             this.notifyListeners(customerInfo);
             return customerInfo;
-        } catch (error: any) {
+        } catch (error) {
             // Ignore cancellations.
-            if (error?.userCancelled) {
+            if (typeof error === 'object' && error !== null && 'userCancelled' in error && (error as any).userCancelled) {
                 return this.customerInfo;
             }
 
@@ -281,14 +263,9 @@ class RevenueCatService {
             this.customerInfo = customerInfo;
             this.notifyListeners(customerInfo);
             return customerInfo;
-        } catch (error: any) {
-            const errorMessage = error?.message || String(error);
+        } catch (error) {
             // Don't log configuration errors - they're expected in development
-            if (
-                errorMessage.includes('configuration') ||
-                errorMessage.includes('offerings-empty') ||
-                errorMessage.includes('products registered')
-            ) {
+            if (isConfigurationError(error)) {
                 // Silently return null for configuration issues
                 return null;
             }
@@ -386,14 +363,9 @@ class RevenueCatService {
             }
             
             return pkg.product.priceString ?? null;
-        } catch (error: any) {
+        } catch (error) {
             // Silently handle configuration errors
-            const errorMessage = error?.message || String(error);
-            if (
-                !errorMessage.includes('configuration') &&
-                !errorMessage.includes('offerings-empty') &&
-                !errorMessage.includes('products registered')
-            ) {
+            if (!isConfigurationError(error)) {
                 console.error('[RevenueCatService] Error getting package price:', error);
             }
             return null;
@@ -448,14 +420,9 @@ class RevenueCatService {
 
             // Default to monthly if we can't determine (based on app's subscription model)
             return 'Monthly';
-        } catch (error: any) {
+        } catch (error) {
             // Silently handle configuration errors
-            const errorMessage = error?.message || String(error);
-            if (
-                !errorMessage.includes('configuration') &&
-                !errorMessage.includes('offerings-empty') &&
-                !errorMessage.includes('products registered')
-            ) {
+            if (!isConfigurationError(error)) {
                 console.error('[RevenueCatService] Error getting subscription period:', error);
             }
             // Default to monthly (based on app's subscription model)
@@ -504,7 +471,7 @@ class RevenueCatService {
                 period,
                 priceString,
             };
-        } catch (error: any) {
+        } catch (error) {
             return {
                 price: null,
                 period: null,

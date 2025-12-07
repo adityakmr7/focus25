@@ -25,6 +25,7 @@ interface AuthState {
     error: string | null;
     isOffline: boolean;
     isProUser: boolean;
+    syncInProgress: boolean; // Track premium status sync to prevent race conditions
 
     // Actions
     signInWithApple: () => Promise<{ displayName: string; email: string }>;
@@ -40,7 +41,6 @@ export const useAuthStore = create<AuthState>()(
     persist(
         (set, get) => {
             const entitlementId = SUBSCRIPTION_CONSTANTS.PRO_ENTITLEMENT_ID;
-            let syncInProgress = false; // Prevent concurrent Supabase syncs
 
             const applyProStatus = async (
                 info: CustomerInfo | null,
@@ -77,9 +77,10 @@ export const useAuthStore = create<AuthState>()(
                 }
 
                 // Sync premium status to Supabase if user is authenticated
-                // Use a flag to prevent concurrent syncs
+                // Use store state flag to prevent concurrent syncs
+                const { syncInProgress } = get();
                 if (user && !syncInProgress) {
-                    syncInProgress = true;
+                    set({ syncInProgress: true });
                     try {
                         const supabaseService = createSupabaseService(user.id);
                         await supabaseService.updateSettings({ hasProAccess: hasPro });
@@ -115,7 +116,7 @@ export const useAuthStore = create<AuthState>()(
                             }
                         }
                     } finally {
-                        syncInProgress = false;
+                        set({ syncInProgress: false });
                     }
                 }
 
@@ -201,6 +202,7 @@ export const useAuthStore = create<AuthState>()(
                 error: null,
                 isOffline: false,
                 isProUser: false,
+                syncInProgress: false,
 
                 // Initialize auth state listener
                 initializeAuth: () => {
