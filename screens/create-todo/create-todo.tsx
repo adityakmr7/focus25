@@ -14,14 +14,16 @@ import {
     View,
     Text,
     FlatList,
+    ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SPACING } from '@/constants/spacing';
 import { HStack } from '@/components/ui/HStack';
 import { VStack } from '@/components/ui/VStack';
 import { Button } from '@/components/ui/Button';
 const CreateTodoScreen = () => {
     const colors = useColorTheme();
+    const insets = useSafeAreaInsets();
     const { createTodo, updateTodo, todos } = useUnifiedTodoStore();
     const { categories } = useCategoryStore();
     const { todoId } = useLocalSearchParams<{ todoId?: string }>();
@@ -150,16 +152,14 @@ const CreateTodoScreen = () => {
 
     return (
         <SafeAreaView
+            edges={['top', 'left', 'right']}
             style={{
                 flex: 1,
                 backgroundColor: colors.backgroundPrimary,
             }}
         >
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={{ flex: 1 }}
-            >
-                <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }}>
+            <View style={{ flex: 1 }}>
+                <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
                     {/* Header */}
                     <HStack
                         alignItems="center"
@@ -171,88 +171,93 @@ const CreateTodoScreen = () => {
                             <Ionicons name="close" size={24} color={colors.contentPrimary} />
                         </TouchableOpacity>
                     </HStack>
+                </View>
 
-                    {/* Title area like mock */}
-                    <VStack gap="lg" style={{ flex: 1 }}>
-                        <TextInput
-                            value={title}
-                            onChangeText={setTitle}
-                            placeholder="Write a new task..."
-                            placeholderTextColor={colors.contentSecondary}
-                            style={{
-                                fontSize: 32,
-                                fontWeight: '700',
-                                color: colors.contentPrimary,
-                            }}
-                            autoFocus={true}
-                            multiline
-                        />
-                        {!!formattedReminder && (
-                            <TypographyText variant="caption" color="default">
-                                {formattedReminder}
-                            </TypographyText>
-                        )}
-
-                        {/* Subtasks toggle and list */}
-                        <HStack alignItems="center" gap="md">
-                            <TouchableOpacity
-                                onPress={() => setEnableSubtasks((v) => !v)}
+                {/* Scrollable Content */}
+                <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                        <VStack gap="lg">
+                            <TextInput
+                                value={title}
+                                onChangeText={setTitle}
+                                placeholder="Write a new task..."
+                                placeholderTextColor={colors.contentSecondary}
                                 style={{
-                                    width: 24,
-                                    height: 24,
-                                    borderRadius: 6,
-                                    borderWidth: 1.5,
-                                    borderColor: colors.contentSecondary,
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    backgroundColor: enableSubtasks
-                                        ? colors.secondary
-                                        : 'transparent',
+                                    fontSize: 32,
+                                    fontWeight: '700',
+                                    color: colors.contentPrimary,
                                 }}
-                            >
-                                {enableSubtasks && (
-                                    <Ionicons
-                                        name="checkmark"
-                                        size={16}
-                                        color={colors.backgroundPrimary}
-                                    />
-                                )}
-                            </TouchableOpacity>
-                            <TypographyText variant="body" style={{ color: colors.contentPrimary }}>
-                                Add subtask
-                            </TypographyText>
-                        </HStack>
-                        {enableSubtasks && (
-                            <VStack gap="sm">
-                                <HStack gap="sm" alignItems="center">
-                                    <View style={{ flex: 1 }}>
-                                        <TextInput
-                                            value={newSubtask}
-                                            onChangeText={setNewSubtask}
-                                            placeholder="New subtask"
-                                            placeholderTextColor={colors.contentSecondary}
-                                            style={{
-                                                paddingHorizontal: 12,
-                                                paddingVertical: 10,
-                                                color: colors.contentPrimary,
-                                            }}
-                                            onSubmitEditing={handleAddSubtask}
-                                            returnKeyType="done"
-                                        />
-                                    </View>
-                                    <TouchableOpacity onPress={handleAddSubtask}>
+                                autoFocus={true}
+                                multiline
+                            />
+                            {!!formattedReminder && (
+                                <TypographyText variant="caption" color="default">
+                                    {formattedReminder}
+                                </TypographyText>
+                            )}
+
+                            {/* Subtasks toggle and list */}
+                            <HStack alignItems="center" gap="md">
+                                <TouchableOpacity
+                                    onPress={() => setEnableSubtasks((v) => !v)}
+                                    style={{
+                                        width: 24,
+                                        height: 24,
+                                        borderRadius: 6,
+                                        borderWidth: 1.5,
+                                        borderColor: colors.contentSecondary,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        backgroundColor: enableSubtasks
+                                            ? colors.secondary
+                                            : 'transparent',
+                                    }}
+                                >
+                                    {enableSubtasks && (
                                         <Ionicons
-                                            name="add-circle"
-                                            size={28}
-                                            color={colors.secondary}
+                                            name="checkmark"
+                                            size={16}
+                                            color={colors.backgroundPrimary}
                                         />
-                                    </TouchableOpacity>
-                                </HStack>
-                                <FlatList
-                                    data={subtasks}
-                                    keyExtractor={(item) => item.id}
-                                    renderItem={({ item }) => (
+                                    )}
+                                </TouchableOpacity>
+                                <TypographyText variant="body" style={{ color: colors.contentPrimary }}>
+                                    Add subtask
+                                </TypographyText>
+                            </HStack>
+                            {enableSubtasks && (
+                                <VStack gap="sm">
+                                    <HStack gap="sm" alignItems="center">
+                                        <View style={{ flex: 1 }}>
+                                            <TextInput
+                                                value={newSubtask}
+                                                onChangeText={setNewSubtask}
+                                                placeholder="New subtask"
+                                                placeholderTextColor={colors.contentSecondary}
+                                                style={{
+                                                    paddingHorizontal: 12,
+                                                    paddingVertical: 10,
+                                                    color: colors.contentPrimary,
+                                                }}
+                                                onSubmitEditing={handleAddSubtask}
+                                                returnKeyType="done"
+                                            />
+                                        </View>
+                                        <TouchableOpacity onPress={handleAddSubtask}>
+                                            <Ionicons
+                                                name="add-circle"
+                                                size={28}
+                                                color={colors.secondary}
+                                            />
+                                        </TouchableOpacity>
+                                    </HStack>
+                                    {subtasks.map((item) => (
                                         <HStack
+                                            key={item.id}
                                             alignItems="center"
                                             justifyContent="space-between"
                                             style={{ paddingVertical: 6 }}
@@ -296,54 +301,68 @@ const CreateTodoScreen = () => {
                                                 />
                                             </TouchableOpacity>
                                         </HStack>
-                                    )}
-                                />
-                            </VStack>
-                        )}
+                                    ))}
+                                </VStack>
+                            )}
 
-                        {/* Category Selection */}
-                        <VStack gap="xs">
-                            <HStack mt="sm" gap="sm" style={{ flexWrap: 'wrap' }}>
-                                {categories.map(({ key, label, color }) => {
-                                    const isActive = selectedCategory === label;
-                                    return (
-                                        <TouchableOpacity
-                                            key={label}
-                                            onPress={() =>
-                                                setSelectedCategory(isActive ? '' : label)
-                                            }
-                                            style={{
-                                                paddingHorizontal: 12,
-                                                paddingVertical: 8,
-                                                backgroundColor: isActive
-                                                    ? color
-                                                    : colors.surfacePrimary,
-                                                borderWidth: 1,
-                                                borderColor: isActive
-                                                    ? color
-                                                    : colors.contentSecondary,
-                                            }}
-                                        >
-                                            <Text
+                            {/* Category Selection */}
+                            <VStack gap="xs">
+                                <HStack mt="sm" gap="sm" style={{ flexWrap: 'wrap' }}>
+                                    {categories.map(({ key, label, color }) => {
+                                        const isActive = selectedCategory === label;
+                                        return (
+                                            <TouchableOpacity
+                                                key={label}
+                                                onPress={() =>
+                                                    setSelectedCategory(isActive ? '' : label)
+                                                }
                                                 style={{
-                                                    color: isActive
-                                                        ? colors.backgroundPrimary
-                                                        : colors.contentPrimary,
-                                                    fontWeight: '700',
-                                                    fontSize: 12,
+                                                    paddingHorizontal: 12,
+                                                    paddingVertical: 8,
+                                                    backgroundColor: isActive
+                                                        ? color
+                                                        : colors.surfacePrimary,
+                                                    borderWidth: 1,
+                                                    borderColor: isActive
+                                                        ? color
+                                                        : colors.contentSecondary,
                                                 }}
                                             >
-                                                {label}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </HStack>
+                                                <Text
+                                                    style={{
+                                                        color: isActive
+                                                            ? colors.backgroundPrimary
+                                                            : colors.contentPrimary,
+                                                        fontWeight: '700',
+                                                        fontSize: 12,
+                                                    }}
+                                                >
+                                                    {label}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </HStack>
+                            </VStack>
                         </VStack>
-                    </VStack>
+                </ScrollView>
 
-                    {/* Action Buttons */}
-                    <HStack gap="md" style={{ marginBottom: 20 }}>
+                {/* Action Buttons - Fixed at bottom */}
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'position' : 'height'}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+                >
+                    <HStack 
+                        gap="md" 
+                        style={{ 
+                            paddingHorizontal: 20,
+                            paddingTop: 12,
+                            paddingBottom: Math.max(insets.bottom, 12),
+                            backgroundColor: colors.backgroundPrimary,
+                            borderTopWidth: 1,
+                            borderTopColor: colors.surfacePrimary,
+                        }}
+                    >
                         <View style={{ flex: 1 }}>
                             <Button
                                 onPress={handleSaveTodo}
@@ -368,8 +387,8 @@ const CreateTodoScreen = () => {
                             </Button>
                         </View>
                     </HStack>
-                </View>
-            </KeyboardAvoidingView>
+                </KeyboardAvoidingView>
+            </View>
         </SafeAreaView>
     );
 };
