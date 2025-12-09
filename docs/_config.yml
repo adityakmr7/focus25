@@ -1,0 +1,61 @@
+# GitHub Pages Configuration for Flowzy Documentation
+
+# Site settings
+title: "Flowzy - Productivity & Pomodoro Timer"
+description: "Enter your flow state with Flowzy - The ultimate productivity app combining the Pomodoro Technique with flow state tracking, ambient music, and comprehensive analytics."
+url: "https://adityakumar.github.io" # Replace with your GitHub username
+baseurl: "/flow-clone" # Replace with your repository name
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Exclude files from processing
+exclude:
+  - README.md
+  - LICENSE
+  - Gemfile
+  - Gemfile.lock
+
+# Include files
+include:
+  - _pages
+
+# SEO settings
+lang: en_US
+author: Flowzy Team
+twitter:
+  username: flowzyapp
+  card: summary_large_image
+
+# Social media and contact
+email: support@flowzyapp.com
+github_username: adityakumar
+
+# Custom variables
+app_store_url: "#" # Add your App Store URL when available
+google_play_url: "#" # Add your Google Play URL when available
+
+# Site verification (add when you have them)
+google_site_verification: ""
+bing_site_verification: ""
+
+# Analytics (add when you have them)
+google_analytics: ""
+
+# Custom CSS and JS
+sass:
+  style: compressed
+
+# Collections
+collections:
+  pages:
+    output: true
+    permalink: /:name/

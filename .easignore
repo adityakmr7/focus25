@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Development files
+.git/
+.gitignore
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment files (these should be handled via EAS secrets)
+.env
+.env*.local
+
+# Build artifacts
+dist/
+web-build/
+.expo/
+*.tsbuildinfo
+
+# Native build files (EAS will generate these)
+ios/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+
+# Test files
+**/__tests__/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Scripts (not needed in build)
+scripts/
+
+# Temporary files
+*.log
+*.tmp
+.DS_Store
+
