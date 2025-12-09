@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { performanceMonitor } from './performance-monitor';
 
 // Simple UUID v4 generator for React Native
 function generateUUID(): string {
@@ -72,9 +73,18 @@ export interface SyncLog {
     error?: string;
 }
 
+// Simple cache interface
+interface CacheEntry<T> {
+    data: T;
+    timestamp: number;
+    ttl: number; // Time to live in milliseconds
+}
+
 class LocalDatabaseService {
     private db: SQLite.SQLiteDatabase | null = null;
     private isInitialized = false;
+    private queryCache: Map<string, CacheEntry<any>> = new Map();
+    private readonly DEFAULT_CACHE_TTL = 5000; // 5 seconds default TTL
 
     async initialize(): Promise<boolean> {
         try {
@@ -226,16 +236,77 @@ class LocalDatabaseService {
 
     // ===== TODO OPERATIONS =====
 
+    /**
+     * Get cached data if available and not expired
+     */
+    private getCachedData<T>(key: string): T | null {
+        const entry = this.queryCache.get(key);
+        if (!entry) return null;
+
+        const now = Date.now();
+        if (now - entry.timestamp > entry.ttl) {
+            // Cache expired, remove it
+            this.queryCache.delete(key);
+            return null;
+        }
+
+        return entry.data as T;
+    }
+
+    /**
+     * Set cached data with TTL
+     */
+    private setCachedData<T>(key: string, data: T, ttl: number = this.DEFAULT_CACHE_TTL): void {
+        this.queryCache.set(key, {
+            data,
+            timestamp: Date.now(),
+            ttl,
+        });
+    }
+
+    /**
+     * Invalidate cache for a specific key or pattern
+     */
+    private invalidateCache(pattern?: string): void {
+        if (!pattern) {
+            this.queryCache.clear();
+            return;
+        }
+
+        // Remove all cache entries matching the pattern
+        for (const key of this.queryCache.keys()) {
+            if (key.includes(pattern)) {
+                this.queryCache.delete(key);
+            }
+        }
+    }
+
     async getTodos(): Promise<Todo[]> {
         if (!this.db) throw new Error('Database not initialized');
 
+        // Check cache first
+        const cacheKey = 'todos:all';
+        const cached = this.getCachedData<Todo[]>(cacheKey);
+        if (cached) {
+            return cached;
+        }
+
+        // Track query performance
+        performanceMonitor.startMetric('db-query-getTodos');
+
+        // Optimize query to select only needed columns
         const rows = await this.db.getAllAsync(`
-      SELECT * FROM todos 
+      SELECT id, title, description, icon, isCompleted, createdAt, 
+             completedAt, category, priority, estimatedMinutes, 
+             actualMinutes, reminderAt, subtasks
+      FROM todos 
       ORDER BY createdAt DESC
     `);
 
+        performanceMonitor.endMetric('db-query-getTodos');
+
         // Normalize/parse fields
-        return (rows as any[]).map((row) => {
+        const todos = (rows as any[]).map((row) => {
             let parsedSubtasks: Subtask[] | undefined;
             try {
                 parsedSubtasks = row.subtasks ? JSON.parse(row.subtasks) : undefined;
@@ -258,6 +329,11 @@ class LocalDatabaseService {
                 subtasks: parsedSubtasks,
             } as Todo;
         });
+
+        // Cache the result
+        this.setCachedData(cacheKey, todos);
+
+        return todos;
     }
 
     async getTodo(id: string): Promise<Todo | null> {
@@ -297,6 +373,8 @@ class LocalDatabaseService {
     async createTodo(todo: Omit<Todo, 'id' | 'createdAt' | 'actualMinutes'>): Promise<string> {
         if (!this.db) throw new Error('Database not initialized');
 
+        performanceMonitor.startMetric('db-query-createTodo');
+
         const id = generateUUID();
         const now = new Date().toISOString();
 
@@ -327,6 +405,11 @@ class LocalDatabaseService {
 
         // Log the change for sync
         await this.logSyncChange('todos', id, 'create');
+
+        // Invalidate todos cache
+        this.invalidateCache('todos');
+
+        performanceMonitor.endMetric('db-query-createTodo');
 
         return id;
     }
@@ -395,6 +478,9 @@ class LocalDatabaseService {
 
         // Log the change for sync
         await this.logSyncChange('todos', id, 'update');
+
+        // Invalidate todos cache
+        this.invalidateCache('todos');
     }
 
     async deleteTodo(id: string): Promise<void> {
@@ -404,6 +490,9 @@ class LocalDatabaseService {
 
         // Log the change for sync
         await this.logSyncChange('todos', id, 'delete');
+
+        // Invalidate todos cache
+        this.invalidateCache('todos');
     }
 
     async getCompletedTodos(): Promise<Todo[]> {

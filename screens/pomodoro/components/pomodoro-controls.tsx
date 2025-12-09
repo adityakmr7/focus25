@@ -2,7 +2,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorTheme } from '@/hooks/useColorTheme';
 import { TimerStatus } from '@/stores/pomodoro-store';
 import { Ionicons as Icon } from '@expo/vector-icons';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
 
@@ -14,7 +14,7 @@ interface PomodoroControlsProps {
     timerStatus: TimerStatus;
 }
 
-export default function PomodoroControls({
+function PomodoroControls({
     onReset,
     onPlayPause,
     onSkip,
@@ -29,29 +29,27 @@ export default function PomodoroControls({
         };
     });
 
-    // Determine which icon to show based on timer status
-    const getPlayPauseIcon = () => {
-        if (timerStatus === 'running') {
-            return 'pause';
-        }
-        return 'play';
-    };
+    // Memoize icon name to prevent recalculation
+    const playPauseIcon = useMemo(() => {
+        return timerStatus === 'running' ? 'pause' : 'play';
+    }, [timerStatus]);
+
+    // Memoize button style
+    const controlButtonStyle = useMemo(() => [
+        styles.controlButton,
+        { backgroundColor: Colors.light.secondary }
+    ], []);
 
     return (
         <View style={styles.controlsContainer}>
             <Animated.View style={buttonAnimatedStyle}>
                 <TouchableOpacity
-                    style={[
-                        styles.controlButton,
-                        {
-                            backgroundColor: Colors.light.secondary,
-                        },
-                    ]}
+                    style={controlButtonStyle}
                     onPress={onPlayPause}
                 >
                     <View style={styles.iconContainer}>
                         <Icon
-                            name={getPlayPauseIcon()}
+                            name={playPauseIcon}
                             size={24}
                             color={colors.backgroundPrimary}
                         />
@@ -61,6 +59,9 @@ export default function PomodoroControls({
         </View>
     );
 }
+
+// Memoize component to prevent unnecessary re-renders
+export default React.memo(PomodoroControls);
 
 const styles = StyleSheet.create({
     controlsContainer: {

@@ -1,7 +1,7 @@
 import { useAuthStore } from '@/stores/auth-store';
 import { useTodoStore } from '@/stores/local-todo-store';
 import { useSupabaseTodoStore } from '@/stores/supabase-todo-store';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 /**
  * Unified Todo Store Hook
@@ -18,8 +18,11 @@ export function useUnifiedTodoStore() {
     const localStore = useTodoStore();
     const supabaseStore = useSupabaseTodoStore();
 
-    // Determine which store to use
-    const shouldUseSupabase = user !== null && isProUser;
+    // Determine which store to use - memoized to prevent recalculation
+    const shouldUseSupabase = useMemo(() => {
+        return user !== null && isProUser;
+    }, [user, isProUser]);
+
     const activeStore = shouldUseSupabase ? supabaseStore : localStore;
 
     // Load todos when switching stores or on mount
@@ -29,10 +32,10 @@ export function useUnifiedTodoStore() {
         } else if (!shouldUseSupabase && !localStore.isInitialized) {
             localStore.loadTodos();
         }
-    }, [shouldUseSupabase, supabaseStore.isInitialized, localStore.isInitialized]);
+    }, [shouldUseSupabase, supabaseStore, localStore]);
 
-    // Return the active store with a unified interface
-    return {
+    // Memoize the returned object to prevent recreation on every render
+    return useMemo(() => ({
         // State
         todos: activeStore.todos,
         isLoading: activeStore.isLoading,
@@ -73,6 +76,6 @@ export function useUnifiedTodoStore() {
         // Store metadata
         isUsingSupabase: shouldUseSupabase,
         isUsingLocal: !shouldUseSupabase,
-    };
+    }), [activeStore, shouldUseSupabase, localStore, supabaseStore]);
 }
 

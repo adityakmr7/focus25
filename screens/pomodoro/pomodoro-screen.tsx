@@ -4,7 +4,7 @@ import { usePomodoroStore } from '@/stores/pomodoro-store';
 import { useSettingsStore } from '@/stores/local-settings-store';
 import { useUnifiedTodoStore } from '@/hooks/useUnifiedTodoStore';
 import BottomSheet from '@gorhom/bottom-sheet';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback, useMemo } from 'react';
 import { Animated, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,10 +15,11 @@ import HugeIconView from '@/components/ui/huge-icon-view';
 import { RefreshIcon } from '@hugeicons/core-free-icons';
 import { Colors } from '@/constants/Colors';
 import { useColorTheme } from '@/hooks/useColorTheme';
-export default function PomodoroScreen() {
+
+function PomodoroScreen() {
     const colors = useColorTheme();
 
-    // Animation values
+    // Animation values - memoized to prevent recreation
     const progressValue = useSharedValue(0);
     const buttonScale = useSharedValue(1);
 
@@ -45,7 +46,7 @@ export default function PomodoroScreen() {
     // Handle app lifecycle events for background timer support
     useAppLifecycle();
 
-    // Load todos on mount
+    // Load todos on mount - memoized to prevent re-creation
     useEffect(() => {
         loadTodos();
     }, [loadTodos]);
@@ -61,8 +62,8 @@ export default function PomodoroScreen() {
         progressValue.value = withTiming(progress, { duration: 1000 });
     }, [timeLeft, progressValue, initialTime]);
 
-    // Handle play/pause button
-    const handlePlayPause = async () => {
+    // Memoize handlers to prevent child re-renders
+    const handlePlayPause = useCallback(async () => {
         buttonScale.value = withSpring(0.95, {}, () => {
             buttonScale.value = withSpring(1);
         });
@@ -77,30 +78,34 @@ export default function PomodoroScreen() {
             // Restart after completion
             await startTimer(focusDuration, breakDuration, notifications);
         }
-    };
+    }, [timerStatus, focusDuration, breakDuration, notifications, startTimer, pauseTimer, resumeTimer, buttonScale]);
 
-    // Handle reset button
-    const handleReset = async () => {
+    const handleReset = useCallback(async () => {
         buttonScale.value = withSpring(0.95, {}, () => {
             buttonScale.value = withSpring(1);
         });
 
         await resetTimer();
         progressValue.value = withTiming(0, { duration: 500 });
-    };
+    }, [resetTimer, buttonScale, progressValue]);
 
-    // Handle skip button
-    const handleSkip = () => {
+    const handleSkip = useCallback(() => {
         buttonScale.value = withSpring(0.95, {}, () => {
             buttonScale.value = withSpring(1);
         });
 
         skipSession(focusDuration, breakDuration);
         progressValue.value = withTiming(0, { duration: 500 });
-    };
+    }, [skipSession, focusDuration, breakDuration, buttonScale, progressValue]);
+
+    // Memoize container style
+    const containerStyle = useMemo(() => [
+        styles.container,
+        { backgroundColor: colors.backgroundPrimary }
+    ], [colors.backgroundPrimary]);
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundPrimary }]}>
+        <SafeAreaView style={containerStyle}>
             <View
                 style={{
                     flexDirection: 'row',
@@ -132,6 +137,9 @@ export default function PomodoroScreen() {
         </SafeAreaView>
     );
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export default React.memo(PomodoroScreen);
 
 const styles = StyleSheet.create({
     gestureContainer: {

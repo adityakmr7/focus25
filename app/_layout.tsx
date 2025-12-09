@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import GlobalErrorBoundary from '@/components/GlobalErrorBoundary';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import EnhancedLoadingScreen from '@/components/EnhancedLoadingScreen';
@@ -7,6 +7,7 @@ import { splashScreenService } from '@/services/splash-screen-service';
 import { networkService } from '@/services/network-service';
 import { errorHandlingService } from '@/services/error-handling-service';
 import { revenueCatService } from '@/services/revenuecat-service';
+import { performanceMonitor } from '@/services/performance-monitor';
 import { useAuthStore } from '@/stores/auth-store';
 import { useSettingsStore } from '@/stores/local-settings-store';
 import { useFonts } from 'expo-font';
@@ -20,6 +21,7 @@ import * as Notifications from 'expo-notifications';
 import { SwitchThemeProvider } from '@/components/telegram-theme-switch/components/switch-theme';
 import { ThemeProvider } from '@/components/telegram-theme-switch/components/theme-provider';
 import { useColorTheme } from '@/hooks/useColorTheme';
+
 // Inner component that uses the theme hook
 function AppContent() {
     const colors = useColorTheme();
@@ -36,16 +38,28 @@ function AppContent() {
 
         const initializeApp = async () => {
             try {
-                // Initialize network service
-                await networkService.initialize();
+                // Start tracking app initialization
+                performanceMonitor.startMetric('app-initialization');
 
-                // Initialize RevenueCat service (iOS only)
-                await revenueCatService.initialize();
+                // Parallelize service initialization for better performance
+                const [networkResult, revenueCatResult, splashScreenResult] = await Promise.allSettled([
+                    networkService.initialize(),
+                    revenueCatService.initialize(), // iOS only, will handle gracefully on Android
+                    splashScreenService.initialize(),
+                ]);
 
-                // Initialize splash screen service
-                await splashScreenService.initialize();
+                // Log any initialization failures (but don't block app startup)
+                if (networkResult.status === 'rejected') {
+                    errorHandlingService.processError(networkResult.reason, { action: 'initializeNetwork' });
+                }
+                if (revenueCatResult.status === 'rejected') {
+                    errorHandlingService.processError(revenueCatResult.reason, { action: 'initializeRevenueCat' });
+                }
+                if (splashScreenResult.status === 'rejected') {
+                    errorHandlingService.processError(splashScreenResult.reason, { action: 'initializeSplashScreen' });
+                }
 
-                // Set up notification response listener
+                // Set up notification response listener (non-blocking)
                 notificationListener = Notifications.addNotificationResponseReceivedListener(
                     (response) => {
                         // Handle notification response when services are ready
@@ -53,13 +67,20 @@ function AppContent() {
                     },
                 );
 
-                // Wait for all initialization to complete
+                // Wait for splash screen initialization to complete
                 await splashScreenService.waitForInitialization();
 
-                // Get auth cleanup function
+                // Initialize auth (this is critical, so we do it after core services)
+                performanceMonitor.startMetric('auth-initialization');
                 authCleanup = initializeAuth();
+                performanceMonitor.endMetric('auth-initialization');
 
+                // Mark app as ready
                 setIsSplashScreenReady(true);
+
+                // End tracking and log startup time
+                performanceMonitor.endMetric('app-initialization');
+                performanceMonitor.trackTimeToInteractive();
             } catch (error) {
                 errorHandlingService.processError(error, { action: 'initializeApp' });
                 setIsSplashScreenReady(true); // Still show app even if initialization fails
@@ -81,7 +102,8 @@ function AppContent() {
     }, [initializeAuth]);
 
     // Handle route protection based on authentication state
-    useEffect(() => {
+    // Memoize the navigation logic to prevent unnecessary re-renders
+    const handleRouteProtection = useCallback(() => {
         if (!isSplashScreenReady || !isInitialized || loading) {
             return; // Don't navigate while loading
         }
@@ -102,7 +124,11 @@ function AppContent() {
         // else if (user && !onboardingCompleted && !inOnboardingGroup && !inAuthGroup && !inTabsGroup) {
         //     router.replace('/onboarding' as any);
         // }
-    }, [user, isInitialized, loading, isSplashScreenReady, segments, onboardingCompleted, router]);
+    }, [user, isInitialized, loading, isSplashScreenReady, segments, router]);
+
+    useEffect(() => {
+        handleRouteProtection();
+    }, [handleRouteProtection]);
 
     // Show loading screen while splash screen is not ready or auth is initializing
     if (!isSplashScreenReady || !isInitialized || loading) {
@@ -198,11 +224,18 @@ function AppContent() {
 }
 
 export default function RootLayout() {
-    const [loaded] = useFonts({
+    const [loaded, error] = useFonts({
         SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     });
-    if (!loaded) {
-        // Async font loading only occurs in development.
+
+    // Don't block app startup if fonts fail to load
+    // The app will use system fonts as fallback
+    if (error) {
+        console.warn('[RootLayout] Font loading error:', error);
+    }
+
+    if (!loaded && !error) {
+        // Only show loading state if fonts are still loading and no error occurred
         return null;
     }
 
