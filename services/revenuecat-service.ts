@@ -46,7 +46,8 @@ class RevenueCatService {
         }
 
         try {
-            Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
+            // Use ERROR level to suppress warnings in Expo Go (StoreKit only works in dev builds)
+            Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.ERROR : LOG_LEVEL.WARN);
             await Purchases.configure({ apiKey });
 
             // Fetch initial customer info and cache it.
